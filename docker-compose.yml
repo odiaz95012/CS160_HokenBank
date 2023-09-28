@@ -2,5 +2,13 @@ version: "3"
 services:
   back-end:
     build: ./back-end
+    container_name: flask_backend
     ports: ['8000:8000']
     volumes: ['./back-end:/flask-app']
+  front-end:
+    build: ./front-end/cs160_online_bank
+    container_name: react_frontend
+    ports: ['3000:3000']
+    volumes:
+      - ./front-end/cs160_online_bank:/app
+      - /app/node_modules

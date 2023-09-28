@@ -8,4 +8,4 @@ RUN pip install -r requirements.txt
 
 COPY ./app ./app
 
-CMD [ "python", "./app/app.py", "--debug", "run" ]
+CMD [ "python", "./app/app.py" ]
