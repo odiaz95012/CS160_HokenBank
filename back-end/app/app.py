@@ -34,6 +34,19 @@ class CustomerInformation(db.Model):
         self.zipcode = zipcode
         self.balance_due = balance_due
         self.status = status
+        
+    def serialize(self):
+        return {
+            "customer_id": self.customer_id,
+            "username": self.username,
+            "email": self.email,
+            "name": self.name,
+            "age": self.age,
+            "gender": self.gender,
+            "zipcode": self.zipcode,
+            "balance_due": self.balance_due,
+            "status": self.status
+        }
 
 @app.route("/createCustomer", methods=['POST'])
 def createCustomer():
@@ -68,20 +81,29 @@ def createCustomer():
 
     return "Customer created successfully"
 
-# Delete a customer by customer_id
-@app.route("/deleteCustomer/<int:customer_id>", methods=['DELETE'])
-def deleteCustomer(customer_id):
+# Unactivate Customer Account
+@app.route("/unactivateCustomer/<int:customer_id>", methods=['PATCH'])
+def unactivateCustomer(customer_id):
     customer = CustomerInformation.query.get(customer_id)
-    
-    if customer:
-        db.session.delete(customer)
-        db.session.commit()
-        return f"Customer with customer_id {customer_id} deleted successfully"
-    else:
-        return f"Customer with customer_id {customer_id} not found", 404
-
-# Get all customers
+    if request.method == 'PATCH':
+        if customer:
+            customer.status = "I"
+            db.session.commit()
+            return f"Customer Account with customer_id {customer_id} unactivated successfully"
+        else:
+            return f"Customer with customer_id {customer_id} not found", 404
+            
+@app.route("/getCustomer/<int:customer_id>", methods=["GET"])
+def getCustomerById(customer_id: int):
+    if request.method == "GET":
+        customer = CustomerInformation.query.get(customer_id)
+        if customer:
+            return jsonify(customer.serialize())  # Assuming you have a serialize method in your model
+        else:
+            return jsonify({"error": f"Customer with customer_id {customer_id} not found"}), 404
+        
 @app.route("/getCustomers", methods=["GET"])
+# Get all customers
 def getCustomers():
     customers = CustomerInformation.query.all()
     customer_list = []
