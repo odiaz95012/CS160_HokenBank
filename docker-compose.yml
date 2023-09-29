@@ -1,28 +1,28 @@
 version: "3"
 services:
-  database:
-    image: mysql:latest
-    hostname: mysql
-    container_name: database
-    ports: ['3306:3306']
-    command: --init-file /init.sql
-    volumes:
-      - ./init.sql:/init.sql
-    environment:
-      MYSQL_ROOT_PASSWORD: "password" 
-      MYSQL_DATABASE: "bankingdb"
-    healthcheck:
-      test: ["CMD", 'mysqladmin', 'ping', '-h', 'mysql', '-u', 'root', '-p$$MYSQL_ROOT_PASSWORD' ]
-      timeout: 5s
+  # database:
+  #   image: mysql:latest
+  #   hostname: mysql
+  #   container_name: database
+  #   ports: ['3306:3306']
+  #   command: --init-file /init.sql
+  #   volumes:
+  #     - ./init.sql:/init.sql
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: "password" 
+  #     MYSQL_DATABASE: "bankingdb"
+  #   healthcheck:
+  #     test: ["CMD", 'mysqladmin', 'ping', '-h', 'mysql', '-u', 'root', '-p$$MYSQL_ROOT_PASSWORD' ]
+  #     timeout: 5s
 
   back-end:
     build: ./back-end
     container_name: flask_backend
     ports: ['8000:8000']
     volumes: ['./back-end:/flask-app']
-    depends_on:
-      database:
-        condition: service_healthy
+    # depends_on:
+    #   database:
+    #     condition: service_healthy
   front-end:
     build: ./front-end
     container_name: react_frontend
