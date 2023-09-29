@@ -5,14 +5,14 @@ from flask_sqlalchemy import SQLAlchemy
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformation.sqlite3'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password@mysql/bankingdb'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 CORS(app)
 db = SQLAlchemy(app)
 
 class CustomerInformation(db.Model):
-    customer_id = db.Column("customer_id", db.Integer, primary_key=True)
+    customer_id = db.Column("customer_id", db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(18))
     email = db.Column(db.String(45))
     password = db.Column(db.String(18))
@@ -23,8 +23,7 @@ class CustomerInformation(db.Model):
     balance_due = db.Column(db.Float)
     status = db.Column(db.String(1))
 
-    def __init__(self, customer_id: int, username: str, email: str, password: str, name: str, age: int, gender: str, zipcode: int, balance_due: float, status: str):
-        self.customer_id = customer_id
+    def __init__(self, username: str, email: str, password: str, name: str, age: int, gender: str, zipcode: int, balance_due: float, status: str):
         self.username = username
         self.email = email
         self.password = password
@@ -38,7 +37,7 @@ class CustomerInformation(db.Model):
 @app.route("/createCustomer", methods=['POST'])
 def createCustomer():
     # Get the values from request parameters, query string, or any other source
-    customer_id = int(request.args.get('customer_id'))
+    #customer_id = int(request.args.get('customer_id'))
     username = request.args.get('username')
     email = request.args.get('email')
     password = request.args.get('password')
@@ -51,7 +50,6 @@ def createCustomer():
 
     # Create a customer object with the provided values
     customer = CustomerInformation(
-        customer_id=customer_id,
         username=username,
         email=email,
         password=password,
@@ -108,10 +106,63 @@ def getCustomers():
 def index():
     return ("Hello World")
 
+def create_dummy_users(db):
+    customer_data = [
+        {
+            "username": "user1",
+            "email": "user1@gmail.com",
+            "name": "User Name 1",
+            "password": "12345678",
+            "age": 22,
+            "gender": "F",
+            "zipcode": 95142,
+            "balance_due": 2342.5,
+            "status": "A"
+        },
+        {
+            "username": "user2",
+            "email": "user2@gmail.com",
+            "name": "User Name 2",
+            "password": "12345678",
+            "age": 22,
+            "gender": "F",
+            "zipcode": 95149,
+            "balance_due": 232.5,
+            "status": "A"
+        },
+        {
+            "username": "user3",
+            "email": "user3@gmail.com",
+            "name": "User Name 3",
+            "password": "12345678",
+            "age": 24,
+            "gender": "F",
+            "zipcode": 95122,
+            "balance_due": 342.5,
+            "status": "I"
+        }
+    ]
+    for cus in customer_data:
+        customer = CustomerInformation(
+            username=cus["username"],
+            email=cus["email"],
+            password=cus["password"],
+            name=cus["name"],
+            age=cus["age"],
+            gender=cus["gender"],
+            zipcode=cus["zipcode"],
+            balance_due=cus["balance_due"],
+            status=cus["status"]
+        )
+        db.session.add(customer)
+
+    db.session.commit()
 
 
 
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        create_dummy_users(db)
+    
     app.run(debug=True, port= 8000, host="0.0.0.0")
