@@ -92,6 +92,7 @@ def getCustomers():
             "customer_id": customer.customer_id,
             "username": customer.username,
             "email": customer.email,
+            "password": customer.password,
             "name": customer.name,
             "age": customer.age,
             "gender": customer.gender,
