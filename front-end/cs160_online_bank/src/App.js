@@ -1,15 +1,15 @@
 import React, {useState, useEffect} from 'react'
 
 function App() {
-  const [data, setData] = useState([{}]);
+  const [customers, setCustomers] = useState([{}]);
 
   useEffect( () => {
-    fetch("http://localhost:8000/members").then( 
+    fetch("http://localhost:8000/getCustomers").then( 
       res => res.json()
     ).then(
-      data => {
-        setData(data);
-        console.log(data);
+      customers => {
+        setCustomers(customers);
+        console.log(customers);
       })
       .catch(
         err => console.log(err)
@@ -17,11 +17,23 @@ function App() {
   }, [])
   return (
     <div>
-      {(typeof data.members === 'undefined') ? (
-        <p>Fetching Members...</p>
+      {(typeof customers === 'undefined') ? (
+        <p>Fetching Customers...</p>
       ) : (
-        data.members.map((member, i) => (
-          <p key={i}>{member}</p>
+        customers.map((customer, i) => (
+          <ul>
+            <li key={i}>Customer ID: {customer.customer_id}</li>
+            <li key={i}>Name: {customer.name}</li>
+            <li key={i}>Email: {customer.email}</li>
+            <li key={i}>Username: {customer.username}</li>
+            <li key={i}>Password: {customer.password}</li>
+            <li key={i}>Age: {customer.age}</li>
+            <li key={i}>Gender: {customer.gender}</li>
+            <li key={i}>Zipcode: {customer.zipcode}</li>
+            <li key={i}>Balance Due: {customer.balance_due}</li>
+            <li key={i}>Status {customer.customer_id}</li>
+          </ul>
+          
         ))   
       )} 
     </div>
