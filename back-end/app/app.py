@@ -160,7 +160,6 @@ class AutomaticPayments(db.Model):
 @app.route('/createCustomer', methods=['POST'])
 def create_customer():
     # Get the values from request parameters, query string, or any other source
-    # customer_id = int(request.args.get('customer_id'))
     username = request.args.get('username')
     email = request.args.get('email')
     password = request.args.get('password')
@@ -168,7 +167,6 @@ def create_customer():
     age = int(request.args.get('age'))
     gender = request.args.get('gender')
     zip_code = int(request.args.get('zip_code'))
-    status = request.args.get('status')
 
     # Create a customer object with the provided values
     customer = CustomerInformation(
@@ -179,7 +177,7 @@ def create_customer():
         age=age,
         gender=gender,
         zip_code=zip_code,
-        status=status
+        status='A'
     )
 
     # Add the customer to the database session and commit the changes
@@ -197,7 +195,12 @@ def deactivate_customer(customer_id):
         if not customer:
             return f'Customer with customer_id {customer_id} not found', 404
         customer.status = 'I'
-        # set all accounts to 0 balance and 'I' status
+        # set all active accounts to 0 balance and 'I' status
+        active_accounts = AccountInformation.query.filter(
+            AccountInformation.customer_id == customer.customer_id and
+            AccountInformation.status == 'A')
+        for acc in active_accounts:
+            close_account(acc.account_id)
         db.session.commit()
         return (f'Customer Account with customer_id {customer_id} '
                 f'deactivated successfully')
@@ -218,18 +221,15 @@ def get_customer_by_id(customer_id: int):
 @app.route('/openAccount', methods=['POST'])
 def open_account():
     # Get the values from request parameters, query string, or any other source
-    # account_id = int(request.args.get('account_id'))
     customer_id = int(request.args.get('customer_id'))
     account_type = request.args.get('account_type')
-    balance = float(request.args.get('balance'))
-    status = request.args.get('status')
 
     # Create a customer object with the provided values
     account = AccountInformation(
         customer_id=customer_id,
         account_type=account_type,
-        balance=balance,
-        status=status
+        balance=float(0),
+        status='A'
     )
 
     # Add the account to the database session and commit the changes
@@ -245,7 +245,7 @@ def close_account(account_id):
     if request.method == 'PATCH':
         if not account:
             return f'Account with account_id {account_id} not found', 404
-        account.balance = 0
+        account.balance = float(0)
         account.status = 'I'
         db.session.commit()
         return (f'Bank Account with account_id {account_id} '
@@ -347,7 +347,34 @@ def withdraw(account_id, amount):
 @app.route('/transfer/<int:from_account_id>/<int:to_account_id>/<int:amount'
            '>', methods=['PATCH'])
 def transfer(from_account_id, to_account_id, amount):
-    return
+    if amount <= 0:
+        return f'Transfer amount must be positive', 404
+    from_account = AccountInformation.query.get(from_account_id)
+    to_account = AccountInformation.query.get(to_account_id)
+    if request.method == 'PATCH':
+        if not from_account:
+            return (f'Sending Account with account_id {from_account_id} not '
+                    f'found', 404)
+        if not to_account:
+            return (f'Receiving Account with account_id {to_account_id} not '
+                    f'found', 404)
+        if from_account.status == 'I':
+            return (f'Sending Account with account_id {from_account_id} is '
+                    f'inactive', 404)
+        if to_account.status == 'I':
+            return (f'Receiving Account with account_id {to_account_id} is '
+                    f'inactive', 404)
+        new_balance = from_account.balance - amount
+        if new_balance < 0:
+            return (f'Transfer from Bank Account with account_id '
+                    f'{from_account_id} will put it into negative balance',
+                    404)
+        from_account.balance = new_balance
+        to_account.balance += amount
+        db.session.commit()
+        return (f'${amount} successfully transferred from Bank Account '
+                f'with account_id {from_account_id} to Bank Account with '
+                f'account_id {to_account_id}')
 
 
 @app.route('/')
