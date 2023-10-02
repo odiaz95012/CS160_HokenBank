@@ -1,7 +1,11 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import exc
 from datetime import datetime
+from functools import wraps
+import jwt
+from flask_bcrypt import Bcrypt
 
 
 app = Flask(__name__)
@@ -12,6 +16,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 CORS(app)
 db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
 
 
 class CustomerInformation(db.Model):
@@ -20,7 +25,7 @@ class CustomerInformation(db.Model):
                             autoincrement=True)
     username = db.Column(db.String(18), unique=True, nullable=False)
     email = db.Column(db.String(45), unique=True, nullable=False)
-    password = db.Column(db.String(18), nullable=False)
+    password = db.Column(db.String(100), nullable=False)
     full_name = db.Column(db.String(100), nullable=False)
     age = db.Column(db.Integer, nullable=False)
     gender = db.Column(db.String(1), nullable=False)
@@ -54,7 +59,7 @@ class CustomerInformation(db.Model):
         self.gender = gender
         self.zip_code = zip_code
         self.status = status
-    
+
     def serialize(self):
         return {
             'customer_id': self.customer_id,
@@ -74,7 +79,7 @@ class AccountInformation(db.Model):
                            autoincrement=True)
     customer_id = db.Column(db.Integer, db.ForeignKey(
         'CustomerInformation.customer_id'),
-                            nullable=False)
+        nullable=False)
     account_type = db.Column(db.String(1), nullable=False)
     balance = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(1), nullable=False)
@@ -113,7 +118,7 @@ class TransactionHistory(db.Model):
                                primary_key=True, autoincrement=True)
     account_id = db.Column(db.Integer, db.ForeignKey(
         'AccountInformation.account_id'),
-                           nullable=False)
+        nullable=False)
     action = db.Column(db.String(20), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -136,10 +141,10 @@ class AutomaticPayments(db.Model):
                            autoincrement=True)
     customer_id = db.Column(db.Integer, db.ForeignKey(
         'CustomerInformation.customer_id'),
-                            nullable=False)
+        nullable=False)
     account_id = db.Column(db.Integer, db.ForeignKey(
         'AccountInformation.account_id'),
-                           nullable=False)
+        nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
@@ -170,39 +175,101 @@ def create_bank_manager():
     db.session.commit()
 
 
-@app.route('/createCustomer', methods=['POST'])
-def create_customer():
-    # Get the values from request parameters, query string, or any other source
-    username = request.args.get('username')
-    email = request.args.get('email')
-    password = request.args.get('password')
-    full_name = request.args.get('full_name')
-    age = int(request.args.get('age'))
-    gender = request.args.get('gender')
-    zip_code = int(request.args.get('zip_code'))
+SECRET_KEY = "secret"
 
-    # Create a customer object with the provided values
-    customer = CustomerInformation(
-        username=username,
-        email=email,
-        password=password,
-        full_name=full_name,
-        age=age,
-        gender=gender,
-        zip_code=zip_code,
-        status='A'
-    )
 
-    # Add the customer to the database session and commit the changes
-    db.session.add(customer)
-    db.session.commit()
+def isAuthenticated(func):
+    @wraps(func)
+    def authenticate(*args, **kwargs):
+        authHeader = request.headers.get('authorization')
+        if not authHeader:
+            return "Token Not Found", 401
 
-    return 'Customer created successfully'
+        token = authHeader.split()[1]
+        if not token:
+            return "Token Not Found", 401
+        data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        currentCustomer = data["customer_id"]
+        customer = CustomerInformation.query.get(currentCustomer)
+        if not customer:
+            return "Invalid Customer", 401
+        request.currentUser = currentCustomer
+        return func(*args, **kwargs)
+    return authenticate
+
+
+def isAuthorized(func):
+    @wraps(func)
+    def authorize(*args, ** kwargs):
+        return func(*args, **kwargs)
+    return authorize
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json(0)
+    print(data)
+    if not data:
+        return "Bad Request", 400
+
+    username = data["username"]
+    password = data["password"]
+
+    if not (username or password):
+        return "Bad Request", 400
+
+    customer = CustomerInformation.query.filter_by(
+        username=username).first()
+    if customer is None:
+        return "Invalid Username", 401
+    try:
+        bcrypt.check_password_hash(customer.password, password)
+    except Exception:
+        return "Invalid Password", 401
+
+    token = jwt.encode({"customer_id": customer.customer_id}, SECRET_KEY)
+
+    return jsonify({"token": token})
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json(0)
+    if not data:
+        return "Bad Request", 400
+
+    existingCustomer = CustomerInformation.query.filter_by(
+        username=data["username"]).first()
+    if existingCustomer:
+        return "Username already exists", 400
+
+    # Hash password
+    hashedPw = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
+    customer = None
+    try:
+        customer = CustomerInformation(
+            username=data["username"],
+            email=data["email"],
+            password=hashedPw,
+            full_name=data["full_name"],
+            age=data["age"],
+            gender=data["gender"],
+            zip_code=data["zip_code"],
+            status=data["status"]
+        )
+        db.session.add(customer)
+        db.session.commit()
+
+    except exc.IntegrityError:
+        return "Invalid Input Format", 400
+
+    return jsonify(customer.serialize())
 
 
 # Deactivate Customer Account
 @app.route('/deactivateCustomer/<int:customer_id>', methods=['PATCH'])
-def deactivate_customer(customer_id):
+@isAuthenticated
+def deactivateCustomer(customer_id):
     customer = CustomerInformation.query.get(customer_id)
     if request.method == 'PATCH':
         if not customer:
@@ -536,5 +603,5 @@ if __name__ == '__main__':
         # create_bank_manager()
         # create_dummy_customers()
         # create_dummy_accounts()
-    
+
     app.run(debug=True, port=8000, host='0.0.0.0')
