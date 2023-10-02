@@ -15,6 +15,7 @@ db = SQLAlchemy(app)
 
 
 class CustomerInformation(db.Model):
+    __tablename__ = 'CustomerInformation'
     customer_id = db.Column('customer_id', db.Integer, primary_key=True,
                             autoincrement=True)
     username = db.Column(db.String(18), unique=True, nullable=False)
@@ -68,6 +69,7 @@ class CustomerInformation(db.Model):
 
 
 class AccountInformation(db.Model):
+    __tablename__ = 'AccountInformation'
     account_id = db.Column('account_id', db.Integer, primary_key=True,
                            autoincrement=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'),
@@ -105,6 +107,7 @@ class AccountInformation(db.Model):
 
 
 class TransactionHistory(db.Model):
+    __tablename__ = 'TransactionHistory'
     transaction_id = db.Column('transaction_id', db.Integer,
                                primary_key=True, autoincrement=True)
     account_id = db.Column(db.Integer, db.ForeignKey('account.account_id'),
@@ -126,6 +129,7 @@ class TransactionHistory(db.Model):
 
 
 class AutomaticPayments(db.Model):
+    __tablename__ = 'AutomaticPayments'
     payment_id = db.Column('payment_id', db.Integer, primary_key=True,
                            autoincrement=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'),
