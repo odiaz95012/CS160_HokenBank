@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
 
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformation.sqlite3'
 # app.config['SQLALCHEMY_DATABASE_URI'] =
@@ -31,16 +32,16 @@ class CustomerInformation(db.Model):
                                lazy=True)
 
     __table_args__ = (
-        SQLAlchemy.CheckConstraint(6 <= username.length <= 18,
+        db.CheckConstraint("LENGTH(username) BETWEEN 6 and 18",
                                    name='check_username_length'),
-        SQLAlchemy.CheckConstraint(6 <= password.length <= 18,
+        db.CheckConstraint("LENGTH(password) BETWEEN 6 and 18",
                                    name='check_password_length'),
-        SQLAlchemy.CheckConstraint(18 <= age <= 150, name='check_age'),
-        SQLAlchemy.CheckConstraint(gender in ('M', 'F', 'O'),
+        db.CheckConstraint("18 <= age <= 150", name='check_age'),
+       db.CheckConstraint("gender IN ('M', 'F', 'O')",
                                    name='check_gender'),
-        SQLAlchemy.CheckConstraint(10000 <= zip_code <= 99999,
+        db.CheckConstraint("10000 <= zip_code <= 99999",
                                    name='check_zip_code'),
-        SQLAlchemy.CheckConstraint(status in ('A', 'I'),
+        db.CheckConstraint("status IN ('A', 'I')",
                                    name='check_status'),
         {})
 
@@ -72,7 +73,7 @@ class CustomerInformation(db.Model):
 class AccountInformation(db.Model):
     account_id = db.Column('account_id', db.Integer, primary_key=True,
                            autoincrement=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'),
+    customer_id = db.Column(db.Integer,  db.ForeignKey('customer.customer_id'),
                             nullable=False)
     account_type = db.Column(db.String(1), nullable=False)
     balance = db.Column(db.Float, nullable=False)
@@ -83,52 +84,36 @@ class AccountInformation(db.Model):
                                lazy=True)
 
     __table_args__ = (
-        SQLAlchemy.CheckConstraint(account_type in ('C', 'S'),
-                                   name='check_gender'),
-        SQLAlchemy.CheckConstraint(balance >= 0,
+       db.CheckConstraint("account_type IN ('C', 'S')",
+                                   name='check_account_type'),
+       db.CheckConstraint("balance >= 0",
                                    name='check_balance'),
-        SQLAlchemy.CheckConstraint(status in ('A', 'I'),
+       db.CheckConstraint("status IN ('A', 'I')",
                                    name='check_status'),
         {})
 
-    def __init__(self, customer_id: int, account_type: str, balance: float,
-                 status: str):
-        self.customer_id = customer_id
+    def __init__(self, account_type: str, balance: float, status: str):
         self.account_type = account_type
         self.balance = balance
         self.status = status
-
-    def serialize(self):
-        return {
-            'account_id': self.account_id,
-            'customer_id': self.customer_id,
-            'account_type': self.account_type,
-            'balance': self.balance,
-            'status': self.status
-        }
 
 
 class TransactionHistory(db.Model):
     transaction_id = db.Column('transaction_id', db.Integer,
                                primary_key=True, autoincrement=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('account.account_id'),
+    account_id = db.Column(db.Integer,  db.ForeignKey('account.account_id'),
                            nullable=False)
     action = db.Column(db.String(20), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     __table_args__ = (
-        SQLAlchemy.CheckConstraint(action in ('Deposit', 'Withdraw',
-                                              'Transfer', 'Normal Payment',
-                                              'Automatic Payment'),
+        db.CheckConstraint("action IN ('Deposit', 'Withdraw','Transfer', 'Normal Payment',  'Automatic Payment')",
                                    name='check_action'),
-        SQLAlchemy.CheckConstraint(amount >= 0,
-                                   name='check_amount'),
-        {})
+        db.CheckConstraint("amount >= 0", name='check_amount'), 
+    {})
 
-    def __init__(self, account_id: int, action: str, amount: float,
-                 date: datetime):
-        self.account_id = account_id
+    def __init__(self, action: str, amount: float, date: datetime):
         self.action = action
         self.amount = amount
         self.date = date
@@ -137,28 +122,25 @@ class TransactionHistory(db.Model):
 class AutomaticPayments(db.Model):
     payment_id = db.Column('payment_id', db.Integer, primary_key=True,
                            autoincrement=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'),
+    customer_id = db.Column(db.Integer,  db.ForeignKey('customer.customer_id'),
                             nullable=False)
-    account_id = db.Column(db.Integer, db.ForeignKey('account.account_id'),
+    account_id = db.Column(db.Integer,  db.ForeignKey('account.account_id'),
                            nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     __table_args__ = (
-        SQLAlchemy.CheckConstraint(amount >= 0,
+        db.CheckConstraint("amount >= 0",
                                    name='check_amount'),
         {})
 
-    def __init__(self, customer_id: int, account_id: int, amount: float,
-                 date: datetime):
-        self.customer_id = customer_id
-        self.account_id = account_id
+    def __init__(self, amount: float, date: datetime):
         self.amount = amount
         self.date = date
 
 
 @app.route('/createCustomer', methods=['POST'])
-def create_customer():
+def createCustomer():
     # Get the values from request parameters, query string, or any other source
     # customer_id = int(request.args.get('customer_id'))
     username = request.args.get('username')
@@ -191,82 +173,33 @@ def create_customer():
 
 # Deactivate Customer Account
 @app.route('/deactivateCustomer/<int:customer_id>', methods=['PATCH'])
-def deactivate_customer(customer_id):
+def deactivateCustomer(customer_id):
     customer = CustomerInformation.query.get(customer_id)
     if request.method == 'PATCH':
-        if not customer:
+        if customer:
+            customer.status = 'I'
+            db.session.commit()
+            return (f'Customer Account with customer_id {customer_id} '
+                    f'deactivated successfully')
+        else:
             return f'Customer with customer_id {customer_id} not found', 404
-        customer.status = 'I'
-        # set all accounts to 0 balance and 'I' status
-        db.session.commit()
-        return (f'Customer Account with customer_id {customer_id} '
-                f'deactivated successfully')
 
 
-# Assuming you have a serialize method in your model
 @app.route('/getCustomer/<int:customer_id>', methods=['GET'])
-def get_customer_by_id(customer_id: int):
+def getCustomerById(customer_id: int):
     if request.method == 'GET':
         customer = CustomerInformation.query.get(customer_id)
-        if not customer:
-            return jsonify({'error': f'Customer Account with customer_id '
+        if customer:
+            return jsonify(customer.serialize())
+            # Assuming you have a serialize method in your model
+        else:
+            return jsonify({'error': f'Customer with customer_id '
                                      f'{customer_id} not found'}), 404
-        # add additional check for 'I' status?
-        return jsonify(customer.serialize())
-
-
-@app.route('/openAccount', methods=['POST'])
-def open_account():
-    # Get the values from request parameters, query string, or any other source
-    # account_id = int(request.args.get('account_id'))
-    customer_id = int(request.args.get('customer_id'))
-    account_type = request.args.get('account_type')
-    balance = float(request.args.get('balance'))
-    status = request.args.get('status')
-
-    # Create a customer object with the provided values
-    account = AccountInformation(
-        customer_id=customer_id,
-        account_type=account_type,
-        balance=balance,
-        status=status
-    )
-
-    # Add the account to the database session and commit the changes
-    db.session.add(account)
-    db.session.commit()
-
-    return 'Account opened successfully'
-
-
-@app.route('/closeAccount/<int:account_id>', methods=['PATCH'])
-def close_account(account_id):
-    account = AccountInformation.query.get(account_id)
-    if request.method == 'PATCH':
-        if not account:
-            return f'Account with account_id {account_id} not found', 404
-        account.balance = 0
-        account.status = 'I'
-        db.session.commit()
-        return (f'Bank Account with account_id {account_id} '
-                f'closed successfully')
-
-
-# Assuming you have a serialize method in your model
-@app.route('/getAccount/<int:account_id>', methods=['GET'])
-def get_account_by_id(account_id: int):
-    if request.method == 'GET':
-        account = AccountInformation.query.get(account_id)
-        if not account:
-            return jsonify({'error': f'Bank Account with account_id '
-                                     f'{account_id} not found'}), 404
-        # add additional check for 'I' status?
-        return jsonify(account.serialize())
 
 
 @app.route('/getCustomers', methods=['GET'])
 # Get all customers
-def get_customers():
+def getCustomers():
     customers = CustomerInformation.query.all()
     customer_list = []
 
@@ -287,79 +220,16 @@ def get_customers():
     return jsonify(customer_list)
 
 
-@app.route('/getAccounts', methods=['GET'])
-# Get all accounts
-def get_accounts():
-    accounts = AccountInformation.query.all()
-    account_list = []
-
-    for account in accounts:
-        account_data = {
-            'account_id': account.account_id,
-            'customer_id': account.customer_id,
-            'account_type': account.account_type,
-            'balance': account.balance,
-            'status': account.status
-        }
-        account_list.append(account_data)
-
-    return jsonify(account_list)
-
-
-@app.route('/deposit/<int:account_id>/<int:amount>', methods=['PATCH'])
-def deposit(account_id, amount):
-    if amount <= 0:
-        return f'Deposit amount must be positive', 404
-    account = AccountInformation.query.get(account_id)
-    if request.method == 'PATCH':
-        if not account:
-            return f'Bank Account with account_id {account_id} not found', 404
-        if account.status == 'I':
-            return (f'Bank Account with account_id {account_id} is inactive',
-                    404)
-        account.balance += amount
-        db.session.commit()
-        return (f'${amount} successfully deposited to Bank Account '
-                f'with account_id {account_id}')
-
-
-@app.route('/withdraw/<int:account_id>/<int:amount>', methods=['PATCH'])
-def withdraw(account_id, amount):
-    if amount <= 0:
-        return f'Withdraw amount must be positive', 404
-    account = AccountInformation.query.get(account_id)
-    if request.method == 'PATCH':
-        if not account:
-            return f'Bank Account with account_id {account_id} not found', 404
-        if account.status == 'I':
-            return (f'Bank Account with account_id {account_id} is inactive',
-                    404)
-        new_balance = account.balance - amount
-        if new_balance < 0:
-            return (f'Withdrawal will put Bank Account with account_id '
-                    f'{account_id} into negative balance', 404)
-        account.balance = new_balance
-        db.session.commit()
-        return (f'${amount} successfully withdrawn from Bank Account '
-                f'with account_id {account_id}')
-
-
-@app.route('/transfer/<int:from_account_id>/<int:to_account_id>/<int:amount'
-           '>', methods=['PATCH'])
-def transfer(from_account_id, to_account_id, amount):
-    return
-
-
 @app.route('/')
 def index():
-    return 'Hello World'
+    return ('Hello World')
 
 
-def create_dummy_customers(db):
+def create_dummy_users(db):
     customer_data = [
         {
-            'username': 'user_1',
-            'email': 'user_1@gmail.com',
+            'username': 'user11',
+            'email': 'user1@gmail.com',
             'full_name': 'User Name 1',
             'password': '12345678',
             'age': 22,
@@ -368,18 +238,18 @@ def create_dummy_customers(db):
             'status': 'A'
         },
         {
-            'username': 'user_2',
-            'email': 'user_2@gmail.com',
+            'username': 'user22',
+            'email': 'user2@gmail.com',
             'full_name': 'User Name 2',
             'password': '12345678',
             'age': 22,
-            'gender': 'M',
+            'gender': 'F',
             'zip_code': 95149,
             'status': 'A'
         },
         {
-            'username': 'user_3',
-            'email': 'user_3@gmail.com',
+            'username': 'user33',
+            'email': 'user3@gmail.com',
             'full_name': 'User Name 3',
             'password': '12345678',
             'age': 24,
@@ -404,43 +274,10 @@ def create_dummy_customers(db):
     db.session.commit()
 
 
-def create_dummy_accounts(db):
-    account_data = [
-        {
-            'customer_id': 1,
-            'account_type': 'C',
-            'balance': 1111.11,
-            'status': 'A'
-        },
-        {
-            'customer_id': 2,
-            'account_type': 'S',
-            'balance': 2222.22,
-            'status': 'A'
-        },
-        {
-            'customer_id': 3,
-            'account_type': 'C',
-            'balance': 0,
-            'status': 'I'
-        }
-    ]
-    for acc in account_data:
-        account = AccountInformation(
-            customer_id=acc['customer_id'],
-            account_type=acc['account_type'],
-            balance=acc['balance'],
-            status=acc['status']
-        )
-        db.session.add(account)
-
-    db.session.commit()
-
-
 if __name__ == '__main__':
     with app.app_context():
+        db.drop_all()
         db.create_all()
-        create_dummy_customers(db)
-        create_dummy_accounts(db)
+        create_dummy_users(db)
     
-    app.run(debug=True, port=8000, host='0.0.0.0')
+    app.run(debug=True, port= 8000, host='0.0.0.0')
