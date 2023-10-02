@@ -1,7 +1,11 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import exc
 from datetime import datetime
+from functools import wraps
+import jwt
+from flask_bcrypt import Bcrypt
 
 
 app = Flask(__name__)
@@ -12,6 +16,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 CORS(app)
 db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
 
 
 class CustomerInformation(db.Model):
@@ -19,7 +24,7 @@ class CustomerInformation(db.Model):
                             autoincrement=True)
     username = db.Column(db.String(18), unique=True, nullable=False)
     email = db.Column(db.String(45), unique=True, nullable=False)
-    password = db.Column(db.String(18), nullable=False)
+    password = db.Column(db.String(100), nullable=False)
     full_name = db.Column(db.String(100), nullable=False)
     age = db.Column(db.Integer, nullable=False)
     gender = db.Column(db.String(1), nullable=False)
@@ -30,19 +35,19 @@ class CustomerInformation(db.Model):
     payments = db.relationship('AutomaticPayments', backref='customer',
                                lazy=True)
 
-    __table_args__ = (
-        SQLAlchemy.CheckConstraint(6 <= username.length <= 18,
-                                   name='check_username_length'),
-        SQLAlchemy.CheckConstraint(6 <= password.length <= 18,
-                                   name='check_password_length'),
-        SQLAlchemy.CheckConstraint(18 <= age <= 150, name='check_age'),
-        SQLAlchemy.CheckConstraint(gender in ('M', 'F', 'O'),
-                                   name='check_gender'),
-        SQLAlchemy.CheckConstraint(10000 <= zip_code <= 99999,
-                                   name='check_zip_code'),
-        SQLAlchemy.CheckConstraint(status in ('A', 'I'),
-                                   name='check_status'),
-        {})
+    # __table_args__ = (
+    #     SQLAlchemy.CheckConstraint(6 <= username.length <= 18,
+    #                                name='check_username_length'),
+    #     SQLAlchemy.CheckConstraint(6 <= password.length <= 18,
+    #                                name='check_password_length'),
+    #     SQLAlchemy.CheckConstraint(18 <= age <= 150, name='check_age'),
+    #     SQLAlchemy.CheckConstraint(gender in ('M', 'F', 'O'),
+    #                                name='check_gender'),
+    #     SQLAlchemy.CheckConstraint(10000 <= zip_code <= 99999,
+    #                                name='check_zip_code'),
+    #     SQLAlchemy.CheckConstraint(status in ('A', 'I'),
+    #                                name='check_status'),
+    #     {})
 
     def __init__(self, username: str, email: str, password: str,
                  full_name: str, age: int, gender: str, zip_code: int,
@@ -55,7 +60,7 @@ class CustomerInformation(db.Model):
         self.gender = gender
         self.zip_code = zip_code
         self.status = status
-    
+
     def serialize(self):
         return {
             'customer_id': self.customer_id,
@@ -72,7 +77,7 @@ class CustomerInformation(db.Model):
 class AccountInformation(db.Model):
     account_id = db.Column('account_id', db.Integer, primary_key=True,
                            autoincrement=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'),
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer_information.customer_id'),
                             nullable=False)
     account_type = db.Column(db.String(1), nullable=False)
     balance = db.Column(db.Float, nullable=False)
@@ -82,14 +87,14 @@ class AccountInformation(db.Model):
     payments = db.relationship('AutomaticPayments', backref='account',
                                lazy=True)
 
-    __table_args__ = (
-        SQLAlchemy.CheckConstraint(account_type in ('C', 'S'),
-                                   name='check_gender'),
-        SQLAlchemy.CheckConstraint(balance >= 0,
-                                   name='check_balance'),
-        SQLAlchemy.CheckConstraint(status in ('A', 'I'),
-                                   name='check_status'),
-        {})
+    # __table_args__ = (
+    #     SQLAlchemy.CheckConstraint(account_type in ('C', 'S'),
+    #                                name='check_gender'),
+    #     SQLAlchemy.CheckConstraint(balance >= 0,
+    #                                name='check_balance'),
+    #     SQLAlchemy.CheckConstraint(status in ('A', 'I'),
+    #                                name='check_status'),
+    #     {})
 
     def __init__(self, account_type: str, balance: float, status: str):
         self.account_type = account_type
@@ -100,20 +105,20 @@ class AccountInformation(db.Model):
 class TransactionHistory(db.Model):
     transaction_id = db.Column('transaction_id', db.Integer,
                                primary_key=True, autoincrement=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('account.account_id'),
+    account_id = db.Column(db.Integer, db.ForeignKey('account_information.account_id'),
                            nullable=False)
     action = db.Column(db.String(20), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    __table_args__ = (
-        SQLAlchemy.CheckConstraint(action in ('Deposit', 'Withdraw',
-                                              'Transfer', 'Normal Payment',
-                                              'Automatic Payment'),
-                                   name='check_action'),
-        SQLAlchemy.CheckConstraint(amount >= 0,
-                                   name='check_amount'),
-        {})
+    # __table_args__ = (
+    #     SQLAlchemy.CheckConstraint(action in ('Deposit', 'Withdraw',
+    #                                           'Transfer', 'Normal Payment',
+    #                                           'Automatic Payment'),
+    #                                name='check_action'),
+    #     SQLAlchemy.CheckConstraint(amount >= 0,
+    #                                name='check_amount'),
+    #     {})
 
     def __init__(self, action: str, amount: float, date: datetime):
         self.action = action
@@ -124,57 +129,118 @@ class TransactionHistory(db.Model):
 class AutomaticPayments(db.Model):
     payment_id = db.Column('payment_id', db.Integer, primary_key=True,
                            autoincrement=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'),
+    customer_id = db.Column(db.Integer, db.ForeignKey('customer_information.customer_id'),
                             nullable=False)
-    account_id = db.Column(db.Integer, db.ForeignKey('account.account_id'),
+    account_id = db.Column(db.Integer, db.ForeignKey('account_information.account_id'),
                            nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
-    __table_args__ = (
-        SQLAlchemy.CheckConstraint(amount >= 0,
-                                   name='check_amount'),
-        {})
+    # __table_args__ = (
+    #     SQLAlchemy.CheckConstraint(amount >= 0,
+    #                                name='check_amount'),
+    #     {})
 
     def __init__(self, amount: float, date: datetime):
         self.amount = amount
         self.date = date
 
 
-@app.route('/createCustomer', methods=['POST'])
-def createCustomer():
-    # Get the values from request parameters, query string, or any other source
-    # customer_id = int(request.args.get('customer_id'))
-    username = request.args.get('username')
-    email = request.args.get('email')
-    password = request.args.get('password')
-    full_name = request.args.get('full_name')
-    age = int(request.args.get('age'))
-    gender = request.args.get('gender')
-    zip_code = int(request.args.get('zip_code'))
-    status = request.args.get('status')
+SECRET_KEY = "secret"
 
-    # Create a customer object with the provided values
-    customer = CustomerInformation(
-        username=username,
-        email=email,
-        password=password,
-        full_name=full_name,
-        age=age,
-        gender=gender,
-        zip_code=zip_code,
-        status=status
-    )
 
-    # Add the customer to the database session and commit the changes
-    db.session.add(customer)
-    db.session.commit()
+def isAuthenticated(func):
+    @wraps(func)
+    def authenticate(*args, **kwargs):
+        authHeader = request.headers.get('authorization')
+        if not authHeader:
+            return "Token Not Found", 401
 
-    return 'Customer created successfully'
+        token = authHeader.split()[1]
+        if not token:
+            return "Token Not Found", 401
+        data = jwt.decode(token, SECRET_KEY)
+        currentCustomer = data["payload"]["customer_id"]
+        customer = CustomerInformation.query.get(currentCustomer)
+        if not customer:
+            return "Invalid Customer", 401
+        request.currentUser = currentCustomer
+        return func(*args, **kwargs)
+    return authenticate
+
+
+def isAuthorized(func):
+    @wraps(func)
+    def authorize(*args, ** kwargs):
+
+        return func(*args, **kwargs)
+    return authorize
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json(0)
+    print(data)
+    if not data:
+        return "Bad Request", 400
+
+    username = data["username"]
+    password = data["password"]
+
+    if not (username or password):
+        return "Bad Request", 400
+
+    customer = CustomerInformation.query.filter_by(
+        username=username).first()
+    if customer is None:
+        return "Invalid Username", 401
+    try:
+        bcrypt.check_password_hash(customer.password, password)
+    except Exception:
+        return "Invalid Password", 401
+
+    token = jwt.encode({"customer_id": customer.customer_id}, SECRET_KEY)
+
+    return jsonify({"token": token})
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json(0)
+    if not data:
+        return "Bad Request", 400
+
+    existingCustomer = CustomerInformation.query.filter_by(
+        username=data["username"]).first()
+    if existingCustomer:
+        return "Username already exists", 400
+
+    # Hash password
+    hashedPw = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
+    customer = None
+    try:
+        customer = CustomerInformation(
+            username=data["username"],
+            email=data["email"],
+            password=hashedPw,
+            full_name=data["full_name"],
+            age=data["age"],
+            gender=data["gender"],
+            zip_code=data["zip_code"],
+            status=data["status"]
+        )
+        db.session.add(customer)
+        db.session.commit()
+
+    except exc.IntegrityError:
+        return "Invalid Input Format", 400
+
+    return jsonify(customer.serialize())
 
 
 # Deactivate Customer Account
 @app.route('/deactivateCustomer/<int:customer_id>', methods=['PATCH'])
+@isAuthenticated
 def deactivateCustomer(customer_id):
     customer = CustomerInformation.query.get(customer_id)
     if request.method == 'PATCH':
@@ -279,6 +345,6 @@ def create_dummy_users(db):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        create_dummy_users(db)
-    
-    app.run(debug=True, port= 8000, host='0.0.0.0')
+        # create_dummy_users(db)
+
+    app.run(debug=True, port=8000, host='0.0.0.0')
