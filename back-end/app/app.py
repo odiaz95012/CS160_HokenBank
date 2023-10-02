@@ -159,8 +159,8 @@ def isAuthenticated(func):
         token = authHeader.split()[1]
         if not token:
             return "Token Not Found", 401
-        data = jwt.decode(token, SECRET_KEY)
-        currentCustomer = data["payload"]["customer_id"]
+        data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        currentCustomer = data["customer_id"]
         customer = CustomerInformation.query.get(currentCustomer)
         if not customer:
             return "Invalid Customer", 401
