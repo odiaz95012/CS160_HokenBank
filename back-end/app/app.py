@@ -172,7 +172,6 @@ def isAuthenticated(func):
 def isAuthorized(func):
     @wraps(func)
     def authorize(*args, ** kwargs):
-
         return func(*args, **kwargs)
     return authorize
 
