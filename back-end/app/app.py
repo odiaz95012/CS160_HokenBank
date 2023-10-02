@@ -31,17 +31,15 @@ class CustomerInformation(db.Model):
                                lazy=True)
 
     __table_args__ = (
-        SQLAlchemy.CheckConstraint(6 <= username.length <= 18,
-                                   name='check_username_length'),
-        SQLAlchemy.CheckConstraint(6 <= password.length <= 18,
-                                   name='check_password_length'),
-        SQLAlchemy.CheckConstraint(18 <= age <= 150, name='check_age'),
-        SQLAlchemy.CheckConstraint(gender in ('M', 'F', 'O'),
-                                   name='check_gender'),
-        SQLAlchemy.CheckConstraint(10000 <= zip_code <= 99999,
-                                   name='check_zip_code'),
-        SQLAlchemy.CheckConstraint(status in ('A', 'I'),
-                                   name='check_status'),
+        db.CheckConstraint("LENGTH(username) BETWEEN 6 and 18",
+                           name='check_username_length'),
+        db.CheckConstraint("LENGTH(password) BETWEEN 6 and 18",
+                           name='check_password_length'),
+        db.CheckConstraint("18 <= age <= 150", name='check_age'),
+        db.CheckConstraint("gender IN ('M', 'F', 'O')", name='check_gender'),
+        db.CheckConstraint("10000 <= zip_code <= 99999",
+                           name='check_zip_code'),
+        db.CheckConstraint("status IN ('A', 'I')", name='check_status'),
         {})
 
     def __init__(self, username: str, email: str, password: str,
@@ -83,12 +81,10 @@ class AccountInformation(db.Model):
                                lazy=True)
 
     __table_args__ = (
-        SQLAlchemy.CheckConstraint(account_type in ('C', 'S'),
-                                   name='check_gender'),
-        SQLAlchemy.CheckConstraint(balance >= 0,
-                                   name='check_balance'),
-        SQLAlchemy.CheckConstraint(status in ('A', 'I'),
-                                   name='check_status'),
+        db.CheckConstraint("account_type IN ('C', 'S')",
+                           name='check_account_type'),
+        db.CheckConstraint("balance >= 0", name='check_balance'),
+        db.CheckConstraint("status IN ('A', 'I')", name='check_status'),
         {})
 
     def __init__(self, customer_id: int, account_type: str, balance: float,
@@ -118,20 +114,15 @@ class TransactionHistory(db.Model):
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     __table_args__ = (
-        SQLAlchemy.CheckConstraint(action in ('Deposit', 'Withdraw',
-                                              'Transfer', 'Normal Payment',
-                                              'Automatic Payment'),
-                                   name='check_action'),
-        SQLAlchemy.CheckConstraint(amount >= 0,
-                                   name='check_amount'),
+        db.CheckConstraint("action IN ('Deposit', 'Withdraw','Transfer', "
+                           "'Normal Payment',  'Automatic Payment')",
+                           name='check_action'),
         {})
 
-    def __init__(self, account_id: int, action: str, amount: float,
-                 date: datetime):
+    def __init__(self, account_id: int, action: str, amount: float):
         self.account_id = account_id
         self.action = action
         self.amount = amount
-        self.date = date
 
 
 class AutomaticPayments(db.Model):
@@ -145,8 +136,7 @@ class AutomaticPayments(db.Model):
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     __table_args__ = (
-        SQLAlchemy.CheckConstraint(amount >= 0,
-                                   name='check_amount'),
+        db.CheckConstraint("amount >= 0", name='check_amount'),
         {})
 
     def __init__(self, customer_id: int, account_id: int, amount: float,
@@ -155,6 +145,21 @@ class AutomaticPayments(db.Model):
         self.account_id = account_id
         self.amount = amount
         self.date = date
+
+
+def create_bank_manager():
+    bank_manager = CustomerInformation(
+        username='bank_manager',
+        email='bank_manager@gmail.com',
+        password='hokenadmin',
+        full_name='Bank Manager',
+        age=150,
+        gender='O',
+        zip_code=10000,
+        status='A'
+    )
+    db.session.add(bank_manager)
+    db.session.commit()
 
 
 @app.route('/createCustomer', methods=['POST'])
@@ -319,6 +324,7 @@ def deposit(account_id, amount):
                     404)
         account.balance += amount
         db.session.commit()
+        create_transaction_history_entry(account_id, 'Deposit', amount)
         return (f'${amount} successfully deposited to Bank Account '
                 f'with account_id {account_id}')
 
@@ -340,6 +346,7 @@ def withdraw(account_id, amount):
                     f'{account_id} into negative balance', 404)
         account.balance = new_balance
         db.session.commit()
+        create_transaction_history_entry(account_id, 'Withdraw', -amount)
         return (f'${amount} successfully withdrawn from Bank Account '
                 f'with account_id {account_id}')
 
@@ -372,9 +379,60 @@ def transfer(from_account_id, to_account_id, amount):
         from_account.balance = new_balance
         to_account.balance += amount
         db.session.commit()
+        create_transaction_history_entry(from_account_id, 'Transfer', -amount)
+        create_transaction_history_entry(to_account_id, 'Transfer', amount)
         return (f'${amount} successfully transferred from Bank Account '
                 f'with account_id {from_account_id} to Bank Account with '
                 f'account_id {to_account_id}')
+
+
+@app.route('/normalPayment/<int:account_id>/<int:amount>', methods=['PATCH'])
+def normal_payment(account_id, amount):
+    if amount <= 0:
+        return f'Payment amount must be positive', 404
+    account = AccountInformation.query.get(account_id)
+    if request.method == 'PATCH':
+        if not account:
+            return f'Bank Account with account_id {account_id} not found', 404
+        if account.status == 'I':
+            return (f'Bank Account with account_id {account_id} is inactive',
+                    404)
+        new_balance = account.balance - amount
+        if new_balance < 0:
+            return (f'Bill payment will put Bank Account with account_id '
+                    f'{account_id} into negative balance', 404)
+        account.balance = new_balance
+        db.session.commit()
+        create_transaction_history_entry(account_id, 'Normal Payment', -amount)
+        return (f'${amount} successfully paid by Bank Account with '
+                f'account_id {account_id}')
+
+
+def create_transaction_history_entry(account_id, action, amount):
+    transaction = TransactionHistory(
+        account_id=account_id,
+        action=action,
+        amount=amount
+    )
+    db.session.add(transaction)
+    db.session.commit()
+
+
+def create_automatic_payment_entry(customer_id, account_id, amount, date):
+    automatic_payment = AutomaticPayments(
+        customer_id=customer_id,
+        account_id=account_id,
+        amount=amount,
+        date=date
+    )
+    db.session.add(automatic_payment)
+    db.session.commit()
+
+
+def delete_automatic_payment_entry(payment_id):
+    AutomaticPayments.query.filter(AutomaticPayments.payment_id ==
+                                   payment_id).delete()
+    db.session.commit()
 
 
 @app.route('/')
@@ -382,13 +440,13 @@ def index():
     return 'Hello World'
 
 
-def create_dummy_customers(db):
+def create_dummy_customers():
     customer_data = [
         {
             'username': 'user_1',
             'email': 'user_1@gmail.com',
-            'full_name': 'User Name 1',
             'password': '12345678',
+            'full_name': 'User Name 1',
             'age': 22,
             'gender': 'F',
             'zip_code': 95142,
@@ -397,8 +455,8 @@ def create_dummy_customers(db):
         {
             'username': 'user_2',
             'email': 'user_2@gmail.com',
-            'full_name': 'User Name 2',
             'password': '12345678',
+            'full_name': 'User Name 2',
             'age': 22,
             'gender': 'M',
             'zip_code': 95149,
@@ -407,8 +465,8 @@ def create_dummy_customers(db):
         {
             'username': 'user_3',
             'email': 'user_3@gmail.com',
-            'full_name': 'User Name 3',
             'password': '12345678',
+            'full_name': 'User Name 3',
             'age': 24,
             'gender': 'F',
             'zip_code': 95122,
@@ -431,22 +489,22 @@ def create_dummy_customers(db):
     db.session.commit()
 
 
-def create_dummy_accounts(db):
+def create_dummy_accounts():
     account_data = [
         {
-            'customer_id': 1,
+            'customer_id': 2,
             'account_type': 'C',
             'balance': 1111.11,
             'status': 'A'
         },
         {
-            'customer_id': 2,
+            'customer_id': 3,
             'account_type': 'S',
             'balance': 2222.22,
             'status': 'A'
         },
         {
-            'customer_id': 3,
+            'customer_id': 4,
             'account_type': 'C',
             'balance': 0,
             'status': 'I'
@@ -467,7 +525,8 @@ def create_dummy_accounts(db):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        create_dummy_customers(db)
-        create_dummy_accounts(db)
+        create_bank_manager()
+        create_dummy_customers()
+        create_dummy_accounts()
     
     app.run(debug=True, port=8000, host='0.0.0.0')
