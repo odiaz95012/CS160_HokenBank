@@ -72,7 +72,8 @@ class AccountInformation(db.Model):
     __tablename__ = 'AccountInformation'
     account_id = db.Column('account_id', db.Integer, primary_key=True,
                            autoincrement=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'),
+    customer_id = db.Column(db.Integer, db.ForeignKey(
+        'CustomerInformation.customer_id'),
                             nullable=False)
     account_type = db.Column(db.String(1), nullable=False)
     balance = db.Column(db.Float, nullable=False)
@@ -110,7 +111,8 @@ class TransactionHistory(db.Model):
     __tablename__ = 'TransactionHistory'
     transaction_id = db.Column('transaction_id', db.Integer,
                                primary_key=True, autoincrement=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('account.account_id'),
+    account_id = db.Column(db.Integer, db.ForeignKey(
+        'AccountInformation.account_id'),
                            nullable=False)
     action = db.Column(db.String(20), nullable=False)
     amount = db.Column(db.Float, nullable=False)
@@ -132,9 +134,11 @@ class AutomaticPayments(db.Model):
     __tablename__ = 'AutomaticPayments'
     payment_id = db.Column('payment_id', db.Integer, primary_key=True,
                            autoincrement=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'),
+    customer_id = db.Column(db.Integer, db.ForeignKey(
+        'CustomerInformation.customer_id'),
                             nullable=False)
-    account_id = db.Column(db.Integer, db.ForeignKey('account.account_id'),
+    account_id = db.Column(db.Integer, db.ForeignKey(
+        'AccountInformation.account_id'),
                            nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -529,8 +533,8 @@ def create_dummy_accounts():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        create_bank_manager()
-        create_dummy_customers()
-        create_dummy_accounts()
+        # create_bank_manager()
+        # create_dummy_customers()
+        # create_dummy_accounts()
     
     app.run(debug=True, port=8000, host='0.0.0.0')
