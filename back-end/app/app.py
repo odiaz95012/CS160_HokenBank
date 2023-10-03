@@ -39,7 +39,7 @@ class CustomerInformation(db.Model):
     __table_args__ = (
         db.CheckConstraint("LENGTH(username) BETWEEN 6 and 18",
                            name='check_username_length'),
-        db.CheckConstraint("LENGTH(password) BETWEEN 6 and 18",
+        db.CheckConstraint("LENGTH(password) BETWEEN 6 and 100",
                            name='check_password_length'),
         db.CheckConstraint("18 <= age <= 150", name='check_age'),
         db.CheckConstraint("gender IN ('M', 'F', 'O')", name='check_gender'),
@@ -207,8 +207,7 @@ def isAuthorized(func):
 
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.get_json(0)
-    print(data)
+    data = request.get_json()
     if not data:
         return "Bad Request", 400
 
@@ -221,15 +220,14 @@ def login():
     customer = CustomerInformation.query.filter_by(
         username=username).first()
     if customer is None:
-        return "Invalid Username", 401
-    try:
-        bcrypt.check_password_hash(customer.password, password)
-    except Exception:
+        return f'No account exists with the username {username}. \n Please enter a valid username.', 401
+    
+    if not bcrypt.check_password_hash(customer.password, password):
         return "Invalid Password", 401
 
     token = jwt.encode({"customer_id": customer.customer_id}, SECRET_KEY)
 
-    return jsonify({"token": token})
+    return jsonify({"token": token}), 200
 
 
 @app.route('/register', methods=['POST'])
@@ -241,29 +239,29 @@ def register():
     existingCustomer = CustomerInformation.query.filter_by(
         username=data["username"]).first()
     if existingCustomer:
-        return "Username already exists", 400
+        return f"An account with the username {existingCustomer.username} already exists. \nPlease choose a different one.", 400
 
     # Hash password
     hashedPw = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
     customer = None
-    try:
-        customer = CustomerInformation(
-            username=data["username"],
-            email=data["email"],
-            password=hashedPw,
-            full_name=data["full_name"],
-            age=data["age"],
-            gender=data["gender"],
-            zip_code=data["zip_code"],
-            status=data["status"]
-        )
-        db.session.add(customer)
-        db.session.commit()
+    # try:
+    customer = CustomerInformation(
+        username=data["username"],
+        email=data["email"],
+        password=hashedPw,
+        full_name=data["full_name"],
+        age=data["age"],
+        gender=data["gender"],
+        zip_code=data["zip_code"],
+        status=data["status"]
+    )
+    db.session.add(customer)
+    db.session.commit()
 
-    except exc.IntegrityError:
-        return "Invalid Input Format", 400
+    # except exc.IntegrityError:
+    #     return "Invalid Input Format", 400
 
-    return jsonify(customer.serialize())
+    return jsonify(customer.serialize()), 200
 
 
 # Deactivate Customer Account
@@ -286,7 +284,7 @@ def deactivateCustomer(customer_id):
                 f'deactivated successfully')
 
 
-# Assuming you have a serialize method in your model
+# Retrieve customer info by customer_id
 @app.route('/getCustomer/<int:customer_id>', methods=['GET'])
 def get_customer_by_id(customer_id: int):
     if request.method == 'GET':
