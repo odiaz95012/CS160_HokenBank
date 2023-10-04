@@ -102,11 +102,11 @@ function Registration() {
           const accountStatusBody = document.getElementById('statusBody');
           accountStatusBody.className = "text-success";
           let count = 5;
-          accountStatusBody.innerText = `Account creation Successful. \nRedirecting to the home page in ${count} seconds.`;
+          accountStatusBody.innerText = `Account creation Successful. \nRedirecting to the login page in ${count} seconds.`;
           
           const countdownInterval = setInterval(() => {
             count -= 1;
-            accountStatusBody.innerText = `Account creation Successful. \nRedirecting to the home page in ${count} seconds.`;
+            accountStatusBody.innerText = `Account creation Successful. \nRedirecting to the login page in ${count} seconds.`;
           
             if (count === 0) {
               clearInterval(countdownInterval); // Stop the countdown when it reaches 0

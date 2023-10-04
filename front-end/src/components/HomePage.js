@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
 
-function MainPage() {
+function HomePage() {
     const navigate = useNavigate();
 
     const goToLoginPage = () => {
@@ -35,5 +35,5 @@ function MainPage() {
         </div>
     )
 }
-export default MainPage;
+export default HomePage;
 
