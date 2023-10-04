@@ -1,17 +1,21 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './components/Login';
 import Registration from './components/Registration';
-import MainPage from './components/MainPage';
+import HomePage from './components/HomePage';
+import Cookies from 'js-cookie';
+import ProtectedRoutes from './components/ProtectedRoutes';
 
 function App() {
+
   return (
     <Router>
       <Routes>
-        <Route path="/" exact element={ <Login/> } /> {/* Root URL route */}
-        <Route path="/registration" element={ <Registration/>} />
-        <Route path="/home" element={ <MainPage/> } />
-        
+        <Route path="/" exact element={<Login />} /> {/* Root URL route */}
+        <Route path="/registration" element={<Registration />} />
+        <Route element={<ProtectedRoutes/>}> 
+            <Route path="/home" element={<HomePage/>} exact/>
+        </Route>
         {/* Other routes */}
       </Routes>
     </Router>
