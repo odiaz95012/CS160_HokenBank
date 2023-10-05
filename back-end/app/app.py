@@ -178,29 +178,29 @@ def create_bank_manager():
 SECRET_KEY = "secret"
 
 
-def isAuthenticated(func):
+def is_authenticated(func):
     @wraps(func)
     def authenticate(*args, **kwargs):
-        authHeader = request.headers.get('authorization')
-        if not authHeader:
+        auth_header = request.headers.get('authorization')
+        if not auth_header:
             return "Token Not Found", 401
 
-        token = authHeader.split()[1]
+        token = auth_header.split()[1]
         if not token:
             return "Token Not Found", 401
         data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        currentCustomer = data["customer_id"]
-        customer = CustomerInformation.query.get(currentCustomer)
+        current_customer = data["customer_id"]
+        customer = CustomerInformation.query.get(current_customer)
         if not customer:
             return "Invalid Customer", 401
-        request.currentUser = currentCustomer
+        request.currentUser = current_customer
         return func(*args, **kwargs)
     return authenticate
 
 
-def isAuthorized(func):
+def is_authorized(func):
     @wraps(func)
-    def authorize(*args, ** kwargs):
+    def authorize(*args, **kwargs):
         return func(*args, **kwargs)
     return authorize
 
@@ -217,10 +217,10 @@ def login():
     if not (username or password):
         return "Bad Request", 400
 
-    customer = CustomerInformation.query.filter_by(
-        username=username).first()
+    customer = CustomerInformation.query.filter_by(username=username).first()
     if customer is None:
-        return f'No account exists with the username {username}. \n Please enter a valid username.', 401
+        return (f'No account exists with the username {username}. \n Please '
+                f'enter a valid username.'), 401
     
     if not bcrypt.check_password_hash(customer.password, password):
         return "Invalid Password", 401
@@ -232,23 +232,24 @@ def login():
 
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.get_json(0)
+    data = request.get_json()
     if not data:
         return "Bad Request", 400
 
-    existingCustomer = CustomerInformation.query.filter_by(
+    existing_customer = CustomerInformation.query.filter_by(
         username=data["username"]).first()
-    if existingCustomer:
-        return f"An account with the username {existingCustomer.username} already exists. \nPlease choose a different one.", 400
+    if existing_customer:
+        return (f"An account with the username {existing_customer.username} "
+                f"already exists. \nPlease choose a different one."), 400
 
     # Hash password
-    hashedPw = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
+    hashed_pw = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
     customer = None
     # try:
     customer = CustomerInformation(
         username=data["username"],
         email=data["email"],
-        password=hashedPw,
+        password=hashed_pw,
         full_name=data["full_name"],
         age=data["age"],
         gender=data["gender"],
@@ -266,8 +267,8 @@ def register():
 
 # Deactivate Customer Account
 @app.route('/deactivateCustomer/<int:customer_id>', methods=['PATCH'])
-@isAuthenticated
-def deactivateCustomer(customer_id):
+@is_authenticated
+def deactivate_customer(customer_id):
     customer = CustomerInformation.query.get(customer_id)
     if request.method == 'PATCH':
         if not customer:
@@ -286,6 +287,7 @@ def deactivateCustomer(customer_id):
 
 # Retrieve customer info by customer_id
 @app.route('/getCustomer/<int:customer_id>', methods=['GET'])
+@is_authenticated
 def get_customer_by_id(customer_id: int):
     if request.method == 'GET':
         customer = CustomerInformation.query.get(customer_id)
@@ -297,6 +299,7 @@ def get_customer_by_id(customer_id: int):
 
 
 @app.route('/openAccount', methods=['POST'])
+@is_authenticated
 def open_account():
     # Get the values from request parameters, query string, or any other source
     customer_id = int(request.args.get('customer_id'))
@@ -318,6 +321,7 @@ def open_account():
 
 
 @app.route('/closeAccount/<int:account_id>', methods=['PATCH'])
+@is_authenticated
 def close_account(account_id):
     account = AccountInformation.query.get(account_id)
     if request.method == 'PATCH':
@@ -332,6 +336,7 @@ def close_account(account_id):
 
 # Assuming you have a serialize method in your model
 @app.route('/getAccount/<int:account_id>', methods=['GET'])
+@is_authenticated
 def get_account_by_id(account_id: int):
     if request.method == 'GET':
         account = AccountInformation.query.get(account_id)
@@ -342,8 +347,9 @@ def get_account_by_id(account_id: int):
         return jsonify(account.serialize())
 
 
-@app.route('/getCustomers', methods=['GET'])
 # Get all customers
+@app.route('/getCustomers', methods=['GET'])
+@is_authenticated
 def get_customers():
     customers = CustomerInformation.query.all()
     customer_list = []
@@ -365,8 +371,9 @@ def get_customers():
     return jsonify(customer_list)
 
 
-@app.route('/getAccounts', methods=['GET'])
 # Get all accounts
+@app.route('/getAccounts', methods=['GET'])
+@is_authenticated
 def get_accounts():
     accounts = AccountInformation.query.all()
     account_list = []
@@ -385,6 +392,7 @@ def get_accounts():
 
 
 @app.route('/deposit/<int:account_id>/<int:amount>', methods=['PATCH'])
+@is_authenticated
 def deposit(account_id, amount):
     if amount <= 0:
         return f'Deposit amount must be positive', 404
@@ -403,6 +411,7 @@ def deposit(account_id, amount):
 
 
 @app.route('/withdraw/<int:account_id>/<int:amount>', methods=['PATCH'])
+@is_authenticated
 def withdraw(account_id, amount):
     if amount <= 0:
         return f'Withdraw amount must be positive', 404
@@ -426,6 +435,7 @@ def withdraw(account_id, amount):
 
 @app.route('/transfer/<int:from_account_id>/<int:to_account_id>/<int:amount'
            '>', methods=['PATCH'])
+@is_authenticated
 def transfer(from_account_id, to_account_id, amount):
     if amount <= 0:
         return f'Transfer amount must be positive', 404
@@ -460,6 +470,7 @@ def transfer(from_account_id, to_account_id, amount):
 
 
 @app.route('/normalPayment/<int:account_id>/<int:amount>', methods=['PATCH'])
+@is_authenticated
 def normal_payment(account_id, amount):
     if amount <= 0:
         return f'Payment amount must be positive', 404
