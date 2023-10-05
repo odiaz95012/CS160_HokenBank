@@ -6,6 +6,7 @@ from datetime import datetime
 from functools import wraps
 import jwt
 from flask_bcrypt import Bcrypt
+import pandas
 
 
 app = Flask(__name__)
@@ -491,6 +492,47 @@ def normal_payment(account_id, amount):
         return (f'${amount} successfully paid by Bank Account with '
                 f'account_id {account_id}')
 
+# setting up automatic payment
+@app.route('/automaticPayment/<int:account_id>/<int:amount>/<string:date>', methods=['PATCH'])
+def automatic_payment(account_id, amount, date):
+    # note: flask can't take datetime representation of date, so needs to be converted to datetime
+    # pandas parses datetime from string in format YYYY-MM-DD
+    dtime = pandas.to_datetime(date)
+    if amount <= 0:
+        return f'Payment amount must be positive', 404
+    if dtime < datetime.now():
+        return f'Date may not be in the past', 404
+    account = AccountInformation.query.get(account_id)
+    if request.method == 'PATCH':
+        if not account:
+            return f'Bank Account with account_id {account_id} not found', 404
+        if account.status == 'I':
+            return (f'Bank Account with account_id {account_id} is inactive',
+                    404)
+        
+        create_automatic_payment_entry(account.customer_id, account_id, amount, dtime)
+        return (f'Payment of ${amount} successfully scheduled for Bank Account with '
+                f'account_id {account_id} and date {date}')
+
+# executing automatic payment, job should auto-execute when server is running   
+def automatic_payment_job(payment_id):
+    # access payment
+    automatic_payment = AutomaticPayments.query.get(payment_id)
+    # access account
+    account = AccountInformation.query.get(automatic_payment.account_id)
+
+    new_balance = account.balance - automatic_payment.amount
+    # placeholder before grace period implement
+    if new_balance < 0:
+        delete_automatic_payment_entry(payment_id)
+        return (f'Scheduled payment with account_id '
+                f'{automatic_payment.account_id} failed due to negative balance', 404)
+    
+    # set new balance and reset date for one month from original date, add transaction
+    account.balance = new_balance
+    automatic_payment.date = automatic_payment.date + pandas.DateOffset(months = 1)
+    db.session.commit()
+    create_transaction_history_entry(account.account_id, 'Automatic Payment', -automatic_payment.amount)
 
 def create_transaction_history_entry(account_id, action, amount):
     transaction = TransactionHistory(
