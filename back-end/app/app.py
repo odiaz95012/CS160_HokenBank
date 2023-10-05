@@ -494,6 +494,7 @@ def normal_payment(account_id, amount):
 
 # setting up automatic payment
 @app.route('/automaticPayment/<int:account_id>/<int:amount>/<string:date>', methods=['PATCH'])
+@is_authenticated
 def automatic_payment(account_id, amount, date):
     # note: flask can't take datetime representation of date, so needs to be converted to datetime
     # pandas parses datetime from string in format YYYY-MM-DD
