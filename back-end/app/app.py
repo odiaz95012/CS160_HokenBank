@@ -537,9 +537,10 @@ def automatic_payment_job(payment_id):
 
 # schedule this job once a year (5% annual interest)
 def interest_accumulation():
-    active_savings = AccountInformation.query.filter(AccountInformation.status == "A",
-                                      AccountInformation.account_type == "S")
-    active_savings.balance = active_savings.balance * INTEREST_RATE
+    db.session.query(AccountInformation).\
+    filter(AccountInformation.status == "A", 
+           AccountInformation.account_type == "S").\
+    update({'balance': AccountInformation.balance * INTEREST_RATE})
     db.session.commit()
 
 def create_transaction_history_entry(account_id, action, amount):
