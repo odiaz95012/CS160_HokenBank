@@ -18,7 +18,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app)
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
-
+INTEREST_RATE = 1.05
 
 class CustomerInformation(db.Model):
     __tablename__ = 'CustomerInformation'
@@ -534,6 +534,13 @@ def automatic_payment_job(payment_id):
     automatic_payment.date = automatic_payment.date + pandas.DateOffset(months = 1)
     db.session.commit()
     create_transaction_history_entry(account.account_id, 'Automatic Payment', -automatic_payment.amount)
+
+# schedule this job once a year (5% annual interest)
+def interest_accumulation():
+    active_savings = AccountInformation.query.filter(AccountInformation.status == "A",
+                                      AccountInformation.account_type == "S")
+    active_savings.balance = active_savings.balance * INTEREST_RATE
+    db.session.commit()
 
 def create_transaction_history_entry(account_id, action, amount):
     transaction = TransactionHistory(
