@@ -1,6 +1,10 @@
+from models import db
+from models.automatic_payment import AutomaticPayments
+from models.transaction import TransactionHistory
+from models.customer import CustomerInformation
+from models.account import AccountInformation
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import exc
 from datetime import datetime
 from functools import wraps
@@ -16,150 +20,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformation.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 CORS(app)
-db = SQLAlchemy(app)
+db.init_app(app)
 bcrypt = Bcrypt(app)
+
+SECRET_KEY = "secret"
 INTEREST_RATE = 1.05
-
-
-class CustomerInformation(db.Model):
-    __tablename__ = 'CustomerInformation'
-    customer_id = db.Column('customer_id', db.Integer, primary_key=True,
-                            autoincrement=True)
-    username = db.Column(db.String(18), unique=True, nullable=False)
-    email = db.Column(db.String(45), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
-    full_name = db.Column(db.String(100), nullable=False)
-    age = db.Column(db.Integer, nullable=False)
-    gender = db.Column(db.String(1), nullable=False)
-    zip_code = db.Column(db.Integer, nullable=False)
-    status = db.Column(db.String(1), nullable=False)
-    accounts = db.relationship('AccountInformation', backref='customer',
-                               lazy=True)
-    payments = db.relationship('AutomaticPayments', backref='customer',
-                               lazy=True)
-
-    __table_args__ = (
-        db.CheckConstraint("LENGTH(username) BETWEEN 6 and 18",
-                           name='check_username_length'),
-        db.CheckConstraint("LENGTH(password) BETWEEN 6 and 100",
-                           name='check_password_length'),
-        db.CheckConstraint("18 <= age <= 150", name='check_age'),
-        db.CheckConstraint("gender IN ('M', 'F', 'O')", name='check_gender'),
-        db.CheckConstraint("10000 <= zip_code <= 99999",
-                           name='check_zip_code'),
-        db.CheckConstraint("status IN ('A', 'I')", name='check_status'),
-        {})
-
-    def __init__(self, username: str, email: str, password: str,
-                 full_name: str, age: int, gender: str, zip_code: int,
-                 status: str):
-        self.username = username
-        self.email = email
-        self.password = password
-        self.full_name = full_name
-        self.age = age
-        self.gender = gender
-        self.zip_code = zip_code
-        self.status = status
-
-    def serialize(self):
-        return {
-            'customer_id': self.customer_id,
-            'username': self.username,
-            'email': self.email,
-            'full_name': self.full_name,
-            'age': self.age,
-            'gender': self.gender,
-            'zip_code': self.zip_code,
-            'status': self.status
-        }
-
-
-class AccountInformation(db.Model):
-    __tablename__ = 'AccountInformation'
-    account_id = db.Column('account_id', db.Integer, primary_key=True,
-                           autoincrement=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey(
-        'CustomerInformation.customer_id'),
-        nullable=False)
-    account_type = db.Column(db.String(1), nullable=False)
-    balance = db.Column(db.Float, nullable=False)
-    status = db.Column(db.String(1), nullable=False)
-    transactions = db.relationship('TransactionHistory',
-                                   backref='account', lazy=True)
-    payments = db.relationship('AutomaticPayments', backref='account',
-                               lazy=True)
-
-    __table_args__ = (
-        db.CheckConstraint("account_type IN ('C', 'S')",
-                           name='check_account_type'),
-        db.CheckConstraint("balance >= 0", name='check_balance'),
-        db.CheckConstraint("status IN ('A', 'I')", name='check_status'),
-        {})
-
-    def __init__(self, customer_id: int, account_type: str, balance: float,
-                 status: str):
-        self.customer_id = customer_id
-        self.account_type = account_type
-        self.balance = balance
-        self.status = status
-
-    def serialize(self):
-        return {
-            'account_id': self.account_id,
-            'customer_id': self.customer_id,
-            'account_type': self.account_type,
-            'balance': self.balance,
-            'status': self.status
-        }
-
-
-class TransactionHistory(db.Model):
-    __tablename__ = 'TransactionHistory'
-    transaction_id = db.Column('transaction_id', db.Integer,
-                               primary_key=True, autoincrement=True)
-    account_id = db.Column(db.Integer, db.ForeignKey(
-        'AccountInformation.account_id'),
-        nullable=False)
-    action = db.Column(db.String(20), nullable=False)
-    amount = db.Column(db.Float, nullable=False)
-    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
-    __table_args__ = (
-        db.CheckConstraint("action IN ('Deposit', 'Withdraw','Transfer', "
-                           "'Normal Payment',  'Automatic Payment')",
-                           name='check_action'),
-        {})
-
-    def __init__(self, account_id: int, action: str, amount: float):
-        self.account_id = account_id
-        self.action = action
-        self.amount = amount
-
-
-class AutomaticPayments(db.Model):
-    __tablename__ = 'AutomaticPayments'
-    payment_id = db.Column('payment_id', db.Integer, primary_key=True,
-                           autoincrement=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey(
-        'CustomerInformation.customer_id'),
-        nullable=False)
-    account_id = db.Column(db.Integer, db.ForeignKey(
-        'AccountInformation.account_id'),
-        nullable=False)
-    amount = db.Column(db.Float, nullable=False)
-    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
-    __table_args__ = (
-        db.CheckConstraint("amount >= 0", name='check_amount'),
-        {})
-
-    def __init__(self, customer_id: int, account_id: int, amount: float,
-                 date: datetime):
-        self.customer_id = customer_id
-        self.account_id = account_id
-        self.amount = amount
-        self.date = date
 
 
 def create_bank_manager():
@@ -177,9 +42,6 @@ def create_bank_manager():
     db.session.commit()
 
 
-SECRET_KEY = "secret"
-
-
 def is_authenticated(func):
     @wraps(func)
     def authenticate(*args, **kwargs):
@@ -195,6 +57,8 @@ def is_authenticated(func):
         customer = CustomerInformation.query.get(current_customer)
         if not customer:
             return "Invalid Customer", 401
+        if customer.status == 'I':
+            return "Inactive Customer", 401
         request.currentUser = current_customer
         return func(*args, **kwargs)
     return authenticate
@@ -220,9 +84,12 @@ def login():
         return "Bad Request", 400
 
     customer = CustomerInformation.query.filter_by(username=username).first()
-    if customer is None:
-        return (f'No account exists with the username {username}. \n Please '
+    if not customer:
+        return (f'No account exists with the username {username}.\nPlease '
                 f'enter a valid username.'), 401
+    if customer.status == 'I':
+        return (f'Customer account with username {username} has been '
+                f'deactivated.\nPlease enter a valid username.'), 401
 
     if not bcrypt.check_password_hash(customer.password, password):
         return "Invalid Password", 401
@@ -242,7 +109,7 @@ def register():
         username=data["username"]).first()
     if existing_customer:
         return (f"An account with the username {existing_customer.username} "
-                f"already exists. \nPlease choose a different one."), 400
+                f"already exists.\nPlease choose a different one."), 400
 
     # Hash password
     hashed_pw = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
@@ -394,6 +261,26 @@ def get_accounts():
             'account_type': account.account_type,
             'balance': account.balance,
             'status': account.status
+        }
+        account_list.append(account_data)
+
+    return jsonify(account_list)
+
+
+# Get all active accounts associated with the customer ID
+@app.route('/getCustomerAccounts/<int:account_id>', methods=['GET'])
+@is_authenticated
+def get_customer_accounts(customer_id):
+    active_accounts = AccountInformation.query.filter(
+        AccountInformation.customer_id == customer_id and
+        AccountInformation.status == 'A').all()
+    account_list = []
+
+    for account in active_accounts:
+        account_data = {
+            'account_id': account.account_id,
+            'account_type': account.account_type,
+            'balance': account.balance
         }
         account_list.append(account_data)
 
@@ -587,11 +474,12 @@ def delete_automatic_payment_entry(payment_id):
     db.session.commit()
 
 
+# number = 0 to get all entries
 @app.route('/getBillPaymentHistory/<int:customer_id>/<int:number>', methods=[
     'GET'])
 @is_authenticated
 def get_bill_payment_history(customer_id, number):
-    if number <= 0:
+    if number < 0:
         return f'Query number must be positive', 404
     customer = CustomerInformation.query.get(customer_id)
     if not customer:
@@ -601,11 +489,12 @@ def get_bill_payment_history(customer_id, number):
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
     if request.method == 'GET':
-        all_payments = TransactionHistory.query.filter(
+        payments = TransactionHistory.query.filter(
             TransactionHistory.customer_id == customer.customer_id and
-            TransactionHistory.action in ('Normal Payment', 'Automatic '
-                                                            'Payment')).all()
-        payments = all_payments.reverse().limit(number)
+            TransactionHistory.action in
+            ('Normal Payment', 'Automatic Payment')).reverse().all()
+        if number > 0:
+            payments = payments.limit(number)
         payment_list = []
         for payment in payments:
             transaction_data = {
@@ -617,11 +506,12 @@ def get_bill_payment_history(customer_id, number):
         return jsonify(payment_list)
 
 
+# number = 0 to get all entries
 @app.route('/getTransactionHistory/<int:account_id>/<int:number>', methods=[
     'GET'])
 @is_authenticated
 def get_transaction_history(account_id, number):
-    if number <= 0:
+    if number < 0:
         return f'Query number must be positive', 404
     account = AccountInformation.query.get(account_id)
     if not account:
@@ -630,9 +520,11 @@ def get_transaction_history(account_id, number):
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
     if request.method == 'GET':
-        all_transactions = TransactionHistory.query.filter(
-            AccountInformation.account_id == account.account_id).all()
-        transactions = all_transactions.reverse().limit(number)
+        transactions = TransactionHistory.query.filter(
+            AccountInformation.account_id ==
+            account.account_id).reverse().all()
+        if number > 0:
+            transactions = transactions.limit(number)
         transaction_list = []
         for transaction in transactions:
             transaction_data = {
@@ -642,6 +534,12 @@ def get_transaction_history(account_id, number):
             }
             transaction_list.append(transaction_data)
         return jsonify(transaction_list)
+
+
+@app.route('/generateUserReport', methods=['GET'])
+@is_authenticated
+def generate_user_report():
+    pass
 
 
 @app.route('/')
