@@ -1,15 +1,13 @@
-from models import db
-from models.automatic_payment import AutomaticPayments
-from models.transaction import TransactionHistory
-from models.customer import CustomerInformation
-from models.account import AccountInformation
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import exc
+from datetime import datetime
 from functools import wraps
 import jwt
 from flask_bcrypt import Bcrypt
 import pandas
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformation.sqlite3'
@@ -18,11 +16,167 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformation.sqlite3'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 CORS(app)
-db.init_app(app)
+db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
-
-
 INTEREST_RATE = 1.05
+
+
+class CustomerInformation(db.Model):
+    __tablename__ = 'CustomerInformation'
+    customer_id = db.Column('customer_id', db.Integer, primary_key=True,
+                            autoincrement=True)
+    username = db.Column(db.String(18), unique=True, nullable=False)
+    email = db.Column(db.String(45), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
+    full_name = db.Column(db.String(100), nullable=False)
+    age = db.Column(db.Integer, nullable=False)
+    gender = db.Column(db.String(1), nullable=False)
+    zip_code = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(1), nullable=False)
+    accounts = db.relationship('AccountInformation', backref='customer',
+                               lazy=True)
+    payments = db.relationship('AutomaticPayments', backref='customer',
+                               lazy=True)
+
+    __table_args__ = (
+        db.CheckConstraint("LENGTH(username) BETWEEN 6 and 18",
+                           name='check_username_length'),
+        db.CheckConstraint("LENGTH(password) BETWEEN 6 and 100",
+                           name='check_password_length'),
+        db.CheckConstraint("18 <= age <= 150", name='check_age'),
+        db.CheckConstraint("gender IN ('M', 'F', 'O')", name='check_gender'),
+        db.CheckConstraint("10000 <= zip_code <= 99999",
+                           name='check_zip_code'),
+        db.CheckConstraint("status IN ('A', 'I')", name='check_status'),
+        {})
+
+    def __init__(self, username: str, email: str, password: str,
+                 full_name: str, age: int, gender: str, zip_code: int,
+                 status: str):
+        self.username = username
+        self.email = email
+        self.password = password
+        self.full_name = full_name
+        self.age = age
+        self.gender = gender
+        self.zip_code = zip_code
+        self.status = status
+
+    def serialize(self):
+        return {
+            'customer_id': self.customer_id,
+            'username': self.username,
+            'email': self.email,
+            'full_name': self.full_name,
+            'age': self.age,
+            'gender': self.gender,
+            'zip_code': self.zip_code,
+            'status': self.status
+        }
+
+
+class AccountInformation(db.Model):
+    __tablename__ = 'AccountInformation'
+    account_id = db.Column('account_id', db.Integer, primary_key=True,
+                           autoincrement=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey(
+        'CustomerInformation.customer_id'),
+        nullable=False)
+    account_type = db.Column(db.String(1), nullable=False)
+    balance = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String(1), nullable=False)
+    transactions = db.relationship('TransactionHistory',
+                                   backref='account', lazy=True)
+    payments = db.relationship('AutomaticPayments', backref='account',
+                               lazy=True)
+
+    __table_args__ = (
+        db.CheckConstraint("account_type IN ('C', 'S')",
+                           name='check_account_type'),
+        db.CheckConstraint("balance >= 0", name='check_balance'),
+        db.CheckConstraint("status IN ('A', 'I')", name='check_status'),
+        {})
+
+    def __init__(self, customer_id: int, account_type: str, balance: float,
+                 status: str):
+        self.customer_id = customer_id
+        self.account_type = account_type
+        self.balance = balance
+        self.status = status
+
+    def serialize(self):
+        return {
+            'account_id': self.account_id,
+            'customer_id': self.customer_id,
+            'account_type': self.account_type,
+            'balance': self.balance,
+            'status': self.status
+        }
+
+
+class TransactionHistory(db.Model):
+    __tablename__ = 'TransactionHistory'
+    transaction_id = db.Column('transaction_id', db.Integer,
+                               primary_key=True, autoincrement=True)
+    account_id = db.Column(db.Integer, db.ForeignKey(
+        'AccountInformation.account_id'),
+        nullable=False)
+    action = db.Column(db.String(20), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.CheckConstraint("action IN ('Deposit', 'Withdraw','Transfer', "
+                           "'Normal Payment',  'Automatic Payment')",
+                           name='check_action'),
+        {})
+
+    def __init__(self, account_id: int, action: str, amount: float):
+        self.account_id = account_id
+        self.action = action
+        self.amount = amount
+
+
+class AutomaticPayments(db.Model):
+    __tablename__ = 'AutomaticPayments'
+    payment_id = db.Column('payment_id', db.Integer, primary_key=True,
+                           autoincrement=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey(
+        'CustomerInformation.customer_id'),
+        nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey(
+        'AccountInformation.account_id'),
+        nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.CheckConstraint("amount >= 0", name='check_amount'),
+        {})
+
+    def __init__(self, customer_id: int, account_id: int, amount: float,
+                 date: datetime):
+        self.customer_id = customer_id
+        self.account_id = account_id
+        self.amount = amount
+        self.date = date
+
+
+def create_bank_manager():
+    bank_manager = CustomerInformation(
+        username='bank_manager',
+        email='bank_manager@gmail.com',
+        password='hokenadmin',
+        full_name='Bank Manager',
+        age=150,
+        gender='O',
+        zip_code=10000,
+        status='A'
+    )
+    db.session.add(bank_manager)
+    db.session.commit()
+
+
 SECRET_KEY = "secret"
 
 
@@ -373,7 +527,7 @@ def automatic_payment(account_id, amount, date):
                 f'Account with account_id {account_id} and date {date}')
 
 
-# executing automatic payment, job should auto-execute when server is running
+# executing automatic payment, job should auto-execute when server is running   
 def automatic_payment_job(payment_id):
     # access payment
     autopayment = AutomaticPayments.query.get(payment_id)
@@ -574,21 +728,6 @@ def create_dummy_accounts():
         )
         db.session.add(account)
 
-    db.session.commit()
-
-
-def create_bank_manager():
-    bank_manager = CustomerInformation(
-        username='bank_manager2',
-        email='bank2@gmail.com',
-        password='hokenadmin',
-        full_name='Bank Manager',
-        age=150,
-        gender='M',
-        zip_code=10000,
-        status='A'
-    )
-    db.session.add(bank_manager)
     db.session.commit()
 
 
