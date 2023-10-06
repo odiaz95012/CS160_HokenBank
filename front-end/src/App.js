@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './components/Login';
 import Registration from './components/Registration';
 import HomePage from './components/HomePage';
-import Cookies from 'js-cookie';
 import ProtectedRoutes from './components/ProtectedRoutes';
 
 function App() {
