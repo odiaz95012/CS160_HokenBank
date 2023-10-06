@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PopUpModal from './PopUpModal';
 import axios from 'axios';
+import DatePicker from './DatePicker';
 
 
 function Registration() {
@@ -12,8 +13,6 @@ function Registration() {
   const goToLoginPage = () => {
     navigate('/');
   };
-
-
 
 
   function isValidZipCode(zipCode) {
@@ -33,6 +32,16 @@ function Registration() {
     //username must be 6-18 characters
     if (!username.length >= 6 && username.length <= 18) {
       throw new Error("The username must be 6-18 characters in length.")
+    }
+    return true;
+  }
+
+  const isValidAge = (age) => {
+    if(age < 18){
+      throw new Error("You must be at least 18 years old to open a Hoken bank account.");
+    }
+    if (age > 150) {
+      throw new Error("The birthdate is invalid.");
     }
     return true;
   }
@@ -77,44 +86,45 @@ function Registration() {
   }
 
   async function verifyInputFields() {
-    const { username, zipcode, email, password, confirmPassword } = formData;
+    const { username, zipcode, age, email, password, confirmPassword } = formData;
 
     try {
       //Check that all attributes are not null or empty
       checkAttributesNotNull('Name', formData.fullName);
       checkAttributesNotNull('Username', formData.username);
       checkAttributesNotNull('Zipcode', formData.zipcode);
-      checkAttributesNotNull('Age', formData.age);
+      checkAttributesNotNull('Birthdate', formData.birthDate);
       checkAttributesNotNull('Gender', formData.gender);
       checkAttributesNotNull('Email', formData.email);
       checkAttributesNotNull('Password', formData.password);
       checkAttributesNotNull('Confirm Password', formData.confirmPassword);
+
       //Check that each attribute meet their constraints
       const isPasswordsMatch = confirmPasswordsMatch(password, confirmPassword);
       const isUsernameValid = isValidUsername(username);
+      const isAgeValid = isValidAge(age);
       const isEmailValid = isValidEmail(email);
       const isZipcodeValid = isValidZipCode(zipcode);
       const isPasswordValid = isValidPassword(password);
 
-      if (isPasswordsMatch && isUsernameValid && isZipcodeValid && isEmailValid && isPasswordValid) {
+      if (isPasswordsMatch && isUsernameValid && isAgeValid && isZipcodeValid && isEmailValid && isPasswordValid) {
         //If all checks passed, send over account info to backend
         if (await handleSubmit()) {
           const accountStatusBody = document.getElementById('statusBody');
           accountStatusBody.className = "text-success";
           let count = 5;
           accountStatusBody.innerText = `Account creation Successful. \nRedirecting to the login page in ${count} seconds.`;
-          
+
           const countdownInterval = setInterval(() => {
             count -= 1;
             accountStatusBody.innerText = `Account creation Successful. \nRedirecting to the login page in ${count} seconds.`;
-          
+
             if (count === 0) {
               clearInterval(countdownInterval); // Stop the countdown when it reaches 0
               goToLoginPage();
             }
           }, 1000);
-  
-       }
+        }
 
       }
 
@@ -126,19 +136,57 @@ function Registration() {
     }
   }
 
+
+  const [birthDate, setBirthDate] = useState(null);
+  const age = null;
+
+  const handleDateChange = (date) => {
+    setBirthDate(date);
+    const calcAge = calculateAge(date);
+    setFormData({ ...formData, birthDate: date, age: calcAge });
+  };
+
+
+
+
   const [formData, setFormData] = useState({
     fullName: '',
     username: '',
     zipcode: '',
-    age: '',
+    birthDate: birthDate,
+    age: age,
     gender: '', // gender is set to none as default
     email: '',
     password: '',
     confirmPassword: ''
   });
 
+
+
+
+  const calculateAge = (birthdate) => {
+
+    const currentDate = new Date();
+
+    // Calculate the difference in years
+    const age = currentDate.getFullYear() - birthdate.getFullYear();
+
+    // Check if the birthday hasn't occurred yet this year
+    if (
+      currentDate.getMonth() < birthdate.getMonth() ||
+      (currentDate.getMonth() === birthdate.getMonth() &&
+        currentDate.getDate() < birthdate.getDate())
+    ) {
+      // Subtract 1 from age if birthday hasn't occurred yet
+      return age - 1;
+    } else {
+      return age;
+    }
+  };
+
+
   function checkAttributesNotNull(attributeName, attributeValue) {
-    if (!attributeValue || attributeValue.trim() === '') {
+    if (!attributeValue || attributeValue === '') {
       throw new Error(`The ${attributeName} field cannot be empty.`);
     }
   }
@@ -149,39 +197,27 @@ function Registration() {
   };
 
   const handleSubmit = async () => {
-    axios.post(
+    await axios.post(
       'http://localhost:8000/register', {
       username: formData.username,
       email: formData.email,
       password: formData.password,
       full_name: formData.fullName,
-      age: parseInt(formData.age),
+      age: formData.age,
       gender: formData.gender,
       zip_code: parseInt(formData.zipcode),
-      status: 'A'
+      status: 'A',
     }
     ).catch((err) => {
-        const accountStatusBody = document.getElementById('statusBody');
-        accountStatusBody.className = "text-danger";
-        accountStatusBody.innerText = err.response.data;
-        return false;
-      });
+      const accountStatusBody = document.getElementById('statusBody');
+      accountStatusBody.className = "text-danger";
+      accountStatusBody.innerText = err.response.data;
+      return false;
+    });
     return true;
   };
 
 
-  function updateSliderValue() {
-    const slider = document.getElementById("customRange2");
-    const sliderValueElement = document.getElementById("sliderValue");
-    sliderValueElement.textContent = slider.value;
-    // update the age value in the formData when it changes
-    handleChange({
-      target: {
-        name: "age",
-        value: slider.value,
-      },
-    });
-  }
 
   //Get the value of the currently selected gender button
   //Param: the value of the selected gender button
@@ -223,14 +259,15 @@ function Registration() {
             <div id="radius-shape-2" className="position-absolute shadow-5-strong"></div>
 
             <div className="card bg-glass">
-              <div className="card-body px-4 py-5 px-md-5">
-                <form onSubmit={handleSubmit}>
+              <div className="card-body px-4 py-5 px-md-5 ">
+                <form>
+
                   {/* Fullname & Username */}
                   <div className="row">
                     <div className="col-md-6 mb-4">
                       <div className="form-outline">
-                        <input name="fullName" type="text" id="form3Example1" className="form-control" onChange={handleChange} />
-                        <label className="form-label" htmlFor="form3Example1">Name</label>
+                        <input name="fullName" type="text" id="validationCustom01" className="form-control" onChange={handleChange} />
+                        <label className="form-label" htmlFor="validationCustom01">Name</label>
                       </div>
                     </div>
                     <div className="col-md-6 mb-4">
@@ -242,17 +279,10 @@ function Registration() {
                   </div>
                   {/*Age, Zipcode, & Gender*/}
                   <div className="row">
-
-                    <div className="col">
-                      <div className="form-outline  mb-4">
-                        <input name="zipcode" type="text" id="form3Example1" className="form-control" onChange={handleChange} />
-                        <label className="form-label" htmlFor="form3Example1">Zipcode</label>
-                      </div>
-                    </div>
                     <div className="col">
                       <div className="form-outline mb-4">
-                        <input name="age" type="range" className="form-range" min="18" max="150" id="customRange2" onChange={updateSliderValue} />
-                        <label htmlFor="customRange2" className="form-label">Age: <span id="sliderValue"></span> </label>
+                        <input name="zipcode" type="text" id="form3Example1" className="form-control" onChange={handleChange} />
+                        <label className="form-label" htmlFor="form3Example1">Zipcode</label>
                       </div>
                     </div>
                     <div className="col">
@@ -269,9 +299,24 @@ function Registration() {
                       <label className="form-label" htmlFor="genderBtns">Gender</label>
                     </div>
                   </div>
+                  <div className="col">
+                    <DatePicker
+                      placeholderText="Birthdate"
+                      peekNextMonth={true}
+                      showMonthDropdown={true}
+                      showYearDropdown={true}
+                      dropdownMode="select"
+                      selected={birthDate}
+                      onDateChange={handleDateChange}
+                      wrapperClassName={"form-control"}
+                      maxDate={new Date()} //set the max date to be the current date
+                      id={"form2Example3"}
+                      labelText={"Birthdate"}
+                    />
+                  </div>
                   {/* Email input */}
                   <div className="form-outline mb-4">
-                    <input name="email" type="email" id="form3Example3" className="form-control" onChange={handleChange} />
+                    <input name="email" type="email" id="form3Example3" className="form-control" onChange={handleChange}/>
                     <label className="form-label" htmlFor="form3Example3">Email address</label>
                   </div>
 
@@ -281,13 +326,12 @@ function Registration() {
                     <label className="form-label" htmlFor="form3Example4">Password</label>
                   </div>
                   <div className="form-outline mb-4">
-                    <input name="confirmPassword" type="password" id="form3Example4" className="form-control" onChange={handleChange} />
+                    <input name="confirmPassword" type="password" id="form3Example4" className="form-control" onChange={handleChange}/>
                     <label className="form-label" htmlFor="form3Example4">Confirm Password</label>
                   </div>
 
 
                   {/* Submit button */}
-
                   <PopUpModal
                     activatingBttn={
                       <button
@@ -302,6 +346,7 @@ function Registration() {
                     body={<div className="text-center"><p id="statusBody"></p></div>}
                     buttonOnClick={() => verifyInputFields()}
                   />
+
                 </form>
               </div>
             </div>
