@@ -1,16 +1,20 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './components/Login';
 import Registration from './components/Registration';
-import Home from './components/Home';
+import HomePage from './components/HomePage';
+import ProtectedRoutes from './components/ProtectedRoutes';
 
 function App() {
+
   return (
     <Router>
       <Routes>
-        <Route path="/" exact element={ <Login/> } /> {/* Root URL route */}
-        <Route path="/registration" element={ <Registration/>} />
-        <Route path="/home" element={ <Home/>} />
+        <Route path="/" exact element={<Login />} /> {/* Root URL route */}
+        <Route path="/registration" element={<Registration />} />
+        <Route element={<ProtectedRoutes/>}> 
+            <Route path="/home" element={<HomePage/>} exact/>
+        </Route>
         {/* Other routes */}
       </Routes>
     </Router>

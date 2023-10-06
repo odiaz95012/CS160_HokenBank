@@ -21,6 +21,8 @@ class CustomerInformation(db.Model):
     __table_args__ = (
         db.CheckConstraint("LENGTH(username) BETWEEN 6 and 18",
                            name='check_username_length'),
+        db.CheckConstraint("LENGTH(password) BETWEEN 6 and 100",
+                           name='check_password_length'),
         db.CheckConstraint("18 <= age <= 150", name='check_age'),
         db.CheckConstraint("gender IN ('M', 'F', 'O')", name='check_gender'),
         db.CheckConstraint("10000 <= zip_code <= 99999",

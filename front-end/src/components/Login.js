@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
 import '../componentStyles/LoginStyles.css';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import PopUpModal from './PopUpModal';
+import Cookies from 'js-cookie';
 
 function Login() {
 
-  const navigate= useNavigate();
+  const navigate = useNavigate();
 
   const goToRegistration = () => {
     navigate('/registration');
   };
+
+  const goToHome = () => {
+    navigate('/home');
+  }
 
   const [formData, setFormData] = useState({
     username: '',
@@ -20,7 +27,33 @@ function Login() {
     setFormData({ ...formData, [name]: value });
   };
 
-  
+  const login = async () => {
+    axios.post('http://localhost:8000/login', {
+      username: formData.username,
+      password: formData.password
+    }).then((response) => {
+      const authToken = response.data.token;
+      Cookies.set('authToken', authToken);
+      const loginStatusBody = document.getElementById('statusBody');
+      loginStatusBody.className = "text-success"; // Set the success class
+      let count = 5;
+      loginStatusBody.innerText = `Login Successful. \nRedirecting to the home page in ${count} seconds.`;
+      
+      const countdownInterval = setInterval(() => {
+        count -= 1;
+        loginStatusBody.innerText = `Login Successful. \nRedirecting to the home page in ${count} seconds.`;
+      
+        if (count === 0) {
+          clearInterval(countdownInterval); // Stop the countdown when it reaches 0
+          goToHome();
+        }
+      }, 1000);
+    }).catch((err) => {
+      const loginStatusBody = document.getElementById('statusBody');
+      loginStatusBody.className = "text-danger";
+      loginStatusBody.innerText = err.response.data;
+    })
+  };
 
 
 
@@ -30,7 +63,17 @@ function Login() {
   };
 
   return (
-    <section className="h-100 gradient-form" style={{ backgroundColor: '#eee' }}>
+    <section className="background-radial-gradient overflow-hidden">
+      <style>
+        {`
+        .background-radial-gradient {
+          background-color: hsl(218, 41%, 15%);
+          background-image: radial-gradient(650px circle at 0% 0%, hsl(218, 41%, 35%) 15%, hsl(218, 41%, 30%) 35%, hsl(218, 41%, 20%) 75%, hsl(218, 41%, 19%) 80%, transparent 100%), radial-gradient(1250px circle at 100% 100%, hsl(218, 41%, 45%) 15%, hsl(218, 41%, 30%) 35%, hsl(218, 41%, 20%) 75%, hsl(218, 41%, 19%) 80%, transparent 100%);
+          height: 100vh;
+        },
+
+      `}
+      </style>
       <div className="container py-5 h-100">
         <div className="row d-flex justify-content-center align-items-center h-100">
           <div className="col-xl-10">
@@ -52,10 +95,12 @@ function Login() {
 
                       <div className="form-outline mb-4">
                         <input
-                          type="email"
+                          type="text"
                           id="form2Example11"
                           className="form-control"
                           placeholder="Username"
+                          name="username"
+                          onChange={handleChange}
                         />
 
                       </div>
@@ -66,21 +111,34 @@ function Login() {
                           id="form2Example22"
                           className="form-control"
                           placeholder="Password"
+                          name="password"
+                          onChange={handleChange}
                         />
 
                       </div>
 
-                      <div className="text-center pt-1 mb-5 pb-1">
-                        <button
-                          className="btn btn-primary btn-block fa-lg gradient-custom-2 mb-3, loginBtn"
-                          type="submit"
-                        >
-                          Log in
-                        </button>
-                        <a className="text-muted" href="#!">
+                      <div className="text-center pt-1 mb-5 pb-1 ">
+                        <PopUpModal
+                          activatingBttn={
+                            <button
+                              className="btn btn-primary btn-block fa-lg gradient-custom-2 mb-3 loginBtn"
+                              type="submit"
+                              data-toggle="modal"
+                              data-target="#exampleModal"
+                              id='loginBttn'
+                            >
+                              Log in
+                            </button>}
+                          title={<div style={{textAlign: "center"}}><p className="h4">Login Status</p></div>}
+                          body={<div className="text-center"><p id="statusBody"></p></div>}
+                          buttonOnClick={() => login()}
+                        />
+
+                          {/* <a className="text-muted" href="#!">
                           Forgot password?
-                        </a>
+                        </a> */}
                       </div>
+
 
                       <div className="d-flex align-items-center justify-content-center pb-4">
                         <p className="mb-0 me-2">Don't have an account?</p>

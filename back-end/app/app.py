@@ -9,6 +9,7 @@ from sqlalchemy import exc
 from functools import wraps
 import jwt
 from flask_bcrypt import Bcrypt
+import pandas
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformation.sqlite3'
@@ -21,40 +22,40 @@ db.init_app(app)
 bcrypt = Bcrypt(app)
 
 
+INTEREST_RATE = 1.05
 SECRET_KEY = "secret"
 
 
-def isAuthenticated(func):
+def is_authenticated(func):
     @wraps(func)
     def authenticate(*args, **kwargs):
-        authHeader = request.headers.get('authorization')
-        if not authHeader:
+        auth_header = request.headers.get('authorization')
+        if not auth_header:
             return "Token Not Found", 401
 
-        token = authHeader.split()[1]
+        token = auth_header.split()[1]
         if not token:
             return "Token Not Found", 401
         data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        currentCustomer = data["customer_id"]
-        customer = CustomerInformation.query.get(currentCustomer)
+        current_customer = data["customer_id"]
+        customer = CustomerInformation.query.get(current_customer)
         if not customer:
             return "Invalid Customer", 401
-        request.currentUser = currentCustomer
+        request.currentUser = current_customer
         return func(*args, **kwargs)
     return authenticate
 
 
-def isAuthorized(func):
+def is_authorized(func):
     @wraps(func)
-    def authorize(*args, ** kwargs):
+    def authorize(*args, **kwargs):
         return func(*args, **kwargs)
     return authorize
 
 
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.get_json(0)
-    print(data)
+    data = request.get_json()
     if not data:
         return "Bad Request", 400
 
@@ -64,62 +65,66 @@ def login():
     if not (username or password):
         return "Bad Request", 400
 
-    customer = CustomerInformation.query.filter_by(
-        username=username).first()
+    customer = CustomerInformation.query.filter_by(username=username).first()
     if customer is None:
-        return "Invalid Username", 401
-    try:
-        bcrypt.check_password_hash(customer.password, password)
-    except Exception:
+        return (f'No account exists with the username {username}. \n Please '
+                f'enter a valid username.'), 401
+
+    if not bcrypt.check_password_hash(customer.password, password):
         return "Invalid Password", 401
 
     token = jwt.encode({"customer_id": customer.customer_id}, SECRET_KEY)
 
-    return jsonify({"token": token})
+    return jsonify({"token": token}), 200
 
 
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.get_json(0)
+    data = request.get_json()
     if not data:
         return "Bad Request", 400
 
-    existingCustomer = CustomerInformation.query.filter_by(
+    existing_customer = CustomerInformation.query.filter_by(
         username=data["username"]).first()
-    if existingCustomer:
-        return "Username already exists", 400
+    if existing_customer:
+        return (f"An account with the username {existing_customer.username} "
+                f"already exists. \nPlease choose a different one."), 400
 
     # Hash password
-    hashedPw = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
-    customer = None
-    try:
-        customer = CustomerInformation(
-            username=data["username"],
-            email=data["email"],
-            password=hashedPw,
-            full_name=data["full_name"],
-            age=data["age"],
-            gender=data["gender"],
-            zip_code=data["zip_code"],
-            status=data["status"]
-        )
-        db.session.add(customer)
-        db.session.commit()
+    hashed_pw = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
+    # customer = None
+    # try:
+    customer = CustomerInformation(
+        username=data["username"],
+        email=data["email"],
+        password=hashed_pw,
+        full_name=data["full_name"],
+        age=data["age"],
+        gender=data["gender"],
+        zip_code=data["zip_code"],
+        status=data["status"]
+    )
+    db.session.add(customer)
+    db.session.commit()
 
-    except exc.IntegrityError:
-        return "Invalid Input Format", 400
+    # except exc.IntegrityError:
+    #     return "Invalid Input Format", 400
 
-    return jsonify(customer.serialize())
+    return jsonify(customer.serialize()), 200
 
 
 # Deactivate Customer Account
 @app.route('/deactivateCustomer/<int:customer_id>', methods=['PATCH'])
-@isAuthenticated
-def deactivateCustomer(customer_id):
+@is_authenticated
+def deactivate_customer(customer_id):
     customer = CustomerInformation.query.get(customer_id)
+    if not customer:
+        return (f'Customer Account with customer_id {customer_id} not found',
+                404)
+    if customer.status == 'I':
+        return (f'Customer Account with customer_id {customer_id} is '
+                f'inactive', 404)
     if request.method == 'PATCH':
-        if not customer:
-            return f'Customer with customer_id {customer_id} not found', 404
         customer.status = 'I'
         # set all active accounts to 0 balance and 'I' status
         active_accounts = AccountInformation.query.filter(
@@ -132,9 +137,9 @@ def deactivateCustomer(customer_id):
                 f'deactivated successfully')
 
 
-# Assuming you have a serialize method in your model
+# Retrieve customer info by customer_id
 @app.route('/getCustomer/<int:customer_id>', methods=['GET'])
-@isAuthenticated
+@is_authenticated
 def get_customer_by_id(customer_id: int):
     if request.method == 'GET':
         customer = CustomerInformation.query.get(customer_id)
@@ -146,6 +151,7 @@ def get_customer_by_id(customer_id: int):
 
 
 @app.route('/openAccount', methods=['POST'])
+@is_authenticated
 def open_account():
     # Get the values from request parameters, query string, or any other source
     customer_id = int(request.args.get('customer_id'))
@@ -167,11 +173,15 @@ def open_account():
 
 
 @app.route('/closeAccount/<int:account_id>', methods=['PATCH'])
+@is_authenticated
 def close_account(account_id):
     account = AccountInformation.query.get(account_id)
+    if not account:
+        return f'Bank Account with account_id {account_id} not found', 404
+    if account.status == 'I':
+        return (f'Bank Account with account_id {account_id} is inactive',
+                404)
     if request.method == 'PATCH':
-        if not account:
-            return f'Account with account_id {account_id} not found', 404
         account.balance = float(0)
         account.status = 'I'
         db.session.commit()
@@ -181,6 +191,7 @@ def close_account(account_id):
 
 # Assuming you have a serialize method in your model
 @app.route('/getAccount/<int:account_id>', methods=['GET'])
+@is_authenticated
 def get_account_by_id(account_id: int):
     if request.method == 'GET':
         account = AccountInformation.query.get(account_id)
@@ -191,8 +202,9 @@ def get_account_by_id(account_id: int):
         return jsonify(account.serialize())
 
 
-@app.route('/getCustomers', methods=['GET'])
 # Get all customers
+@app.route('/getCustomers', methods=['GET'])
+@is_authenticated
 def get_customers():
     customers = CustomerInformation.query.all()
     customer_list = []
@@ -214,8 +226,9 @@ def get_customers():
     return jsonify(customer_list)
 
 
-@app.route('/getAccounts', methods=['GET'])
 # Get all accounts
+@app.route('/getAccounts', methods=['GET'])
+@is_authenticated
 def get_accounts():
     accounts = AccountInformation.query.all()
     account_list = []
@@ -234,16 +247,17 @@ def get_accounts():
 
 
 @app.route('/deposit/<int:account_id>/<int:amount>', methods=['PATCH'])
+@is_authenticated
 def deposit(account_id, amount):
     if amount <= 0:
         return f'Deposit amount must be positive', 404
     account = AccountInformation.query.get(account_id)
+    if not account:
+        return f'Bank Account with account_id {account_id} not found', 404
+    if account.status == 'I':
+        return (f'Bank Account with account_id {account_id} is inactive',
+                404)
     if request.method == 'PATCH':
-        if not account:
-            return f'Bank Account with account_id {account_id} not found', 404
-        if account.status == 'I':
-            return (f'Bank Account with account_id {account_id} is inactive',
-                    404)
         account.balance += amount
         db.session.commit()
         create_transaction_history_entry(account_id, 'Deposit', amount)
@@ -252,16 +266,17 @@ def deposit(account_id, amount):
 
 
 @app.route('/withdraw/<int:account_id>/<int:amount>', methods=['PATCH'])
+@is_authenticated
 def withdraw(account_id, amount):
     if amount <= 0:
         return f'Withdraw amount must be positive', 404
     account = AccountInformation.query.get(account_id)
+    if not account:
+        return f'Bank Account with account_id {account_id} not found', 404
+    if account.status == 'I':
+        return (f'Bank Account with account_id {account_id} is inactive',
+                404)
     if request.method == 'PATCH':
-        if not account:
-            return f'Bank Account with account_id {account_id} not found', 404
-        if account.status == 'I':
-            return (f'Bank Account with account_id {account_id} is inactive',
-                    404)
         new_balance = account.balance - amount
         if new_balance < 0:
             return (f'Withdrawal will put Bank Account with account_id '
@@ -275,24 +290,25 @@ def withdraw(account_id, amount):
 
 @app.route('/transfer/<int:from_account_id>/<int:to_account_id>/<int:amount'
            '>', methods=['PATCH'])
+@is_authenticated
 def transfer(from_account_id, to_account_id, amount):
     if amount <= 0:
         return f'Transfer amount must be positive', 404
     from_account = AccountInformation.query.get(from_account_id)
+    if not from_account:
+        return (f'Sending Account with account_id {from_account_id} not '
+                f'found', 404)
+    if from_account.status == 'I':
+        return (f'Sending Account with account_id {from_account_id} is '
+                f'inactive', 404)
     to_account = AccountInformation.query.get(to_account_id)
+    if not to_account:
+        return (f'Receiving Account with account_id {to_account_id} not '
+                f'found', 404)
+    if to_account.status == 'I':
+        return (f'Receiving Account with account_id {to_account_id} is '
+                f'inactive', 404)
     if request.method == 'PATCH':
-        if not from_account:
-            return (f'Sending Account with account_id {from_account_id} not '
-                    f'found', 404)
-        if not to_account:
-            return (f'Receiving Account with account_id {to_account_id} not '
-                    f'found', 404)
-        if from_account.status == 'I':
-            return (f'Sending Account with account_id {from_account_id} is '
-                    f'inactive', 404)
-        if to_account.status == 'I':
-            return (f'Receiving Account with account_id {to_account_id} is '
-                    f'inactive', 404)
         new_balance = from_account.balance - amount
         if new_balance < 0:
             return (f'Transfer from Bank Account with account_id '
@@ -309,16 +325,17 @@ def transfer(from_account_id, to_account_id, amount):
 
 
 @app.route('/normalPayment/<int:account_id>/<int:amount>', methods=['PATCH'])
+@is_authenticated
 def normal_payment(account_id, amount):
     if amount <= 0:
         return f'Payment amount must be positive', 404
     account = AccountInformation.query.get(account_id)
+    if not account:
+        return f'Bank Account with account_id {account_id} not found', 404
+    if account.status == 'I':
+        return (f'Bank Account with account_id {account_id} is inactive',
+                404)
     if request.method == 'PATCH':
-        if not account:
-            return f'Bank Account with account_id {account_id} not found', 404
-        if account.status == 'I':
-            return (f'Bank Account with account_id {account_id} is inactive',
-                    404)
         new_balance = account.balance - amount
         if new_balance < 0:
             return (f'Bill payment will put Bank Account with account_id '
@@ -328,6 +345,65 @@ def normal_payment(account_id, amount):
         create_transaction_history_entry(account_id, 'Normal Payment', -amount)
         return (f'${amount} successfully paid by Bank Account with '
                 f'account_id {account_id}')
+
+
+# setting up automatic payment
+@app.route('/automaticPayment/<int:account_id>/<int:amount>/<string:date>',
+           methods=['PATCH'])
+@is_authenticated
+def automatic_payment(account_id, amount, date):
+    # note: flask can't take datetime representation of date, so needs to be
+    # converted to datetime
+    # pandas parses datetime from string in format YYYY-MM-DD
+    if amount <= 0:
+        return f'Payment amount must be positive', 404
+    dtime = pandas.to_datetime(date)
+    if dtime < datetime.now():
+        return f'Date may not be in the past', 404
+    account = AccountInformation.query.get(account_id)
+    if not account:
+        return f'Bank Account with account_id {account_id} not found', 404
+    if account.status == 'I':
+        return (f'Bank Account with account_id {account_id} is inactive',
+                404)
+    if request.method == 'PATCH':
+        create_automatic_payment_entry(account.customer_id, account_id,
+                                       amount, dtime)
+        return (f'Payment of ${amount} successfully scheduled for Bank '
+                f'Account with account_id {account_id} and date {date}')
+
+
+# executing automatic payment, job should auto-execute when server is running
+def automatic_payment_job(payment_id):
+    # access payment
+    autopayment = AutomaticPayments.query.get(payment_id)
+    # access account
+    account = AccountInformation.query.get(autopayment.account_id)
+
+    new_balance = account.balance - autopayment.amount
+    # placeholder before grace period implement
+    if new_balance < 0:
+        delete_automatic_payment_entry(payment_id)
+        return (f'Scheduled payment with account_id '
+                f'{autopayment.account_id} failed due to negative balance',
+                404)
+
+    # set new balance and reset date for one month from original date,
+    # add transaction
+    account.balance = new_balance
+    autopayment.date = autopayment.date + pandas.DateOffset(months=1)
+    db.session.commit()
+    create_transaction_history_entry(account.account_id, 'Automatic Payment',
+                                     -autopayment.amount)
+
+
+# schedule this job once a year (5% annual interest)
+def interest_accumulation():
+    db.session.query(AccountInformation).filter(
+        AccountInformation.status == "A",
+        AccountInformation.account_type == "S").update(
+        {'balance': AccountInformation.balance * INTEREST_RATE})
+    db.session.commit()
 
 
 def create_transaction_history_entry(account_id, action, amount):
@@ -341,13 +417,13 @@ def create_transaction_history_entry(account_id, action, amount):
 
 
 def create_automatic_payment_entry(customer_id, account_id, amount, date):
-    automatic_payment = AutomaticPayments(
+    autopayment = AutomaticPayments(
         customer_id=customer_id,
         account_id=account_id,
         amount=amount,
         date=date
     )
-    db.session.add(automatic_payment)
+    db.session.add(autopayment)
     db.session.commit()
 
 
@@ -355,6 +431,63 @@ def delete_automatic_payment_entry(payment_id):
     AutomaticPayments.query.filter(AutomaticPayments.payment_id ==
                                    payment_id).delete()
     db.session.commit()
+
+
+@app.route('/getBillPaymentHistory/<int:customer_id>/<int:number>', methods=[
+    'GET'])
+@is_authenticated
+def get_bill_payment_history(customer_id, number):
+    if number <= 0:
+        return f'Query number must be positive', 404
+    customer = CustomerInformation.query.get(customer_id)
+    if not customer:
+        return (f'Customer Account with customer_id {customer_id} not found',
+                404)
+    if customer.status == 'I':
+        return (f'Customer Account with customer_id {customer_id} is '
+                f'inactive', 404)
+    if request.method == 'GET':
+        all_payments = TransactionHistory.query.filter(
+            TransactionHistory.customer_id == customer.customer_id and
+            TransactionHistory.action in ('Normal Payment', 'Automatic '
+                                                            'Payment')).all()
+        payments = all_payments.reverse().limit(number)
+        payment_list = []
+        for payment in payments:
+            transaction_data = {
+                'date': payment.date,
+                'action': payment.action,
+                'amount': payment.amount
+            }
+            payment_list.append(transaction_data)
+        return jsonify(payment_list)
+
+
+@app.route('/getTransactionHistory/<int:account_id>/<int:number>', methods=[
+    'GET'])
+@is_authenticated
+def get_transaction_history(account_id, number):
+    if number <= 0:
+        return f'Query number must be positive', 404
+    account = AccountInformation.query.get(account_id)
+    if not account:
+        return f'Bank Account with account_id {account_id} not found', 404
+    if account.status == 'I':
+        return (f'Bank Account with account_id {account_id} is inactive',
+                404)
+    if request.method == 'GET':
+        all_transactions = TransactionHistory.query.filter(
+            AccountInformation.account_id == account.account_id).all()
+        transactions = all_transactions.reverse().limit(number)
+        transaction_list = []
+        for transaction in transactions:
+            transaction_data = {
+                'date': transaction.date,
+                'action': transaction.action,
+                'amount': transaction.amount
+            }
+            transaction_list.append(transaction_data)
+        return jsonify(transaction_list)
 
 
 @app.route('/')

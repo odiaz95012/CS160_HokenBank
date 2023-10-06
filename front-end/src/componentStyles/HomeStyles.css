@@ -1,8 +1,8 @@
 @charset "UTF-8";
 /*!
-* Start Bootstrap - Bare v5.0.9 (https://startbootstrap.com/template/bare)
+* Start Bootstrap - Business Frontpage v5.0.9 (https://startbootstrap.com/template/business-frontpage)
 * Copyright 2013-2023 Start Bootstrap
-* Licensed under MIT (https://github.com/StartBootstrap/startbootstrap-bare/blob/master/LICENSE)
+* Licensed under MIT (https://github.com/StartBootstrap/startbootstrap-business-frontpage/blob/master/LICENSE)
 */
 /*!
  * Bootstrap  v5.2.3 (https://getbootstrap.com/)
@@ -10,6 +10,10 @@
  * Copyright 2011-2022 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
  */
+
+ #logoutBttn {
+  margin-left: 50px;
+ }
 :root {
   --bs-blue: #0d6efd;
   --bs-indigo: #6610f2;
@@ -594,7 +598,7 @@ progress {
   color: #6c757d;
 }
 .blockquote-footer::before {
-  content: "— ";
+  content: "— ";
 }
 
 .img-fluid {
@@ -3734,7 +3738,7 @@ textarea.form-control-lg {
   --bs-navbar-active-color: rgba(0, 0, 0, 0.9);
   --bs-navbar-brand-padding-y: 0.3125rem;
   --bs-navbar-brand-margin-end: 1rem;
-  --bs-navbar-brand-font-size: 1.25rem;
+  --bs-navbar-brand-font-size: 1.5rem;
   --bs-navbar-brand-color: rgba(0, 0, 0, 0.9);
   --bs-navbar-brand-hover-color: rgba(0, 0, 0, 0.9);
   --bs-navbar-nav-link-padding-x: 0.5rem;
@@ -10823,4 +10827,12 @@ textarea.form-control-lg {
   .d-print-none {
     display: none !important;
   }
+}
+.feature {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 4rem;
+  width: 4rem;
+  font-size: 2rem;
 }
