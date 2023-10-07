@@ -7,10 +7,12 @@ from models.account import AccountInformation
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from sqlalchemy import exc
+from datetime import datetime
 from functools import wraps
 import jwt
 from flask_bcrypt import Bcrypt
 import pandas
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformation.sqlite3'
@@ -22,9 +24,23 @@ CORS(app)
 db.init_app(app)
 bcrypt = Bcrypt(app)
 
-
-INTEREST_RATE = 1.05
 SECRET_KEY = "secret"
+INTEREST_RATE = 1.05
+
+
+def create_bank_manager():
+    bank_manager = CustomerInformation(
+        username='bank_manager',
+        email='bank_manager@gmail.com',
+        password='hokenadmin',
+        full_name='Bank Manager',
+        age=150,
+        gender='O',
+        zip_code=10000,
+        status='A'
+    )
+    db.session.add(bank_manager)
+    db.session.commit()
 
 
 def is_authenticated(func):
@@ -42,6 +58,8 @@ def is_authenticated(func):
         customer = CustomerInformation.query.get(current_customer)
         if not customer:
             return "Invalid Customer", 401
+        if customer.status == 'I':
+            return "Inactive Customer", 401
         request.currentUser = current_customer
         return func(*args, **kwargs)
     return authenticate
@@ -102,9 +120,12 @@ def login():
         return "Bad Request", 400
 
     customer = CustomerInformation.query.filter_by(username=username).first()
-    if customer is None:
-        return (f'No account exists with the username {username}. \n Please '
+    if not customer:
+        return (f'No account exists with the username {username}.\nPlease '
                 f'enter a valid username.'), 401
+    if customer.status == 'I':
+        return (f'Customer account with username {username} has been '
+                f'deactivated.\nPlease enter a valid username.'), 401
 
     if not bcrypt.check_password_hash(customer.password, password):
         return "Invalid Password", 401
@@ -124,7 +145,7 @@ def register():
         username=data["username"]).first()
     if existing_customer:
         return (f"An account with the username {existing_customer.username} "
-                f"already exists. \nPlease choose a different one."), 400
+                f"already exists.\nPlease choose a different one."), 400
 
     # Hash password
     hashed_pw = bcrypt.generate_password_hash(data["password"]).decode('utf-8')
@@ -280,6 +301,27 @@ def get_accounts():
             'account_type': account.account_type,
             'balance': account.balance,
             'status': account.status
+        }
+        account_list.append(account_data)
+
+    return jsonify(account_list)
+
+
+# Get all active accounts associated with the customer ID
+@app.route('/getCustomerAccounts/<int:account_id>', methods=['GET'])
+@is_authenticated
+@account_owner
+def get_customer_accounts(customer_id):
+    active_accounts = AccountInformation.query.filter(
+        AccountInformation.customer_id == customer_id and
+        AccountInformation.status == 'A').all()
+    account_list = []
+
+    for account in active_accounts:
+        account_data = {
+            'account_id': account.account_id,
+            'account_type': account.account_type,
+            'balance': account.balance
         }
         account_list.append(account_data)
 
@@ -493,11 +535,12 @@ def get_bill_payment_history(customer_id, number):
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
     if request.method == 'GET':
-        all_payments = TransactionHistory.query.filter(
+        payments = TransactionHistory.query.filter(
             TransactionHistory.customer_id == customer.customer_id and
-            TransactionHistory.action in ('Normal Payment', 'Automatic '
-                                                            'Payment')).all()
-        payments = all_payments.reverse().limit(number)
+            TransactionHistory.action in
+            ('Normal Payment', 'Automatic Payment')).reverse().all()
+        if number > 0:
+            payments = payments.limit(number)
         payment_list = []
         for payment in payments:
             transaction_data = {
@@ -509,12 +552,13 @@ def get_bill_payment_history(customer_id, number):
         return jsonify(payment_list)
 
 
+# number = 0 to get all entries
 @app.route('/getTransactionHistory/<int:account_id>/<int:number>', methods=[
     'GET'])
 @is_authenticated
 @account_owner
 def get_transaction_history(account_id, number):
-    if number <= 0:
+    if number < 0:
         return f'Query number must be positive', 404
     account = AccountInformation.query.get(account_id)
     if not account:
@@ -523,9 +567,11 @@ def get_transaction_history(account_id, number):
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
     if request.method == 'GET':
-        all_transactions = TransactionHistory.query.filter(
-            AccountInformation.account_id == account.account_id).all()
-        transactions = all_transactions.reverse().limit(number)
+        transactions = TransactionHistory.query.filter(
+            AccountInformation.account_id ==
+            account.account_id).reverse().all()
+        if number > 0:
+            transactions = transactions.limit(number)
         transaction_list = []
         for transaction in transactions:
             transaction_data = {
@@ -535,6 +581,12 @@ def get_transaction_history(account_id, number):
             }
             transaction_list.append(transaction_data)
         return jsonify(transaction_list)
+
+
+@app.route('/generateUserReport', methods=['GET'])
+@is_authenticated
+def generate_user_report():
+    pass
 
 
 @app.route('/')
@@ -621,21 +673,6 @@ def create_dummy_accounts():
         )
         db.session.add(account)
 
-    db.session.commit()
-
-
-def create_bank_manager():
-    bank_manager = CustomerInformation(
-        username='bank_manager2',
-        email='bank2@gmail.com',
-        password='hokenadmin',
-        full_name='Bank Manager',
-        age=150,
-        gender='M',
-        zip_code=10000,
-        status='A'
-    )
-    db.session.add(bank_manager)
     db.session.commit()
 
 

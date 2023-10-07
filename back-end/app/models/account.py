@@ -8,7 +8,7 @@ class AccountInformation(db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey(
         'CustomerInformation.customer_id'),
         nullable=False)
-    account_type = db.Column(db.String(1), nullable=False)
+    account_type = db.Column(db.String(20), nullable=False)
     balance = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(1), nullable=False)
     transactions = db.relationship('TransactionHistory',
@@ -17,7 +17,7 @@ class AccountInformation(db.Model):
                                lazy=True)
 
     __table_args__ = (
-        db.CheckConstraint("account_type IN ('C', 'S')",
+        db.CheckConstraint("account_type IN ('Checking', 'Savings')",
                            name='check_account_type'),
         db.CheckConstraint("balance >= 0", name='check_balance'),
         db.CheckConstraint("status IN ('A', 'I')", name='check_status'),
