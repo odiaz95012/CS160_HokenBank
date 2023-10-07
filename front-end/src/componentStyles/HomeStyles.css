@@ -11,9 +11,14 @@
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/main/LICENSE)
  */
 
- #logoutBttn {
-  margin-left: 50px;
+.nav-bar-bttn {
+  margin-left: 25px;
  }
+
+ .nav-link {
+  color: white !important;
+  }
+ 
 :root {
   --bs-blue: #0d6efd;
   --bs-indigo: #6610f2;
