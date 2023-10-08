@@ -229,6 +229,7 @@ def open_account():
     db.session.commit()
 
     return jsonify(account.serialize())
+    return jsonify(account.serialize())
 
 
 @app.route('/closeAccount/<int:account_id>', methods=['PATCH'])
@@ -287,7 +288,7 @@ def get_customers():
     return jsonify(customer_list)
 
 
-# Get all accounts
+# Get all accounts, including inactive ones
 @app.route('/getAccounts', methods=['GET'])
 @is_authenticated
 def get_accounts():
