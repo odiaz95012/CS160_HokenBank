@@ -308,10 +308,10 @@ def get_accounts():
 
 
 # Get all active accounts associated with the customer ID
-@app.route('/getCustomerAccounts/<int:account_id>', methods=['GET'])
+@app.route('/getCustomerAccounts', methods=['GET'])
 @is_authenticated
-@account_owner
-def get_customer_accounts(customer_id):
+def get_customer_accounts():
+    customer_id = request.currentUser
     active_accounts = AccountInformation.query.filter(
         AccountInformation.customer_id == customer_id and
         AccountInformation.status == 'A').all()
