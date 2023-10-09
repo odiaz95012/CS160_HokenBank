@@ -69,12 +69,12 @@ def account_owner(func):
     @wraps(func)
     def authorize(*args, **kwargs):
         account_id = kwargs["account_id"]
-        currentCustomer = request.currentUser
+        current_customer = request.currentUser
         account = AccountInformation.query.filter_by(
             account_id=account_id).first()
         if account:
             account_owner_id = account.customer.customer_id
-            if currentCustomer != account_owner_id:
+            if current_customer != account_owner_id:
                 return "Not Account Owner", 403
         else:
             return "Invalid Account ID ", 400
@@ -86,13 +86,13 @@ def account_owner(func):
 def automatic_payment_owner(func):
     @wraps(func)
     def authorize(*args, **kwargs):
-        currentCustomer = request.currentUser
+        current_customer = request.currentUser
         payment_id = kwargs["payment_id"]
         payment = AutomaticPayments.query.filter_by(
             payment_id=payment_id).first()
         if payment:
             payment_owner_id = payment.customer.customer_id
-            if currentCustomer != payment_owner_id:
+            if current_customer != payment_owner_id:
                 return "Not Automatic Payment Owner", 403
         else:
             return "Invalid Payment ID ", 400
@@ -228,7 +228,6 @@ def open_account():
     db.session.add(account)
     db.session.commit()
 
-    return jsonify(account.serialize())
     return jsonify(account.serialize())
 
 
@@ -589,7 +588,7 @@ def get_transaction_history(account_id, number):
 # gender = 'A'
 # zip_code = 100000
 @app.route('/generateUserReport/<float:min_balance>/<float:max_balance>/<int'
-           ':min_age>/<int:max_age>/<int:zip_code>/<str:gender>',
+           ':min_age>/<int:max_age>/<int:zip_code>/<gender>',
            methods=['GET'])
 @is_authenticated
 def generate_user_report(min_balance, max_balance, min_age, max_age,
