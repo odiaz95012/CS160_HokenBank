@@ -1,3 +1,4 @@
+import json
 from models import db
 from models.automatic_payment import AutomaticPayments
 from models.transaction import TransactionHistory
@@ -64,9 +65,44 @@ def is_authenticated(func):
     return authenticate
 
 
-def is_authorized(func):
+def account_owner(func):
     @wraps(func)
     def authorize(*args, **kwargs):
+        account_id = kwargs["account_id"]
+        currentCustomer = request.currentUser
+        account = AccountInformation.query.filter_by(
+            account_id=account_id).first()
+        if account:
+            account_owner_id = account.customer.customer_id
+            if currentCustomer != account_owner_id:
+                return "Not Account Owner", 403
+        else:
+            return "Invalid Account ID ", 400
+
+        return func(*args, **kwargs)
+    return authorize
+
+
+def automatic_payment_owner(func):
+    @wraps(func)
+    def authorize(*args, **kwargs):
+        currentCustomer = request.currentUser
+        payment_id = kwargs["payment_id"]
+        payment = AutomaticPayments.query.filter_by(
+            payment_id=payment_id).first()
+        if payment:
+            payment_owner_id = payment.customer.customer_id
+            if currentCustomer != payment_owner_id:
+                return "Not Automatic Payment Owner", 403
+        else:
+            return "Invalid Payment ID ", 400
+
+        return func(*args, **kwargs)
+    return authorize
+
+
+def is_admin(*args, **kwargs):
+    def authorize(func):
         return func(*args, **kwargs)
     return authorize
 
@@ -135,9 +171,10 @@ def register():
 
 
 # Deactivate Customer Account
-@app.route('/deactivateCustomer/<int:customer_id>', methods=['PATCH'])
+@app.route('/deactivateCustomer', methods=['PATCH'])
 @is_authenticated
-def deactivate_customer(customer_id):
+def deactivate_customer():
+    customer_id = request.currentUser
     customer = CustomerInformation.query.get(customer_id)
     if not customer:
         return (f'Customer Account with customer_id {customer_id} not found',
@@ -159,9 +196,10 @@ def deactivate_customer(customer_id):
 
 
 # Retrieve customer info by customer_id
-@app.route('/getCustomer/<int:customer_id>', methods=['GET'])
+@app.route('/getCustomer', methods=['GET'])
 @is_authenticated
-def get_customer_by_id(customer_id: int):
+def get_customer_by_id():
+    customer_id = request.currentUser
     if request.method == 'GET':
         customer = CustomerInformation.query.get(customer_id)
         if not customer:
@@ -175,8 +213,8 @@ def get_customer_by_id(customer_id: int):
 @is_authenticated
 def open_account():
     # Get the values from request parameters, query string, or any other source
-    customer_id = int(request.args.get('customer_id'))
-    account_type = request.args.get('account_type')
+    customer_id = request.currentUser
+    account_type = request.get_json().get('account_type')
 
     # Create a customer object with the provided values
     account = AccountInformation(
@@ -190,11 +228,13 @@ def open_account():
     db.session.add(account)
     db.session.commit()
 
-    return 'Account opened successfully'
+    return jsonify(account.serialize())
+    return jsonify(account.serialize())
 
 
 @app.route('/closeAccount/<int:account_id>', methods=['PATCH'])
 @is_authenticated
+@account_owner
 def close_account(account_id):
     account = AccountInformation.query.get(account_id)
     if not account:
@@ -213,6 +253,7 @@ def close_account(account_id):
 # Assuming you have a serialize method in your model
 @app.route('/getAccount/<int:account_id>', methods=['GET'])
 @is_authenticated
+@account_owner
 def get_account_by_id(account_id: int):
     if request.method == 'GET':
         account = AccountInformation.query.get(account_id)
@@ -247,7 +288,7 @@ def get_customers():
     return jsonify(customer_list)
 
 
-# Get all accounts
+# Get all accounts, including inactive ones
 @app.route('/getAccounts', methods=['GET'])
 @is_authenticated
 def get_accounts():
@@ -268,9 +309,10 @@ def get_accounts():
 
 
 # Get all active accounts associated with the customer ID
-@app.route('/getCustomerAccounts/<int:account_id>', methods=['GET'])
+@app.route('/getCustomerAccounts', methods=['GET'])
 @is_authenticated
-def get_customer_accounts(customer_id):
+def get_customer_accounts():
+    customer_id = request.currentUser
     active_accounts = AccountInformation.query.filter(
         AccountInformation.customer_id == customer_id and
         AccountInformation.status == 'A').all()
@@ -289,6 +331,7 @@ def get_customer_accounts(customer_id):
 
 @app.route('/deposit/<int:account_id>/<int:amount>', methods=['PATCH'])
 @is_authenticated
+@account_owner
 def deposit(account_id, amount):
     if amount <= 0:
         return f'Deposit amount must be positive', 404
@@ -308,6 +351,7 @@ def deposit(account_id, amount):
 
 @app.route('/withdraw/<int:account_id>/<int:amount>', methods=['PATCH'])
 @is_authenticated
+@account_owner
 def withdraw(account_id, amount):
     if amount <= 0:
         return f'Withdraw amount must be positive', 404
@@ -332,6 +376,7 @@ def withdraw(account_id, amount):
 @app.route('/transfer/<int:from_account_id>/<int:to_account_id>/<int:amount'
            '>', methods=['PATCH'])
 @is_authenticated
+@account_owner
 def transfer(from_account_id, to_account_id, amount):
     if amount <= 0:
         return f'Transfer amount must be positive', 404
@@ -367,6 +412,7 @@ def transfer(from_account_id, to_account_id, amount):
 
 @app.route('/normalPayment/<int:account_id>/<int:amount>', methods=['PATCH'])
 @is_authenticated
+@account_owner
 def normal_payment(account_id, amount):
     if amount <= 0:
         return f'Payment amount must be positive', 404
@@ -392,6 +438,7 @@ def normal_payment(account_id, amount):
 @app.route('/automaticPayment/<int:account_id>/<int:amount>/<string:date>',
            methods=['PATCH'])
 @is_authenticated
+@account_owner
 def automatic_payment(account_id, amount, date):
     # note: flask can't take datetime representation of date, so needs to be
     # converted to datetime
@@ -414,7 +461,7 @@ def automatic_payment(account_id, amount, date):
                 f'Account with account_id {account_id} and date {date}')
 
 
-# executing automatic payment, job should auto-execute when server is running   
+# executing automatic payment, job should auto-execute when server is running
 def automatic_payment_job(payment_id):
     # access payment
     autopayment = AutomaticPayments.query.get(payment_id)
@@ -474,12 +521,12 @@ def delete_automatic_payment_entry(payment_id):
     db.session.commit()
 
 
-# number = 0 to get all entries
-@app.route('/getBillPaymentHistory/<int:customer_id>/<int:number>', methods=[
+@app.route('/getBillPaymentHistory/<int:number>', methods=[
     'GET'])
 @is_authenticated
 def get_bill_payment_history(customer_id, number):
-    if number < 0:
+    customer_id = request.currentUser
+    if number <= 0:
         return f'Query number must be positive', 404
     customer = CustomerInformation.query.get(customer_id)
     if not customer:
@@ -510,6 +557,7 @@ def get_bill_payment_history(customer_id, number):
 @app.route('/getTransactionHistory/<int:account_id>/<int:number>', methods=[
     'GET'])
 @is_authenticated
+@account_owner
 def get_transaction_history(account_id, number):
     if number < 0:
         return f'Query number must be positive', 404
