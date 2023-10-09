@@ -1,4 +1,6 @@
 from . import db
+from .account import AccountInformation
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 class CustomerInformation(db.Model):
@@ -53,3 +55,20 @@ class CustomerInformation(db.Model):
             'zip_code': self.zip_code,
             'status': self.status
         }
+
+    @hybrid_property
+    def total_balance(self):
+        customer = CustomerInformation.query.get(self.customer_id)
+        if not customer:
+            return (f'Customer Account with customer_id {self.customer_id} '
+                    f'not found', 404)
+        if customer.status == 'I':
+            return (f'Customer Account with customer_id {self.customer_id} is '
+                    f'inactive', 404)
+        total_balance = float(0)
+        active_accounts = AccountInformation.query.filter(
+            AccountInformation.customer_id == customer.customer_id and
+            AccountInformation.status == 'A')
+        for acc in active_accounts:
+            total_balance += acc.balance
+        return total_balance
