@@ -3,8 +3,9 @@ import React from 'react';
 import { useState, useEffect } from "react";
 import Cookies from 'js-cookie';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-function AccountPage() {
+function AccountPage(props) {
     const [userData, setUserData] = useState({
         customer_id: '',
         username: '',
@@ -20,8 +21,8 @@ function AccountPage() {
     const [error, setError] = useState('');
     const [isUserDataLoaded, setIsUserDataLoaded] = useState(false);
 
-    const getUserData = async (authToken, customer_id) => {
-        await axios.get(`http://localhost:8000/getCustomer/${customer_id}`, {
+    const getUserData = async (authToken) => {
+        await axios.get(`http://localhost:8000/getCustomer`, {
             headers: {
                 'authorization': `Bearer ${authToken}`
             }
@@ -34,22 +35,35 @@ function AccountPage() {
                 console.log(err);
             })
     };
-    const getCustomerID = async () => {
-        const authToken = Cookies.get('authToken');
-        // setAuthToken(authToken);
-        const customerObj = JSON.parse(window.atob(authToken.split('.')[1]));
-        // setCustomerID(customerObj.customer_id);
-        return [authToken, customerObj.customer_id];
+
+    const [userAccount, setUserAccount] = useState([]);
+    const getUserAccounts = async (authToken) => {
+        await axios.get(`http://localhost:8000/getCustomerAccounts`, {
+            headers: {
+                'authorization': `Bearer ${authToken}`
+            }
+        }).then((response) => {
+            setUserAccount(response.data);
+        }).catch((err) => {
+            console.log(err);
+        })
     };
+    const getCustomerToken = async () => {
+        const authToken = Cookies.get('authToken');
+        return authToken;
+    };
+
+
 
     useEffect(() => {
         const fetchUserData = async () => {
             try {
                 //Retrieve the customer id and auth token, authToken is at index 0 and customer_id is at index 1 
-                const customerAuth = await getCustomerID();
+                const customerAuth = await getCustomerToken();
                 //Retrieve the customer details
-                await getUserData(customerAuth[0], customerAuth[1]);
+                await getUserData(customerAuth);
 
+                await getUserAccounts(customerAuth);
 
                 setIsUserDataLoaded(true);
             } catch (err) {
@@ -60,6 +74,10 @@ function AccountPage() {
 
         fetchUserData();
     }, [])
+    const navigate = useNavigate();
+    const gotoCloseAccountPage = () => {
+        navigate('/closeAccount');
+    }
 
 
 
@@ -108,7 +126,7 @@ function AccountPage() {
                                         <div className="d-grid gap-3 d-sm-flex justify-content-sm-center">
                                             <a className="btn btn-primary btn-lg px-4 me-sm-3" href="#features">Internal Transfer</a>
                                             <a className="btn btn-primary btn-lg px-4 me-sm-3" href="#features">External Transfer</a>
-                                            <a className="btn btn-primary btn-lg px-4 me-sm-3" href="#features">Close Account</a>
+                                            <a className="btn btn-primary btn-lg px-4 me-sm-3" href="#features" onClick={gotoCloseAccountPage}>Close Account</a>
 
 
                                         </div>
@@ -140,9 +158,9 @@ function AccountPage() {
                         <div className="col-lg-4 mb-5 mb-lg-0">
 
                             <h2 className="h4 fw-bolder">Account</h2>
-                            <p>Account ID:</p>
-                            <p>Account Type: </p>
-                            <p>Balance:</p>
+                            <p>Account ID:{userAccount.account_id}</p>
+                            <p>Account Type:{userAccount.account_type} </p>
+                            <p>Balance:{userAccount.balance}</p>
                         </div>
                     </div>
                 </div>

@@ -5,6 +5,7 @@ import Registration from './components/Registration';
 import HomePage from './components/HomePage';
 import ProtectedRoutes from './components/ProtectedRoutes';
 import AccountPage from './components/AccountPage';
+import CloseAccount from './components/CloseAccount';
 
 function App() {
 
@@ -16,6 +17,7 @@ function App() {
         <Route element={<ProtectedRoutes />}>
           <Route path="/home" element={<HomePage />} exact />
           <Route path="/accountPage" element={<AccountPage />} exact />
+          <Route path="/closeAccount" element={<CloseAccount />} exact />
         </Route>
         {/* Other routes */}
       </Routes>
