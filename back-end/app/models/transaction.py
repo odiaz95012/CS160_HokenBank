@@ -26,6 +26,6 @@ class TransactionHistory(db.Model):
         self.amount = amount
 
     @hybrid_property
-    def customer_id(self):
+    def customer_id(self) -> int:
         account = AccountInformation.query.get(self.account_id)
         return account.customer_id
