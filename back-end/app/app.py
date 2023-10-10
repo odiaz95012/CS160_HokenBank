@@ -523,7 +523,7 @@ def delete_automatic_payment_entry(payment_id):
 @app.route('/getBillPaymentHistory/<int:number>', methods=[
     'GET'])
 @is_authenticated
-def get_bill_payment_history(customer_id, number):
+def get_bill_payment_history(number):
     customer_id = request.currentUser
     if number <= 0:
         return f'Query number must be positive', 404
