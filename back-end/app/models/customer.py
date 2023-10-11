@@ -57,14 +57,8 @@ class CustomerInformation(db.Model):
         }
 
     @hybrid_property
-    def total_balance(self):
+    def total_balance(self) -> float:
         customer = CustomerInformation.query.get(self.customer_id)
-        if not customer:
-            return (f'Customer Account with customer_id {self.customer_id} '
-                    f'not found', 404)
-        if customer.status == 'I':
-            return (f'Customer Account with customer_id {self.customer_id} is '
-                    f'inactive', 404)
         total_balance = float(0)
         active_accounts = AccountInformation.query.filter(
             AccountInformation.customer_id == customer.customer_id and

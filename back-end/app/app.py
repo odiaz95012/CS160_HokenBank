@@ -520,8 +520,7 @@ def delete_automatic_payment_entry(payment_id):
     db.session.commit()
 
 
-@app.route('/getBillPaymentHistory/<int:number>', methods=[
-    'GET'])
+@app.route('/getBillPaymentHistory/<int:number>', methods=['GET'])
 @is_authenticated
 def get_bill_payment_history(number):
     customer_id = request.currentUser
@@ -536,9 +535,9 @@ def get_bill_payment_history(number):
                 f'inactive', 404)
     if request.method == 'GET':
         payments = TransactionHistory.query.filter(
-            TransactionHistory.customer_id == customer.customer_id and
-            TransactionHistory.action in
-            ('Normal Payment', 'Automatic Payment')).reverse().all()
+            TransactionHistory.customer_id == customer.customer_id,
+            TransactionHistory.action.in_(
+                ('Normal Payment', 'Automatic Payment'))).all().reverse()
         if number > 0:
             payments = payments.limit(number)
         payment_list = []
@@ -568,8 +567,8 @@ def get_transaction_history(account_id, number):
                 404)
     if request.method == 'GET':
         transactions = TransactionHistory.query.filter(
-            AccountInformation.account_id ==
-            account.account_id).reverse().all()
+            TransactionHistory.account_id ==
+            account.account_id).all().reverse()
         if number > 0:
             transactions = transactions.limit(number)
         transaction_list = []
@@ -588,8 +587,7 @@ def get_transaction_history(account_id, number):
 # gender = 'A'
 # zip_code = 100000
 @app.route('/generateUserReport/<float:min_balance>/<float:max_balance>/<int'
-           ':min_age>/<int:max_age>/<int:zip_code>/<gender>',
-           methods=['GET'])
+           ':min_age>/<int:max_age>/<int:zip_code>/<gender>', methods=['GET'])
 @is_authenticated
 def generate_user_report(min_balance, max_balance, min_age, max_age,
                          zip_code, gender):
