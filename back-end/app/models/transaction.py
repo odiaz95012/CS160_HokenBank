@@ -1,13 +1,15 @@
 from datetime import datetime
 from . import db
-from .account import AccountInformation
-from sqlalchemy.ext.hybrid import hybrid_property
+# from .account import AccountInformation
+# from sqlalchemy.ext.hybrid import hybrid_property
 
 
 class TransactionHistory(db.Model):
     __tablename__ = 'TransactionHistory'
     transaction_id = db.Column('transaction_id', db.Integer,
                                primary_key=True, autoincrement=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey(
+        'CustomerInformation.customer_id'), nullable=False)
     account_id = db.Column(db.Integer, db.ForeignKey(
         'AccountInformation.account_id'), nullable=False)
     action = db.Column(db.String(20), nullable=False)
@@ -20,12 +22,14 @@ class TransactionHistory(db.Model):
                            name='check_action'),
         {})
 
-    def __init__(self, account_id: int, action: str, amount: float):
+    def __init__(self, customer_id: int, account_id: int, action: str,
+                 amount: float):
+        self.customer_id = customer_id
         self.account_id = account_id
         self.action = action
         self.amount = amount
 
-    @hybrid_property
-    def customer_id(self) -> int:
-        account = AccountInformation.query.get(self.account_id)
-        return account.customer_id
+    # @hybrid_property
+    # def customer_id(self) -> int:
+    #     account = AccountInformation.query.get(self.account_id)
+    #     return account.customer_id

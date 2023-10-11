@@ -332,6 +332,7 @@ def get_customer_accounts():
 @is_authenticated
 @account_owner
 def deposit(account_id, amount):
+    customer_id = request.currentUser
     if amount <= 0:
         return f'Deposit amount must be positive', 404
     account = AccountInformation.query.get(account_id)
@@ -343,7 +344,8 @@ def deposit(account_id, amount):
     if request.method == 'PATCH':
         account.balance += amount
         db.session.commit()
-        create_transaction_history_entry(account_id, 'Deposit', amount)
+        create_transaction_history_entry(
+            customer_id, account_id, 'Deposit', amount)
         return (f'${amount} successfully deposited to Bank Account '
                 f'with account_id {account_id}')
 
@@ -352,6 +354,7 @@ def deposit(account_id, amount):
 @is_authenticated
 @account_owner
 def withdraw(account_id, amount):
+    customer_id = request.currentUser
     if amount <= 0:
         return f'Withdraw amount must be positive', 404
     account = AccountInformation.query.get(account_id)
@@ -367,7 +370,8 @@ def withdraw(account_id, amount):
                     f'{account_id} into negative balance', 404)
         account.balance = new_balance
         db.session.commit()
-        create_transaction_history_entry(account_id, 'Withdraw', -amount)
+        create_transaction_history_entry(
+            customer_id, account_id, 'Withdraw', -amount)
         return (f'${amount} successfully withdrawn from Bank Account '
                 f'with account_id {account_id}')
 
@@ -377,6 +381,7 @@ def withdraw(account_id, amount):
 @is_authenticated
 @account_owner
 def transfer(from_account_id, to_account_id, amount):
+    from_customer_id = request.currentUser
     if amount <= 0:
         return f'Transfer amount must be positive', 404
     from_account = AccountInformation.query.get(from_account_id)
@@ -393,6 +398,7 @@ def transfer(from_account_id, to_account_id, amount):
     if to_account.status == 'I':
         return (f'Receiving Account with account_id {to_account_id} is '
                 f'inactive', 404)
+    to_customer_id = AccountInformation.query.get(to_account_id).customer_id
     if request.method == 'PATCH':
         new_balance = from_account.balance - amount
         if new_balance < 0:
@@ -402,8 +408,10 @@ def transfer(from_account_id, to_account_id, amount):
         from_account.balance = new_balance
         to_account.balance += amount
         db.session.commit()
-        create_transaction_history_entry(from_account_id, 'Transfer', -amount)
-        create_transaction_history_entry(to_account_id, 'Transfer', amount)
+        create_transaction_history_entry(
+            from_customer_id, from_account_id, 'Transfer', -amount)
+        create_transaction_history_entry(
+            to_customer_id, to_account_id, 'Transfer', amount)
         return (f'${amount} successfully transferred from Bank Account '
                 f'with account_id {from_account_id} to Bank Account with '
                 f'account_id {to_account_id}')
@@ -413,6 +421,7 @@ def transfer(from_account_id, to_account_id, amount):
 @is_authenticated
 @account_owner
 def normal_payment(account_id, amount):
+    customer_id = request.currentUser
     if amount <= 0:
         return f'Payment amount must be positive', 404
     account = AccountInformation.query.get(account_id)
@@ -428,7 +437,8 @@ def normal_payment(account_id, amount):
                     f'{account_id} into negative balance', 404)
         account.balance = new_balance
         db.session.commit()
-        create_transaction_history_entry(account_id, 'Normal Payment', -amount)
+        create_transaction_history_entry(
+            customer_id, account_id, 'Normal Payment', -amount)
         return (f'${amount} successfully paid by Bank Account with '
                 f'account_id {account_id}')
 
@@ -493,8 +503,9 @@ def interest_accumulation():
     db.session.commit()
 
 
-def create_transaction_history_entry(account_id, action, amount):
+def create_transaction_history_entry(customer_id, account_id, action, amount):
     transaction = TransactionHistory(
+        customer_id=customer_id,
         account_id=account_id,
         action=action,
         amount=amount
@@ -535,7 +546,7 @@ def get_bill_payment_history(number):
                 f'inactive', 404)
     if request.method == 'GET':
         payments = TransactionHistory.query.filter(
-            TransactionHistory.customer_id == customer.customer_id,
+            TransactionHistory.customer_id == customer_id,
             TransactionHistory.action.in_(
                 ('Normal Payment', 'Automatic Payment'))).all().reverse()
         if number > 0:
