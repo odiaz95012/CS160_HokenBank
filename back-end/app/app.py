@@ -69,12 +69,12 @@ def account_owner(func):
     @wraps(func)
     def authorize(*args, **kwargs):
         account_id = kwargs["account_id"]
-        current_customer = request.currentUser
+        currentCustomer = request.currentUser
         account = AccountInformation.query.filter_by(
             account_id=account_id).first()
         if account:
             account_owner_id = account.customer.customer_id
-            if current_customer != account_owner_id:
+            if currentCustomer != account_owner_id:
                 return "Not Account Owner", 403
         else:
             return "Invalid Account ID ", 400
@@ -86,13 +86,13 @@ def account_owner(func):
 def automatic_payment_owner(func):
     @wraps(func)
     def authorize(*args, **kwargs):
-        current_customer = request.currentUser
+        currentCustomer = request.currentUser
         payment_id = kwargs["payment_id"]
         payment = AutomaticPayments.query.filter_by(
             payment_id=payment_id).first()
         if payment:
             payment_owner_id = payment.customer.customer_id
-            if current_customer != payment_owner_id:
+            if currentCustomer != payment_owner_id:
                 return "Not Automatic Payment Owner", 403
         else:
             return "Invalid Payment ID ", 400
@@ -520,9 +520,10 @@ def delete_automatic_payment_entry(payment_id):
     db.session.commit()
 
 
-@app.route('/getBillPaymentHistory/<int:number>', methods=['GET'])
+@app.route('/getBillPaymentHistory/<int:number>', methods=[
+    'GET'])
 @is_authenticated
-def get_bill_payment_history(number):
+def get_bill_payment_history(customer_id, number):
     customer_id = request.currentUser
     if number <= 0:
         return f'Query number must be positive', 404
@@ -535,9 +536,9 @@ def get_bill_payment_history(number):
                 f'inactive', 404)
     if request.method == 'GET':
         payments = TransactionHistory.query.filter(
-            TransactionHistory.customer_id == customer.customer_id,
-            TransactionHistory.action.in_(
-                ('Normal Payment', 'Automatic Payment'))).all().reverse()
+            TransactionHistory.customer_id == customer.customer_id and
+            TransactionHistory.action in
+            ('Normal Payment', 'Automatic Payment')).reverse().all()
         if number > 0:
             payments = payments.limit(number)
         payment_list = []
@@ -567,8 +568,8 @@ def get_transaction_history(account_id, number):
                 404)
     if request.method == 'GET':
         transactions = TransactionHistory.query.filter(
-            TransactionHistory.account_id ==
-            account.account_id).all().reverse()
+            AccountInformation.account_id ==
+            account.account_id).reverse().all()
         if number > 0:
             transactions = transactions.limit(number)
         transaction_list = []
@@ -582,87 +583,10 @@ def get_transaction_history(account_id, number):
         return jsonify(transaction_list)
 
 
-# default values:
-# min_balance, max_balance, min_age, max_age = 0
-# gender = 'A'
-# zip_code = 100000
-@app.route('/generateUserReport/<float:min_balance>/<float:max_balance>/<int'
-           ':min_age>/<int:max_age>/<int:zip_code>/<gender>', methods=['GET'])
+@app.route('/generateUserReport', methods=['GET'])
 @is_authenticated
-def generate_user_report(min_balance, max_balance, min_age, max_age,
-                         zip_code, gender):
-    if min_balance < 0:
-        return f'Minimum balance must be positive', 404
-    if max_balance < 0:
-        return f'Maximum balance must be positive', 404
-    if max_balance < min_balance:
-        return f'Minimum balance cannot exceed maximum balance', 404
-    if min_age < 0:
-        return f'Minimum age must be positive', 404
-    if max_age < 0:
-        return f'Maximum age must be positive', 404
-    if max_age < min_age:
-        return f'Minimum age cannot exceed maximum age', 404
-    if gender not in ('M', 'F', 'O', 'A'):
-        return f'Gender must be one of the following options: M, F, O, A', 404
-    if zip_code < 10000 or zip_code > 100000:
-        return f'Zip code must be a 5-digit integer', 404
-
-    select_customers = CustomerInformation.query.filter(
-        CustomerInformation.status == 'A').all()
-
-    select_customers = select_customers.query.filter(
-        CustomerInformation.total_balance >= min_balance)
-
-    if max_balance != 0:
-        select_customers = select_customers.query.filter(
-            CustomerInformation.total_balance <= max_balance)
-
-    select_customers = select_customers.query.filter(
-        CustomerInformation.age >= min_age)
-
-    if max_age != 0:
-        select_customers = select_customers.query.filter(
-            CustomerInformation.age <= max_age)
-
-    if gender != 'A':
-        select_customers = select_customers.query.filter(
-            CustomerInformation.gender == gender)
-
-    if zip_code != 100000:
-        select_customers = select_customers.query.filter(
-            CustomerInformation.zip_code == zip_code)
-
-    customer_list = []
-
-    for customer in select_customers:
-        customer_data = {
-            'customer_id': customer.customer_id,
-            'age': customer.age,
-            'gender': customer.gender,
-            'zip_code': customer.zip_code,
-            'balance': customer.total_balance
-        }
-        customer_list.append(customer_data)
-
-    return jsonify(customer_list)
-
-
-# def sum_user_balance(customer_id):
-#     customer = CustomerInformation.query.get(customer_id)
-#     if not customer:
-#         return (f'Customer Account with customer_id {customer_id} not found',
-#                 404)
-#     if customer.status == 'I':
-#         return (f'Customer Account with customer_id {customer_id} is '
-#                 f'inactive', 404)
-#     total_balance = float(0)
-#     active_accounts = AccountInformation.query.filter(
-#         AccountInformation.customer_id == customer.customer_id and
-#         AccountInformation.status == 'A')
-#     for acc in active_accounts:
-#         total_balance += acc.balance
-#     return total_balance
+def generate_user_report():
+    pass
 
 
 @app.route('/')
