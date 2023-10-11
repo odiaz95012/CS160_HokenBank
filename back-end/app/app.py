@@ -229,7 +229,6 @@ def open_account():
     db.session.commit()
 
     return jsonify(account.serialize())
-    return jsonify(account.serialize())
 
 
 @app.route('/closeAccount/<int:account_id>', methods=['PATCH'])
