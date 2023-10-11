@@ -1,5 +1,7 @@
 from datetime import datetime
 from . import db
+from .account import AccountInformation
+from sqlalchemy.ext.hybrid import hybrid_property
 
 
 class TransactionHistory(db.Model):
@@ -7,8 +9,7 @@ class TransactionHistory(db.Model):
     transaction_id = db.Column('transaction_id', db.Integer,
                                primary_key=True, autoincrement=True)
     account_id = db.Column(db.Integer, db.ForeignKey(
-        'AccountInformation.account_id'),
-        nullable=False)
+        'AccountInformation.account_id'), nullable=False)
     action = db.Column(db.String(20), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -23,3 +24,8 @@ class TransactionHistory(db.Model):
         self.account_id = account_id
         self.action = action
         self.amount = amount
+
+    @hybrid_property
+    def customer_id(self) -> int:
+        account = AccountInformation.query.get(self.account_id)
+        return account.customer_id
