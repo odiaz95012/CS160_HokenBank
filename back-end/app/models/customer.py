@@ -63,7 +63,7 @@ class CustomerInformation(db.Model):
         total_balance = float(0)
         active_accounts = AccountInformation.query.filter(
             AccountInformation.customer_id == self.customer_id,
-            AccountInformation.status == 'A')
+            AccountInformation.status == 'A').all()
         for acc in active_accounts:
             total_balance += acc.balance
         return total_balance
