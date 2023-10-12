@@ -60,11 +60,10 @@ class CustomerInformation(db.Model):
 
     @hybrid_property
     def total_balance(self) -> float:
-        customer = CustomerInformation.query.get(self.customer_id)
         total_balance = float(0)
         active_accounts = AccountInformation.query.filter(
-            AccountInformation.customer_id == customer.customer_id and
-            AccountInformation.status == 'A')
+            AccountInformation.customer_id == self.customer_id,
+            AccountInformation.status == 'A').all()
         for acc in active_accounts:
             total_balance += acc.balance
         return total_balance

@@ -6,7 +6,7 @@ from models.customer import CustomerInformation
 from models.account import AccountInformation
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from sqlalchemy import exc
+from sqlalchemy import exc, desc
 from datetime import datetime
 from functools import wraps
 import jwt
@@ -531,11 +531,12 @@ def delete_automatic_payment_entry(payment_id):
     db.session.commit()
 
 
+# number = 0 to return all entries
 @app.route('/getBillPaymentHistory/<int:number>', methods=['GET'])
 @is_authenticated
 def get_bill_payment_history(number):
     customer_id = request.currentUser
-    if number <= 0:
+    if number < 0:
         return f'Query number must be positive', 404
     customer = CustomerInformation.query.get(customer_id)
     if not customer:
@@ -545,24 +546,33 @@ def get_bill_payment_history(number):
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
     if request.method == 'GET':
-        payments = TransactionHistory.query.filter(
-            TransactionHistory.customer_id == customer_id,
-            TransactionHistory.action.in_(
-                ('Normal Payment', 'Automatic Payment'))).all().reverse()
-        if number > 0:
-            payments = payments.limit(number)
+        if number == 0:
+            payments = (TransactionHistory.query.filter(
+                TransactionHistory.customer_id == customer_id,
+                TransactionHistory.action.in_(
+                    ('Normal Payment', 'Automatic Payment')))
+                        .order_by(desc(TransactionHistory.date)).all())
+        else:
+            payments = (TransactionHistory.query.filter(
+                TransactionHistory.customer_id == customer_id,
+                TransactionHistory.action.in_(
+                    ('Normal Payment', 'Automatic Payment')))
+                        .limit(number)
+                        .order_by(desc(TransactionHistory.date)).all())
         payment_list = []
         for payment in payments:
-            transaction_data = {
-                'date': payment.date,
-                'action': payment.action,
-                'amount': payment.amount
-            }
-            payment_list.append(transaction_data)
+            # transaction_data = {
+            #     'transaction_id': payment.transaction_id,
+            #     'date': payment.date,
+            #     'action': payment.action,
+            #     'amount': payment.amount
+            # }
+            # payment_list.append(transaction_data)
+            payment_list.append(payment.serialize())
         return jsonify(payment_list)
 
 
-# number = 0 to get all entries
+# number = 0 to return all entries
 @app.route('/getTransactionHistory/<int:account_id>/<int:number>', methods=[
     'GET'])
 @is_authenticated
@@ -577,19 +587,24 @@ def get_transaction_history(account_id, number):
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
     if request.method == 'GET':
-        transactions = TransactionHistory.query.filter(
-            TransactionHistory.account_id ==
-            account.account_id).all().reverse()
-        if number > 0:
-            transactions = transactions.limit(number)
+        if number == 0:
+            transactions = (TransactionHistory.query.filter(
+                TransactionHistory.account_id == account.account_id)
+                            .order_by(desc(TransactionHistory.date)).all())
+        else:
+            transactions = (TransactionHistory.query.filter(
+                TransactionHistory.account_id == account.account_id)
+                            .limit(number)
+                            .order_by(desc(TransactionHistory.date)).all())
         transaction_list = []
         for transaction in transactions:
-            transaction_data = {
-                'date': transaction.date,
-                'action': transaction.action,
-                'amount': transaction.amount
-            }
-            transaction_list.append(transaction_data)
+            # transaction_data = {
+            #     'date': transaction.date,
+            #     'action': transaction.action,
+            #     'amount': transaction.amount
+            # }
+            # transaction_list.append(transaction_data)
+            transaction_list.append(transaction.serialize())
         return jsonify(transaction_list)
 
 
@@ -620,7 +635,7 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
         return f'Zip code must be a 5-digit integer', 404
 
     select_customers = CustomerInformation.query.filter(
-        CustomerInformation.status == 'A').all()
+        CustomerInformation.status == 'A')
 
     select_customers = select_customers.query.filter(
         CustomerInformation.total_balance >= min_balance)
@@ -646,7 +661,7 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
 
     customer_list = []
 
-    for customer in select_customers:
+    for customer in select_customers.all():
         customer_data = {
             'customer_id': customer.customer_id,
             'age': customer.age,
