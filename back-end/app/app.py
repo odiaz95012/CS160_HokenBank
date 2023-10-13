@@ -608,6 +608,42 @@ def get_transaction_history(account_id, number):
         return jsonify(transaction_list)
 
 
+# number = 0 to return all entries
+@app.route('/getCompleteTransactionHistory/<int:number>', methods=['GET'])
+@is_authenticated
+def get_complete_transaction_history(number):
+    customer_id = request.currentUser
+    if number < 0:
+        return f'Query number must be positive', 404
+    customer = CustomerInformation.query.get(customer_id)
+    if not customer:
+        return (f'Customer Account with customer_id {customer_id} not found',
+                404)
+    if customer.status == 'I':
+        return (f'Customer Account with customer_id {customer_id} is '
+                f'inactive', 404)
+    if request.method == 'GET':
+        if number == 0:
+            transactions = (TransactionHistory.query.filter(
+                TransactionHistory.customer_id == customer_id)
+                        .order_by(desc(TransactionHistory.date)).all())
+        else:
+            transactions = (TransactionHistory.query.filter(
+                TransactionHistory.customer_id == customer_id)
+                        .limit(number)
+                        .order_by(desc(TransactionHistory.date)).all())
+        transaction_list = []
+        for transaction in transactions:
+            # transaction_data = {
+            #     'date': transaction.date,
+            #     'action': transaction.action,
+            #     'amount': transaction.amount
+            # }
+            # transaction_list.append(transaction_data)
+            transaction_list.append(transaction.serialize())
+        return jsonify(transaction_list)
+
+
 # default values:
 # min_balance, max_balance, min_age, max_age = 0
 # gender = 'A'
