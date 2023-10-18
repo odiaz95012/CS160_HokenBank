@@ -30,33 +30,38 @@ class DatePicker extends React.Component {
             wrapperClassName,
             minDate,
             maxDate,
-            labelText
+            labelText,
+            dateFormat
         } = this.props;
 
         return (
-            <div className="col-md-6">
-                <div className="input-group">
-                    <span className="input-group-text" id="basic-addon1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-calendar" viewBox="0 0 16 16">
-                            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z" />
-                        </svg>
-                    </span>
-                    <Datepicker
-                        id={id} // Add id to the DatePicker component
-                        selected={this.state.date}
-                        dateFormat="MM-dd-yyyy"
-                        onChange={this.selectDate}
-                        placeholderText={placeholderText}
-                        peekNextMonth={peekNextMonth}
-                        showMonthDropdown={showMonthDropdown}
-                        showYearDropdown={showYearDropdown}
-                        dropdownMode={dropdownMode}
-                        maxDate={maxDate}
-                        minDate={minDate}
-                        className={wrapperClassName} />
+            <div className="col-md-6 col-lg-10">
+                <div className="d-flex">
+                    <i className="bi bi-calendar-event me-1 mt-1" style={{ width: '25px' }}></i>
+                    <div className="input-group">
+                        <Datepicker
+                            id={id}
+                            selected={this.state.date}
+                            dateFormat="MM-dd-yyyy"
+                            onChange={this.selectDate}
+                            placeholderText={placeholderText}
+                            peekNextMonth={peekNextMonth}
+                            showMonthDropdown={showMonthDropdown}
+                            showYearDropdown={showYearDropdown}
+                            dropdownMode={dropdownMode}
+                            maxDate={maxDate}
+                            minDate={minDate}
+                            className={wrapperClassName}
+                        />
+                    </div>
                 </div>
-                <label className="form-label" htmlFor={id}>{labelText}</label> {/* Associate label with input using htmlFor */}
+                <div className="d-flex justify-content-start ms-4 ps-2">
+                    <label className="form-label" htmlFor={id}>
+                        {labelText}
+                    </label>
+                </div>
             </div>
+
         )
     }
 }

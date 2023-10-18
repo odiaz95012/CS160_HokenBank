@@ -129,7 +129,7 @@ function Login() {
                             >
                               Log in
                             </button>}
-                          title={<div style={{textAlign: "center"}}><p className="h4">Login Status</p></div>}
+                          title={<div><p className="h4">Login Status</p></div>}
                           body={<div className="text-center"><p id="statusBody"></p></div>}
                           buttonOnClick={() => login()}
                         />

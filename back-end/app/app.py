@@ -433,14 +433,13 @@ def normal_payment(account_id, amount):
     if request.method == 'PATCH':
         new_balance = account.balance - amount
         if new_balance < 0:
-            return (f'Bill payment will put Bank Account with account_id '
-                    f'{account_id} into negative balance', 404)
+            return (f'Bill payment will put the account with Account ID: '
+                    f'{account_id} into negative balance.', 404)
         account.balance = new_balance
         db.session.commit()
         create_transaction_history_entry(
             customer_id, account_id, 'Normal Payment', -amount)
-        return (f'${amount} successfully paid by Bank Account with '
-                f'account_id {account_id}')
+        return jsonify(account.serialize())
 
 
 # setting up automatic payment

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PopUpModal from './PopUpModal';
 import axios from 'axios';
@@ -216,6 +216,7 @@ function Registration() {
     });
     return true;
   };
+
 
 
 

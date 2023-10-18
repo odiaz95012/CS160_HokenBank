@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Cookies from 'js-cookie';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import NavBar from './NavBar';
 
 function AccountPage(props) {
     const [userData, setUserData] = useState({
@@ -91,27 +92,7 @@ function AccountPage(props) {
         <div>
             <h1>Account Page</h1>
 
-            {/* <!-- Responsive navbar--> */}
-            <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-                <div className="container px-5">
-                    <img
-                        src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/lotus.webp"
-                        style={{ width: '85px' }}
-                        alt="logo"
-                    />
-                    <a className="navbar-brand" href="#!">Hoken</a>
-                    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-                    <div className="collapse navbar-collapse" id="navbarSupportedContent">
-                        <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
-                            <li className="nav-item"><a className="nav-link active" aria-current="page" href="#!">Home</a></li>
-                            <li className="nav-item"><a className="nav-link" href="#!">About</a></li>
-                            <li className="nav-item"><a className="nav-link" href="#!">Contact</a></li>
-                            <li className="nav-item"><a className="nav-link" href="#!">Services</a></li>
-                            <li className="nav-item"><button id="logoutBttn" type="button" className="btn btn-primary">Logout</button></li>
-                        </ul>
-                    </div>
-                </div>
-            </nav>
+            <NavBar/>
             {/* <!-- Welcome Banner--> */}
             {
                 isUserDataLoaded ? (

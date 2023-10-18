@@ -18,6 +18,13 @@
  .nav-link {
   color: white !important;
   }
+  .overflow-container {
+    max-height: 200px; /* Set your desired fixed height */
+    overflow-y: auto; /* Add vertical scrolling when content overflows */
+}
+#pop-up-alert {
+  visibility: hidden;
+}
  
 :root {
   --bs-blue: #0d6efd;
@@ -86,6 +93,7 @@
   --bs-link-hover-color: #0a58ca;
   --bs-code-color: #d63384;
   --bs-highlight-bg: #fff3cd;
+  overflow-x: hidden;
 }
 
 *,
