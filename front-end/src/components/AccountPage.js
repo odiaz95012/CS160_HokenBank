@@ -78,6 +78,9 @@ function AccountPage(props) {
     const gotoCloseAccountPage = () => {
         navigate('/closeAccount');
     }
+    const gotoInternalTransferPage = () => {
+        navigate('/internalTransfer');
+    }
 
 
 
@@ -124,7 +127,7 @@ function AccountPage(props) {
 
 
                                         <div className="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                                            <a className="btn btn-primary btn-lg px-4 me-sm-3" href="#features">Internal Transfer</a>
+                                            <a className="btn btn-primary btn-lg px-4 me-sm-3" href="#features" onClick={gotoInternalTransferPage}>Internal Transfer </a>
                                             <a className="btn btn-primary btn-lg px-4 me-sm-3" href="#features">External Transfer</a>
                                             <a className="btn btn-primary btn-lg px-4 me-sm-3" href="#features" onClick={gotoCloseAccountPage}>Close Account</a>
 
