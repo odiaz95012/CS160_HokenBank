@@ -454,8 +454,8 @@ def automatic_payment(account_id, amount, date):
     # pandas parses datetime from string in format YYYY-MM-DD
     if amount <= 0:
         return f'Payment amount must be positive', 404
-    dtime = pandas.to_datetime(date)
-    if dtime < datetime.now():
+    dtime = pandas.to_datetime(date).astimezone()
+    if dtime < datetime.now().astimezone():
         return f'Date may not be in the past', 404
     account = AccountInformation.query.get(account_id)
     if not account:
