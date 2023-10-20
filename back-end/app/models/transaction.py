@@ -29,6 +29,16 @@ class TransactionHistory(db.Model):
         self.action = action
         self.amount = amount
 
+    def serialize(self):
+        return {
+            'transaction_id': self.transaction_id,
+            'customer_id': self.customer_id,
+            'account_id': self.account_id,
+            'action': self.action,
+            'amount': self.amount,
+            'date': self.date
+        }
+
     # @hybrid_property
     # def customer_id(self) -> int:
     #     account = AccountInformation.query.get(self.account_id)

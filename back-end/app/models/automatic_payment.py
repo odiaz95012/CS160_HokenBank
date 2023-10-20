@@ -25,3 +25,12 @@ class AutomaticPayments(db.Model):
         self.account_id = account_id
         self.amount = amount
         self.date = date
+
+    def serialize(self):
+        return {
+            'payment_id': self.payment_id,
+            'customer_id': self.customer_id,
+            'account_id': self.account_id,
+            'amount': self.amount,
+            'date': self.date
+        }
