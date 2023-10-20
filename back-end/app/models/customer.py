@@ -17,6 +17,8 @@ class CustomerInformation(db.Model):
     status = db.Column(db.String(1), nullable=False)
     accounts = db.relationship('AccountInformation', backref='customer',
                                lazy=True)
+    transactions = db.relationship('TransactionHistory', backref='customer',
+                                   lazy=True)
     payments = db.relationship('AutomaticPayments', backref='customer',
                                lazy=True)
 
