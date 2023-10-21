@@ -740,7 +740,7 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
         return f'Minimum balance must be positive', 404
     if max_balance < 0:
         return f'Maximum balance must be positive', 404
-    if max_balance < min_balance:
+    if max_balance != 0 and max_balance < min_balance:
         return f'Minimum balance cannot exceed maximum balance', 404
     if min_age < 0:
         return f'Minimum age must be positive', 404
@@ -756,26 +756,26 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
     select_customers = CustomerInformation.query.filter(
         CustomerInformation.status == 'A')
 
-    select_customers = select_customers.query.filter(
+    select_customers = select_customers.filter(
         CustomerInformation.total_balance >= min_balance)
 
     if max_balance != 0:
-        select_customers = select_customers.query.filter(
+        select_customers = select_customers.filter(
             CustomerInformation.total_balance <= max_balance)
 
-    select_customers = select_customers.query.filter(
+    select_customers = select_customers.filter(
         CustomerInformation.age >= min_age)
 
     if max_age != 0:
-        select_customers = select_customers.query.filter(
+        select_customers = select_customers.filter(
             CustomerInformation.age <= max_age)
 
     if gender != 'A':
-        select_customers = select_customers.query.filter(
+        select_customers = select_customers.filter(
             CustomerInformation.gender == gender)
 
     if zip_code != 100000:
-        select_customers = select_customers.query.filter(
+        select_customers = select_customers.filter(
             CustomerInformation.zip_code == zip_code)
 
     customer_list = []
