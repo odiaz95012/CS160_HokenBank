@@ -13,7 +13,10 @@ from functools import wraps
 import jwt
 from flask_bcrypt import Bcrypt
 import pandas
-
+import cv2
+import pytesseract
+from PIL import Image
+import re
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformation.sqlite3'
@@ -554,8 +557,7 @@ def get_customer_complete_history(number):
         else:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id)
-                .limit(number)
-                .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).limit(number).all())
         record_list = []
         for record in records:
             record_list.append(record.serialize())
@@ -588,8 +590,7 @@ def get_customer_transaction_history(number):
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                .limit(number)
-                .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).limit(number).all())
         transaction_list = []
         for transaction in transactions:
             transaction_list.append(transaction.serialize())
@@ -623,8 +624,7 @@ def get_customer_payment_history(number):
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                .limit(number)
-                .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).limit(number).all())
         payment_list = []
         for payment in payments:
             payment_list.append(payment.serialize())
@@ -653,8 +653,7 @@ def get_account_complete_history(account_id, number):
         else:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id)
-                .limit(number)
-                .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).limit(number).all())
         record_list = []
         for record in records:
             record_list.append(record.serialize())
@@ -687,8 +686,7 @@ def get_account_transaction_history(account_id, number):
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                .limit(number)
-                .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).limit(number).all())
         transaction_list = []
         for transaction in transactions:
             transaction_list.append(transaction.serialize())
@@ -721,8 +719,7 @@ def get_account_payment_history(account_id, number):
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                .limit(number)
-                .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).limit(number).all())
         payment_list = []
         for payment in payments:
             payment_list.append(payment.serialize())
@@ -793,6 +790,39 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
         customer_list.append(customer_data)
 
     return jsonify(customer_list)
+
+
+@app.route('/checkDeposit/<int:account_id>', methods=["POST"])
+@is_authenticated
+@account_owner
+def check_deposit(account_id):
+    file = request.files.get('check')
+    image = Image.open(file)
+    text = pytesseract.image_to_string(image, lang="eng")
+
+    try:
+        # extract full name of receiver on the check
+        name_text = re.search('pay(\s)*to.*\|', text,
+                              flags=re.IGNORECASE).group()
+        name = name_text.split(':')[1].split('|')[0].strip()
+        # extract the amount deposited
+        amount_text = re.search('\$\s[0-9,.]+', text).group().replace(",", "")
+        amount = float(re.split('\s', amount_text)[1])
+    except Exception:
+        return "Can not scan the check. Not in valid format", 400
+
+    # check if the name on the check matches current user's name
+    account = AccountInformation.query.filter_by(account_id=account_id).first()
+    if account.customer.full_name != name:
+        return "Check does not belong to current user", 403
+
+    # deposit the amount to the account
+    account.balance += amount
+    create_transaction_history_entry(
+        request.currentUser, account_id, 'Deposit', amount)
+    db.session.commit()
+
+    return jsonify(account.serialize())
 
 
 # def sum_user_balance(customer_id):
