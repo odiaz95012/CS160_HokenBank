@@ -7,7 +7,7 @@ from models.account import AccountInformation
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from sqlalchemy import exc, desc
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, text
 from datetime import datetime
 from functools import wraps
 import jwt
@@ -66,6 +66,7 @@ def is_authenticated(func):
             return "Inactive Customer", 401
         request.currentUser = current_customer
         return func(*args, **kwargs)
+
     return authenticate
 
 
@@ -73,41 +74,44 @@ def account_owner(func):
     @wraps(func)
     def authorize(*args, **kwargs):
         account_id = kwargs["account_id"]
-        currentCustomer = request.currentUser
+        current_customer = request.currentUser
         account = AccountInformation.query.filter_by(
             account_id=account_id).first()
         if account:
             account_owner_id = account.customer.customer_id
-            if currentCustomer != account_owner_id:
+            if current_customer != account_owner_id:
                 return "Not Account Owner", 403
         else:
             return "Invalid Account ID ", 400
 
         return func(*args, **kwargs)
+
     return authorize
 
 
 def automatic_payment_owner(func):
     @wraps(func)
     def authorize(*args, **kwargs):
-        currentCustomer = request.currentUser
+        current_customer = request.currentUser
         payment_id = kwargs["payment_id"]
         payment = AutomaticPayments.query.filter_by(
             payment_id=payment_id).first()
         if payment:
             payment_owner_id = payment.customer.customer_id
-            if currentCustomer != payment_owner_id:
+            if current_customer != payment_owner_id:
                 return "Not Automatic Payment Owner", 403
         else:
             return "Invalid Payment ID ", 400
 
         return func(*args, **kwargs)
+
     return authorize
 
 
 def is_admin(*args, **kwargs):
     def authorize(func):
         return func(*args, **kwargs)
+
     return authorize
 
 
@@ -187,13 +191,13 @@ def deactivate_customer():
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
     if request.method == 'PATCH':
-        customer.status = 'I'
         # set all active accounts to 0 balance and 'I' status
         active_accounts = AccountInformation.query.filter(
             AccountInformation.customer_id == customer.customer_id and
             AccountInformation.status == 'A')
         for acc in active_accounts:
             close_account(acc.account_id)
+        customer.status = 'I'
         db.session.commit()
         return (f'Customer Account with customer_id {customer_id} '
                 f'deactivated successfully')
@@ -332,7 +336,7 @@ def get_customer_accounts():
     return jsonify(account_list)
 
 
-@app.route('/deposit/<int:account_id>/<int:amount>', methods=['PATCH'])
+@app.route('/deposit/<int:account_id>/<float:amount>', methods=['PATCH'])
 @is_authenticated
 @account_owner
 def deposit(account_id, amount):
@@ -354,7 +358,7 @@ def deposit(account_id, amount):
                 f'with account_id {account_id}')
 
 
-@app.route('/withdraw/<int:account_id>/<int:amount>', methods=['PATCH'])
+@app.route('/withdraw/<int:account_id>/<float:amount>', methods=['PATCH'])
 @is_authenticated
 @account_owner
 def withdraw(account_id, amount):
@@ -380,7 +384,7 @@ def withdraw(account_id, amount):
                 f'with account_id {account_id}')
 
 
-@app.route('/transfer/<int:from_account_id>/<int:to_account_id>/<int:amount'
+@app.route('/transfer/<int:from_account_id>/<int:to_account_id>/<float:amount'
            '>', methods=['PATCH'])
 @is_authenticated
 @account_owner
@@ -421,7 +425,7 @@ def transfer(from_account_id, to_account_id, amount):
                 f'account_id {to_account_id}')
 
 
-@app.route('/normalPayment/<int:account_id>/<int:amount>', methods=['PATCH'])
+@app.route('/normalPayment/<int:account_id>/<float:amount>', methods=['PATCH'])
 @is_authenticated
 @account_owner
 def normal_payment(account_id, amount):
@@ -448,7 +452,7 @@ def normal_payment(account_id, amount):
 
 
 # setting up automatic payment
-@app.route('/automaticPayment/<int:account_id>/<int:amount>/<string:date>',
+@app.route('/automaticPayment/<int:account_id>/<float:amount>/<string:date>',
            methods=['PATCH'])
 @is_authenticated
 @account_owner
@@ -553,11 +557,12 @@ def get_customer_complete_history(number):
         if number == 0:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id)
-                .order_by(desc(TransactionHistory.date)).all())
+                       .order_by(desc(TransactionHistory.date)).all())
         else:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id)
-                .order_by(desc(TransactionHistory.date)).limit(number).all())
+                       .order_by(desc(TransactionHistory.date)).limit(
+                number).all())
         record_list = []
         for record in records:
             record_list.append(record.serialize())
@@ -584,13 +589,14 @@ def get_customer_transaction_history(number):
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                .order_by(desc(TransactionHistory.date)).all())
+                            .order_by(desc(TransactionHistory.date)).all())
         else:
             transactions = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                .order_by(desc(TransactionHistory.date)).limit(number).all())
+                            .order_by(desc(TransactionHistory.date)).limit(
+                number).all())
         transaction_list = []
         for transaction in transactions:
             transaction_list.append(transaction.serialize())
@@ -618,13 +624,14 @@ def get_customer_payment_history(number):
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                .order_by(desc(TransactionHistory.date)).all())
+                        .order_by(desc(TransactionHistory.date)).all())
         else:
             payments = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                .order_by(desc(TransactionHistory.date)).limit(number).all())
+                        .order_by(desc(TransactionHistory.date)).limit(
+                number).all())
         payment_list = []
         for payment in payments:
             payment_list.append(payment.serialize())
@@ -649,11 +656,12 @@ def get_account_complete_history(account_id, number):
         if number == 0:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id)
-                .order_by(desc(TransactionHistory.date)).all())
+                       .order_by(desc(TransactionHistory.date)).all())
         else:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id)
-                .order_by(desc(TransactionHistory.date)).limit(number).all())
+                       .order_by(desc(TransactionHistory.date)).limit(
+                number).all())
         record_list = []
         for record in records:
             record_list.append(record.serialize())
@@ -680,13 +688,14 @@ def get_account_transaction_history(account_id, number):
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                .order_by(desc(TransactionHistory.date)).all())
+                            .order_by(desc(TransactionHistory.date)).all())
         else:
             transactions = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                .order_by(desc(TransactionHistory.date)).limit(number).all())
+                            .order_by(desc(TransactionHistory.date)).limit(
+                number).all())
         transaction_list = []
         for transaction in transactions:
             transaction_list.append(transaction.serialize())
@@ -713,13 +722,14 @@ def get_account_payment_history(account_id, number):
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                .order_by(desc(TransactionHistory.date)).all())
+                        .order_by(desc(TransactionHistory.date)).all())
         else:
             payments = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                .order_by(desc(TransactionHistory.date)).limit(number).all())
+                        .order_by(desc(TransactionHistory.date)).limit(
+                number).all())
         payment_list = []
         for payment in payments:
             payment_list.append(payment.serialize())
@@ -752,15 +762,15 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
     if zip_code < 10000 or zip_code > 100000:
         return f'Zip code must be a 5-digit integer', 404
 
-    select_customers = CustomerInformation.query.filter(
-        CustomerInformation.status == 'A')
+    select_customers = (db.session.query(
+        CustomerInformation, func.sum(AccountInformation.balance).label(
+            "total_balance"))
+                        .filter(CustomerInformation.customer_id ==
+                                AccountInformation.customer_id)
+                        .group_by(CustomerInformation.customer_id))
 
     select_customers = select_customers.filter(
-        CustomerInformation.total_balance >= min_balance)
-
-    if max_balance != 0:
-        select_customers = select_customers.filter(
-            CustomerInformation.total_balance <= max_balance)
+        CustomerInformation.status == 'A')
 
     select_customers = select_customers.filter(
         CustomerInformation.age >= min_age)
@@ -777,15 +787,23 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
         select_customers = select_customers.filter(
             CustomerInformation.zip_code == zip_code)
 
+    select_customers = select_customers.having(
+        text(f'total_balance >= {min_balance}'))
+
+    if max_balance != 0.0:
+        select_customers = select_customers.having(
+            text(f'total_balance <= {max_balance}'))
+
     customer_list = []
 
-    for customer in select_customers.all():
+    for record in select_customers.all():
+        customer = record[0]
         customer_data = {
             'customer_id': customer.customer_id,
             'age': customer.age,
             'gender': customer.gender,
             'zip_code': customer.zip_code,
-            'balance': customer.total_balance
+            'balance': record[1]
         }
         customer_list.append(customer_data)
 
@@ -796,6 +814,7 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
 @is_authenticated
 @account_owner
 def check_deposit(account_id):
+    customer_id = request.currentUser
     file = request.files.get('check')
     image = Image.open(file)
     text = pytesseract.image_to_string(image, lang="eng")
@@ -819,27 +838,10 @@ def check_deposit(account_id):
     # deposit the amount to the account
     account.balance += amount
     create_transaction_history_entry(
-        request.currentUser, account_id, 'Deposit', amount)
+        customer_id, account_id, 'Deposit', amount)
     db.session.commit()
 
     return jsonify(account.serialize())
-
-
-# def sum_user_balance(customer_id):
-#     customer = CustomerInformation.query.get(customer_id)
-#     if not customer:
-#         return (f'Customer Account with customer_id {customer_id} not found',
-#                 404)
-#     if customer.status == 'I':
-#         return (f'Customer Account with customer_id {customer_id} is '
-#                 f'inactive', 404)
-#     total_balance = float(0)
-#     active_accounts = AccountInformation.query.filter(
-#         AccountInformation.customer_id == customer.customer_id and
-#         AccountInformation.status == 'A')
-#     for acc in active_accounts:
-#         total_balance += acc.balance
-#     return total_balance
 
 
 @app.route('/')
