@@ -6,6 +6,8 @@ import HomePage from './components/HomePage';
 import ProtectedRoutes from './components/ProtectedRoutes';
 import AccountPage from './components/AccountPage';
 import CloseAccount from './components/CloseAccount';
+import InternalTransfer from './components/InternalTransfer';
+import ExternalTransfer from './components/ExternalTransfer';
 
 function App() {
 
@@ -18,6 +20,8 @@ function App() {
           <Route path="/home" element={<HomePage />} exact />
           <Route path="/accountPage" element={<AccountPage />} exact />
           <Route path="/closeAccount" element={<CloseAccount />} exact />
+          <Route path="/internalTransfer" element={<InternalTransfer />} exact />
+          <Route path="/externalTransfer" element={<ExternalTransfer />} exact />
         </Route>
         {/* Other routes */}
       </Routes>
