@@ -39,7 +39,8 @@ def create_bank_manager():
         bank_manager = CustomerInformation(
             username='bank_manager',
             email='bank_manager@gmail.com',
-            password='Hoken-Admin1',
+            password=bcrypt.generate_password_hash(
+                'Hoken-Admin1').decode('utf-8'),
             full_name='Bank Manager',
             age=150,
             gender='O',
@@ -62,7 +63,8 @@ def is_authenticated(func):
             return "Token Not Found", 401
         data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         current_customer = data["customer_id"]
-        customer = CustomerInformation.query.get(current_customer)
+        customer = CustomerInformation.query.filter_by(
+            customer_id=current_customer).first()
         if not customer:
             return "Invalid Customer", 401
         if customer.status == 'I':
@@ -752,6 +754,7 @@ def get_account_payment_history(account_id, number):
 # zip_code = 100000
 @app.route('/generateUserReport/<int:min_balance>/<int:max_balance>/<int:min_age>/<int:max_age>/<int:zip_code>/<string:gender>', methods=['GET'])
 @is_authenticated
+@is_admin
 def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code, gender):
     if min_balance < 0:
         return f'Minimum balance must be positive', 404
@@ -895,7 +898,8 @@ def create_dummy_customers():
         customer = CustomerInformation(
             username=cus['username'],
             email=cus['email'],
-            password=cus['password'],
+            password=bcrypt.generate_password_hash(
+                cus['password']).decode('utf-8'),
             full_name=cus['full_name'],
             age=cus['age'],
             gender=cus['gender'],
