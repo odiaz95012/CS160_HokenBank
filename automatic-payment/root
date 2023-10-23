@@ -1,0 +1,4 @@
+# must be ended with a new line "LF" (Unix) and not "CRLF" (Windows)
+# proper schedule: 0 0 * * *, using every minute for debug purposes
+* * * * * python3 /bin/payscript
+# An empty line is required at the end of this file for a valid cron file.

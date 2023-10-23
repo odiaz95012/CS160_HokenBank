@@ -1,0 +1,13 @@
+#!/usr/bin/python
+# need interest_accumulation
+# execute every year             
+
+# interest_accumulation()  
+# from sqlalchemy import exc, desc, create_engine
+# from sqlalchemy.orm import Session
+
+# engine = create_engine('sqlite:///CustomerInformation.sqlite3')
+
+# session = Session(engine)
+
+print("interest update done")
