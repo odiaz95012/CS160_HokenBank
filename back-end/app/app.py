@@ -7,7 +7,7 @@ from models.account import AccountInformation
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from sqlalchemy import exc, desc
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, text
 from datetime import datetime
 from functools import wraps
 import jwt
@@ -33,18 +33,21 @@ INTEREST_RATE = 1.05
 
 
 def create_bank_manager():
-    bank_manager = CustomerInformation(
-        username='bank_manager',
-        email='bank_manager@gmail.com',
-        password='Hoken-Admin',
-        full_name='Bank Manager',
-        age=150,
-        gender='O',
-        zip_code=10000,
-        status='A'
-    )
-    db.session.add(bank_manager)
-    db.session.commit()
+    admin = CustomerInformation.query.filter_by(
+        username="bank_manager").first()
+    if not admin:
+        bank_manager = CustomerInformation(
+            username='bank_manager',
+            email='bank_manager@gmail.com',
+            password='Hoken-Admin1',
+            full_name='Bank Manager',
+            age=150,
+            gender='O',
+            zip_code=10000,
+            status='A'
+        )
+        db.session.add(bank_manager)
+        db.session.commit()
 
 
 def is_authenticated(func):
@@ -105,8 +108,15 @@ def automatic_payment_owner(func):
     return authorize
 
 
-def is_admin(*args, **kwargs):
-    def authorize(func):
+def is_admin(func):
+    @wraps(func)
+    def authorize(*args, **kwargs):
+        current_customer = request.currentUser
+        username = CustomerInformation.query.filter_by(
+            customer_id=current_customer).first().username
+        if username != 'bank_manager':
+            return "Not a manager", 401
+
         return func(*args, **kwargs)
     return authorize
 
@@ -730,11 +740,9 @@ def get_account_payment_history(account_id, number):
 # min_balance, max_balance, min_age, max_age = 0
 # gender = 'A'
 # zip_code = 100000
-@app.route('/generateUserReport/<float:min_balance>/<float:max_balance>/<int'
-           ':min_age>/<int:max_age>/<int:zip_code>/<gender>', methods=['GET'])
+@app.route('/generateUserReport/<int:min_balance>/<int:max_balance>/<int:min_age>/<int:max_age>/<int:zip_code>/<string:gender>', methods=['GET'])
 @is_authenticated
-def generate_user_report(min_balance, max_balance, min_age, max_age,
-                         zip_code, gender):
+def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code, gender):
     if min_balance < 0:
         return f'Minimum balance must be positive', 404
     if max_balance < 0:
@@ -752,15 +760,11 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
     if zip_code < 10000 or zip_code > 100000:
         return f'Zip code must be a 5-digit integer', 404
 
-    select_customers = CustomerInformation.query.filter(
-        CustomerInformation.status == 'A')
+    select_customers = db.session.query(CustomerInformation, func.sum(AccountInformation.balance).label("total_balance")).filter(CustomerInformation.customer_id == AccountInformation.customer_id).group_by(
+        CustomerInformation.customer_id).having(text('total_balance > 100 AND total_balance < 10000'))
 
     select_customers = select_customers.filter(
-        CustomerInformation.total_balance >= min_balance)
-
-    if max_balance != 0:
-        select_customers = select_customers.filter(
-            CustomerInformation.total_balance <= max_balance)
+        CustomerInformation.status == 'A')
 
     select_customers = select_customers.filter(
         CustomerInformation.age >= min_age)
@@ -779,13 +783,15 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
 
     customer_list = []
 
-    for customer in select_customers.all():
+    print(select_customers)
+    for entry in select_customers.all():
+        customer = entry[0]
         customer_data = {
             'customer_id': customer.customer_id,
             'age': customer.age,
             'gender': customer.gender,
             'zip_code': customer.zip_code,
-            'balance': customer.total_balance
+            'balance': entry[1]
         }
         customer_list.append(customer_data)
 
@@ -797,10 +803,11 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
 @account_owner
 def check_deposit(account_id):
     file = request.files.get('check')
-    image = Image.open(file)
-    text = pytesseract.image_to_string(image, lang="eng")
-
+    if not file:
+        return "No check fo found", 400
     try:
+        image = Image.open(file)
+        text = pytesseract.image_to_string(image, lang="eng")
         # extract full name of receiver on the check
         name_text = re.search('pay(\s)*to.*\|', text,
                               flags=re.IGNORECASE).group()
@@ -932,7 +939,7 @@ def create_dummy_accounts():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        # create_bank_manager()
+        create_bank_manager()
         # create_dummy_customers()
         # create_dummy_accounts()
 
