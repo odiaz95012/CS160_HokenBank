@@ -17,12 +17,15 @@ import cv2
 import pytesseract
 from PIL import Image
 import re
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformation.sqlite3'
 # app.config['SQLALCHEMY_DATABASE_URI'] =
 # 'mysql+pymysql://root:password@mysql/bankingdb'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+sched = BackgroundScheduler()
 
 CORS(app)
 db.init_app(app)
@@ -501,6 +504,19 @@ def automatic_payment_job(payment_id):
     create_transaction_history_entry(account.account_id, 'Automatic Payment',
                                      -autopayment.amount)
 
+# go thru db + update all automatic jobs on the day
+def automatic_payment_cycle():
+    due_today = (AutomaticPayments.query.filter(
+                  AutomaticPayments.date == datetime.now()))
+    if (due_today):
+        for due in due_today:
+            automatic_payment_job(due.payment_id)
+    over_due = (AutomaticPayments.query.filter(
+                  AutomaticPayments.date < datetime.now()))
+    if (over_due):
+        for due in over_due:
+            automatic_payment_job(due.payment_id)
+        return f'overdue payments detected and executed'
 
 # schedule this job once a year (5% annual interest)
 def interest_accumulation():
@@ -637,6 +653,31 @@ def get_customer_payment_history(number):
             payment_list.append(payment.serialize())
         return jsonify(payment_list)
 
+# upcoming automatic payments
+@app.route('/getUpcomingPayments/<int:number>', methods=['GET'])
+@is_authenticated
+def get_upcoming_payments(number):
+     customer_id = request.currentUser
+     if number < 0:
+        return f'Query number must be positive', 404
+     customer = CustomerInformation.query.get(customer_id)
+     if not customer:
+        return (f'Customer Account with customer_id {customer_id} not found',
+                404)
+     if customer.status == 'I':
+        return (f'Customer Account with customer_id {customer_id} is '
+                f'inactive', 404)
+     if request.method == 'GET':
+         if number == 0:
+            upcoming = (AutomaticPayments.query.filter
+                        (AutomaticPayments.customer_id == customer_id))
+         else:
+            upcoming = (AutomaticPayments.query.filter
+                        (AutomaticPayments.customer_id == customer_id)).limit(number)
+            upcoming_payments = []
+         for payment in upcoming:
+            upcoming_payments.append(payment.serialize())
+         return jsonify(upcoming_payments)
 
 # number = 0 to return all entries
 @app.route('/getAccountCompleteHistory/<int:account_id>/<int:number>',
@@ -930,6 +971,9 @@ def create_dummy_accounts():
 
     db.session.commit()
 
+# add two jobs to sched
+sched.add_job(automatic_payment_cycle,'cron', hour=0, minute = 0)
+sched.add_job(interest_accumulation,'cron', month = 1, day = 1, hour = 0, minute = 0)
 
 if __name__ == '__main__':
     with app.app_context():
@@ -937,5 +981,6 @@ if __name__ == '__main__':
         # create_bank_manager()
         # create_dummy_customers()
         # create_dummy_accounts()
+        sched.start()
 
     app.run(debug=True, port=8000, host='0.0.0.0')
