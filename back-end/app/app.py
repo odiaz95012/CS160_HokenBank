@@ -33,18 +33,22 @@ INTEREST_RATE = 1.05
 
 
 def create_bank_manager():
-    bank_manager = CustomerInformation(
-        username='bank_manager',
-        email='bank_manager@gmail.com',
-        password='Hoken-Admin',
-        full_name='Bank Manager',
-        age=150,
-        gender='O',
-        zip_code=10000,
-        status='A'
-    )
-    db.session.add(bank_manager)
-    db.session.commit()
+    admin = CustomerInformation.query.filter_by(
+        username="bank_manager").first()
+    if not admin:
+        bank_manager = CustomerInformation(
+            username='bank_manager',
+            email='bank_manager@gmail.com',
+            password=bcrypt.generate_password_hash(
+                'Hoken-Admin1').decode('utf-8'),
+            full_name='Bank Manager',
+            age=150,
+            gender='O',
+            zip_code=10000,
+            status='A'
+        )
+        db.session.add(bank_manager)
+        db.session.commit()
 
 
 def is_authenticated(func):
@@ -59,7 +63,8 @@ def is_authenticated(func):
             return "Token Not Found", 401
         data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         current_customer = data["customer_id"]
-        customer = CustomerInformation.query.get(current_customer)
+        customer = CustomerInformation.query.filter_by(
+            customer_id=current_customer).first()
         if not customer:
             return "Invalid Customer", 401
         if customer.status == 'I':
@@ -108,8 +113,15 @@ def automatic_payment_owner(func):
     return authorize
 
 
-def is_admin(*args, **kwargs):
-    def authorize(func):
+def is_admin(func):
+    @wraps(func)
+    def authorize(*args, **kwargs):
+        current_customer = request.currentUser
+        username = CustomerInformation.query.filter_by(
+            customer_id=current_customer).first().username
+        if username != 'bank_manager':
+            return "Not a manager", 401
+
         return func(*args, **kwargs)
 
     return authorize
@@ -556,11 +568,11 @@ def get_customer_complete_history(number):
         if number == 0:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id)
-                       .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).all())
         else:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id)
-                       .order_by(desc(TransactionHistory.date)).limit(
+                .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         record_list = []
         for record in records:
@@ -588,13 +600,13 @@ def get_customer_transaction_history(number):
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                            .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).all())
         else:
             transactions = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                            .order_by(desc(TransactionHistory.date)).limit(
+                .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         transaction_list = []
         for transaction in transactions:
@@ -623,13 +635,13 @@ def get_customer_payment_history(number):
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                        .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).all())
         else:
             payments = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                        .order_by(desc(TransactionHistory.date)).limit(
+                .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         payment_list = []
         for payment in payments:
@@ -655,11 +667,11 @@ def get_account_complete_history(account_id, number):
         if number == 0:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id)
-                       .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).all())
         else:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id)
-                       .order_by(desc(TransactionHistory.date)).limit(
+                .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         record_list = []
         for record in records:
@@ -687,13 +699,13 @@ def get_account_transaction_history(account_id, number):
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                            .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).all())
         else:
             transactions = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                            .order_by(desc(TransactionHistory.date)).limit(
+                .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         transaction_list = []
         for transaction in transactions:
@@ -721,13 +733,13 @@ def get_account_payment_history(account_id, number):
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                        .order_by(desc(TransactionHistory.date)).all())
+                .order_by(desc(TransactionHistory.date)).all())
         else:
             payments = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                        .order_by(desc(TransactionHistory.date)).limit(
+                .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         payment_list = []
         for payment in payments:
@@ -739,11 +751,10 @@ def get_account_payment_history(account_id, number):
 # min_balance, max_balance, min_age, max_age = 0
 # gender = 'A'
 # zip_code = 100000
-@app.route('/generateUserReport/<float:min_balance>/<float:max_balance>/<int'
-           ':min_age>/<int:max_age>/<int:zip_code>/<gender>', methods=['GET'])
+@app.route('/generateUserReport/<int:min_balance>/<int:max_balance>/<int:min_age>/<int:max_age>/<int:zip_code>/<string:gender>', methods=['GET'])
 @is_authenticated
-def generate_user_report(min_balance, max_balance, min_age, max_age,
-                         zip_code, gender):
+@is_admin
+def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code, gender):
     if min_balance < 0:
         return f'Minimum balance must be positive', 404
     if max_balance < 0:
@@ -764,9 +775,9 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
     select_customers = (db.session.query(
         CustomerInformation, func.sum(AccountInformation.balance).label(
             "total_balance"))
-                        .filter(CustomerInformation.customer_id ==
-                                AccountInformation.customer_id)
-                        .group_by(CustomerInformation.customer_id))
+        .filter(CustomerInformation.customer_id ==
+                AccountInformation.customer_id)
+        .group_by(CustomerInformation.customer_id))
 
     select_customers = select_customers.filter(
         CustomerInformation.status == 'A')
@@ -815,10 +826,11 @@ def generate_user_report(min_balance, max_balance, min_age, max_age,
 def check_deposit(account_id):
     customer_id = request.currentUser
     file = request.files.get('check')
-    image = Image.open(file)
-    text = pytesseract.image_to_string(image, lang="eng")
-
+    if not file:
+        return "No check fo found", 400
     try:
+        image = Image.open(file)
+        text = pytesseract.image_to_string(image, lang="eng")
         # extract full name of receiver on the check
         name_text = re.search('pay(\s)*to.*\|', text,
                               flags=re.IGNORECASE).group()
@@ -885,7 +897,8 @@ def create_dummy_customers():
         customer = CustomerInformation(
             username=cus['username'],
             email=cus['email'],
-            password=cus['password'],
+            password=bcrypt.generate_password_hash(
+                cus['password']).decode('utf-8'),
             full_name=cus['full_name'],
             age=cus['age'],
             gender=cus['gender'],
@@ -933,7 +946,7 @@ def create_dummy_accounts():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        # create_bank_manager()
+        create_bank_manager()
         # create_dummy_customers()
         # create_dummy_accounts()
 
