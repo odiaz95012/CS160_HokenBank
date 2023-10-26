@@ -1,0 +1,13 @@
+from app import automatic_payment_job
+from models.automatic_payment import AutomaticPayments
+from datetime import datetime
+
+def automatic_payment_task():
+    due_today = (AutomaticPayments.query.filter(
+                  AutomaticPayments.date == datetime.now()))
+    if (due_today):
+        for due in due_today:
+            automatic_payment_job(due.payment_id)
+
+automatic_payment_task()
+print("automatic payment done")

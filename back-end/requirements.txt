@@ -19,3 +19,4 @@ Flask-Bcrypt==1.0.1
 pandas==2.1.1
 pytesseract==0.3.10
 opencv-python==4.8.1.78
+apscheduler==3.10.4
