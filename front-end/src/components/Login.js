@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import '../componentStyles/LoginStyles.css';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import PopUpModal from './PopUpModal';
+// import PopUpModal from './PopUpModal';
 import Cookies from 'js-cookie';
+import PopUpAlert from './PopUpAlert';
 
 function Login() {
 
@@ -13,57 +14,105 @@ function Login() {
     navigate('/registration');
   };
 
-  const goToHome = () => {
-    navigate('/home');
+
+
+  const goToHome = (destination) => {
+    if (destination === 'ATM') {
+      navigate('/atm');
+    } else {
+      navigate('/home');
+    }
+
   }
 
   const [formData, setFormData] = useState({
     username: '',
     password: '',
   });
+  const [alert, setAlert] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const login = async () => {
+  const login = async (data, destination) => {
+    if (!data.username || !data.password) {
+      setAlert({ text: 'At least one required input field was not provided. Please try again.', variant: 'warning' });
+      handleAlert();
+      return;
+    }
     axios.post('http://localhost:8000/login', {
-      username: formData.username,
-      password: formData.password
+      username: data.username,
+      password: data.password
     }).then((response) => {
       const authToken = response.data.token;
       Cookies.set('authToken', authToken);
-      const loginStatusBody = document.getElementById('statusBody');
-      loginStatusBody.className = "text-success"; // Set the success class
-      let count = 5;
-      loginStatusBody.innerText = `Login Successful. \nRedirecting to the home page in ${count} seconds.`;
-      
-      const countdownInterval = setInterval(() => {
-        count -= 1;
-        loginStatusBody.innerText = `Login Successful. \nRedirecting to the home page in ${count} seconds.`;
-      
-        if (count === 0) {
-          clearInterval(countdownInterval); // Stop the countdown when it reaches 0
-          goToHome();
-        }
-      }, 1000);
+      loginSuccessMessage(destination);
+      //setAlert({ text: `Login successful! Redirecting to ${destination} home page.`, variant: 'success' });
+      //loginSuccessMessage(bttnId);
     }).catch((err) => {
-      const loginStatusBody = document.getElementById('statusBody');
-      loginStatusBody.className = "text-danger";
-      loginStatusBody.innerText = err.response.data;
+      setAlert({ text: err.response.data, variant: 'danger' });
+      handleAlert();
     })
   };
 
+  // const loginSuccessMessage = () => {
+  //   const loginStatusBody = document.getElementById('statusBody');
+  //   loginStatusBody.className = "text-success"; // Set the success class
+  //   let count = 5;
+  //   loginStatusBody.innerText = `Login Successful. \nRedirecting to the home page in ${count} seconds.`;
 
+  //   const countdownInterval = setInterval(() => {
+  //     count -= 1;
+  //     loginStatusBody.innerText = `Login Successful. \nRedirecting to the home page in ${count} seconds.`;
+
+  //     if (count === 0) {
+  //       clearInterval(countdownInterval); // Stop the countdown when it reaches 0
+  //       goToHome();
+  //     }
+  //   }, 1000);
+  // };
+
+  const loginSuccessMessage = (destination) => {
+    const alertElem = document.getElementById('pop-up-alert');
+    alertElem.style.visibility = 'visible';
+    let count = 5;
+    setAlert({ text: `Login successful!\nRedirecting to the ${destination} home page in ${count} seconds.`, variant: 'success' });
+    const countdownInterval = setInterval(() => {
+      count -= 1;
+      setAlert({ text: `Login successful!\nRedirecting to the ${destination} home page in ${count} seconds.`, variant: 'success' });
+
+      if (count === 0) {
+        clearInterval(countdownInterval); // Stop the countdown when it reaches 0
+        goToHome(destination);
+        alertElem.style.visibility = 'hidden';
+        setAlert(null);
+      }
+    }, 1000);
+
+  }
+
+
+
+  const handleAlert = () => {
+    const alertElem = document.getElementById('pop-up-alert');
+    alertElem.style.visibility = 'visible';
+    // Automatically dismiss the alert after 3 seconds
+    setTimeout(() => {
+      setAlert(null);
+      alertElem.style.visibility = 'hidden';
+    }, 3000);
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Implement login logic here (e.g., send data to a server).
-  };
+  }
+
+
 
   return (
-    <section className="background-radial-gradient overflow-hidden">
+    <section className="background-radial-gradient overflow-auto">
       <style>
         {`
         .background-radial-gradient {
@@ -81,6 +130,11 @@ function Login() {
               <div className="row g-0">
                 <div className="col-lg-6">
                   <div className="card-body p-md-5 mx-md-4">
+                    <div className="d-flex justify-content-center" id='pop-up-alert'>
+                      {alert ? (
+                        <PopUpAlert text={alert.text} variant={alert.variant} />
+                      ) : (null)}
+                    </div>
                     <div className="text-center">
                       <img
                         src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/lotus.webp"
@@ -117,24 +171,58 @@ function Login() {
 
                       </div>
 
-                      <div className="text-center pt-1 mb-5 pb-1 ">
-                        <PopUpModal
+
+                      <div className="d-flex justify-content-center pt-1 mb-4 pb-1">
+                        <button
+                          className="btn btn-primary btn-block fa-lg gradient-custom-2 me-3"
+                          type="submit"
+                          id='loginATMBttn'
+                          onClick={() => login(formData, 'ATM')}
+                        >
+                          Login via ATM
+                        </button>
+                        <button
+                          className="btn btn-primary btn-block fa-lg gradient-custom-2"
+                          type="submit"
+                          id='loginWebBttn'
+                          onClick={() => login(formData, 'Web')}
+                        >
+                          Login via Web
+                        </button>
+                        {/* <PopUpModal
                           activatingBttn={
                             <button
-                              className="btn btn-primary btn-block fa-lg gradient-custom-2 mb-3 loginBtn"
+                              className="btn btn-primary btn-block fa-lg gradient-custom-2 me-3"
                               type="submit"
                               data-toggle="modal"
                               data-target="#exampleModal"
                               id='loginBttn'
                             >
-                              Log in
+                              Login via ATM
                             </button>}
                           title={<div><p className="h4">Login Status</p></div>}
                           body={<div className="text-center"><p id="statusBody"></p></div>}
-                          buttonOnClick={() => login()}
-                        />
+                          buttonOnClick={() => login(formData)}
+                          closeOnSubmit={false}
+                        /> */}
+                        {/* <PopUpModal
+                          activatingBttn={
+                            <button
+                              className="btn btn-primary btn-block fa-lg gradient-custom-2"
+                              type="submit"
+                              data-toggle="modal"
+                              data-target="#exampleModal"
+                              id='loginBttn'
+                            >
+                              Login via Web
+                            </button>}
+                          title={<div><p className="h4">Login Status</p></div>}
+                          body={<div className="text-center"><p id="statusBody"></p></div>}
+                          buttonOnClick={() => login(formData)}
+                          closeOnSubmit={false}
+                        /> */}
 
-                          {/* <a className="text-muted" href="#!">
+                        {/* <a className="text-muted" href="#!">
                           Forgot password?
                         </a> */}
                       </div>

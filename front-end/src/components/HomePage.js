@@ -9,6 +9,7 @@ import Dropdown from './Dropdown';
 import PopUpModal from './PopUpModal';
 import DatePicker from './DatePicker';
 import PopUpAlert from './PopUpAlert';
+import Accounts from './Accounts';
 
 
 function HomePage() {
@@ -185,7 +186,7 @@ function HomePage() {
 
     const openAccount = async (authToken, accountType) => {
         if (accountType === null) {
-            setAlert({text: "The account type was not provided. Please try again", variant: "warning"});
+            setAlert({ text: "The account type was not provided. Please try again", variant: "warning" });
             handleAlert();
             return;
         }
@@ -200,10 +201,10 @@ function HomePage() {
             const newAccount = response.data;
             setUserAccounts([...userAccounts, newAccount]);
             setSelectedAccountType(null); //reset account type selection
-            setAlert({text: "Account creation successful", variant: "success"})
+            setAlert({ text: "Account creation successful", variant: "success" })
         }).catch((err) => {
             console.log(err);
-            setAlert({text: err.response.data, variant: "danger"})
+            setAlert({ text: err.response.data, variant: "danger" })
         })
         handleAlert();
     }
@@ -220,12 +221,9 @@ function HomePage() {
     const handleAutomaticPaymentDateChange = (date) => {
         const formattedDate = formatAutomaticPaymentDate(date);
         setAutomaticPaymentDate(formattedDate);
-        setPaymentData({...paymentData, date: formattedDate});
+        setPaymentData({ ...paymentData, date: formattedDate });
     };
 
-    useEffect(() => {
-        console.log(paymentData);
-    }, [paymentData]);
 
     //To display success & error alerts after they execute some feature
     const [alert, setAlert] = useState(null);
@@ -278,46 +276,47 @@ function HomePage() {
             setAlert(null);
             alertElem.style.visibility = 'hidden';
         }, 3000);
-    } 
+    }
 
     const formatAutomaticPaymentDate = (date) => {
         const year = date.getFullYear();
         const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed, so add 1
         const day = date.getDate().toString().padStart(2, '0');
-        
+
         return `${year}-${month}-${day}`;
-      };
-      
+    };
+
 
     const automaticPayment = async (accountID, amt, paymentDate, authToken) => {
         if (accountID === '' || amt === '' || paymentDate === null) {
             setAlert({ text: 'At least one required input field was not provided. Please try again.', variant: 'warning' });
             handleAlert();
             return;
+        }else{
+            accountID = parseInt(accountID);
+            amt = parseFloat(amt).toFixed(2); // add .00 to the amount in case it wasn't included
         }
+
         await axios.patch(`http://localhost:8000/automaticPayment/${accountID}/${amt}/${paymentDate}`, {
-            account_id: parseInt(accountID),
-            amount: parseInt(amt),
+            account_id: accountID,
+            amount: amt,
             date: paymentDate
         }, {
             headers: {
                 'authorization': `Bearer ${authToken}`
             }
         }).then(() => {
-            setAlert({text: "The automatic payment was successfully set.", variant: "success"});
+            setAlert({ text: "The automatic payment was successfully set.", variant: "success" });
         }).catch((err) => {
             console.log(err);
-            setAlert({text: err.response.data, variant: "danger"});
+            setAlert({ text: err.response.data, variant: "danger" });
         })
         handleAlert();
     };
 
 
 
-    const logout = () => {
-        Cookies.remove('authToken');
-        navigate("/");
-    }
+
     const getCustomerToken = async () => {
         const authToken = Cookies.get('authToken');
         return authToken;
@@ -349,11 +348,7 @@ function HomePage() {
 
     }, [])
 
-    const [isAccountsExpanded, setIsAccountsExpanded] = useState(false); // Change the name to isAccountExpanded
 
-    const toggleExpand = () => {
-        setIsAccountsExpanded(!isAccountsExpanded);
-    };
 
     const formatDate = (inputDate) => {
         const date = new Date(inputDate);
@@ -373,52 +368,81 @@ function HomePage() {
         return formattedDate;
     }
 
+    const [checkDepositData, setCheckDepositData] = useState({
+        accountID: '',
+        checkFile: null
+    });
+
+    const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        setCheckDepositData({ ...checkDepositData, checkFile: file });
+    }
+
+    const handleCheckDepositAccountSelection = (e) => {
+        const { name, value } = e.target;
+        setCheckDepositData({ ...checkDepositData, [name]: value });
+    };
+
+
+    const checkFileType = (file) => {
+        return file && (file.type === 'image/png' || file.type === 'image/jpeg');
+    }
+
+    const checkDeposit = (depositData, authToken) => {
+
+        if (depositData.accountID === '') {
+            setAlert({ text: "Please select an account to deposit into.", variant: "warning" });
+            handleAlert();
+            return;
+        }
+
+
+        if (!checkFileType(depositData.checkFile)) {
+            setAlert({ text: "Check file must be a .png or .jpg file.", variant: "warning" });
+            handleAlert();
+            return;
+        }
+
+        let accountID = parseInt(depositData.accountID);
+
+        // Create a FormData object and append the file to it
+        const formData = new FormData();
+        formData.append("account_id", accountID);
+        formData.append("check", depositData.checkFile);
+
+
+        axios.post(`http://localhost:8000/checkDeposit/${accountID}`, formData, {
+            headers: {
+                'authorization': `Bearer ${authToken}`,
+                'Content-Type': 'multipart/form-data'
+            }
+        }).then((response) => {
+            console.log(response);
+            setAlert({ text: "The check was deposited successfully.", variant: "success" });
+            handleAlert();
+        }).catch((err) => {
+            console.log(err);
+            setAlert({ text: err.response.data, variant: "danger" });
+            handleAlert();
+        })
+    };
+
+    useEffect(() => {
+        if (checkDepositData) {
+            console.log(checkDepositData.checkFile);
+        }
+    }, [checkDepositData]);
+
 
 
     return (
 
-        <div>
-            <NavBar/>
-            {/* <!-- Responsive navbar-->
-            <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-                <div className="container px-5">
-                    <img
-                        src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/lotus.webp"
-                        style={{ width: '85px' }}
-                        alt="logo"
-                    />
-                    <a className="navbar-brand" href="#!">Hoken</a>
-                    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span className="navbar-toggler-icon"></span></button>
-                    <div className="collapse navbar-collapse" id="navbarSupportedContent">
-                        <ul className="navbar-nav ms-auto mb-lg-0 my-2">
-                            <li className="nav-item my-2"><button type="button" className="nav-link btn btn-outline-secondary nav-bar-bttn"><i className="bi bi-search me-2"></i>ATM Search</button></li>
-                            <li className="nav-item my-2"><button type="button" className="nav-link btn btn-outline-secondary nav-bar-bttn"><i className="bi bi-door-closed-fill me-2"></i>Close Account</button></li>
-                            <li className="nav-item my-2">
-                                <PopUpModal
-                                    activatingBttn={
-                                        <button
-                                            type="button"
-                                            className="nav-link btn btn-primary  nav-bar-bttn"
-                                            data-toggle="modal"
-                                            data-target="#exampleModal"
-                                        >
-                                            <i className="bi bi-arrow-bar-right me-2"></i>
-                                            Logout
-                                        </button>}
-                                    title={<div><h4>Logout</h4></div>}
-                                    body={<div className="text-center"><p className="text-primary ">Are you sure you want to logout?</p></div>}
-                                    closeBttnText={"Yes"}
-                                    additionalBttnText={"No"}
-                                    submitAction={() => logout()}
-                                />
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </nav> */}
+        <div className='overflow-hidden'>
+            <NavBar />
             {/* <!-- Welcome Banner--> */}
             {
                 isUserDataLoaded ? (
+
                     <header className="bg-dark py-5">
                         <div className="container px-5">
                             <div className="row gx-5 justify-content-center">
@@ -427,7 +451,7 @@ function HomePage() {
                                 </div>
                                 <div className="col-lg-6">
                                     <div className="text-center my-5">
-                                        <h1 className="display-5 fw-bolder text-white mb-2">Welcome {userData.full_name}</h1>
+                                        <h1 className="display-6 fw-bolder text-white mb-2">Welcome {userData.full_name}</h1>
                                         <p className="lead text-white-50 mb-4">Thank you for choosing Hoken bank. Happy banking!</p>
                                         <div className="d-grid gap-4 d-sm-flex justify-content-sm-center">
                                             <PopUpModal
@@ -538,7 +562,7 @@ function HomePage() {
                                                         </div>
                                                         <div className="col-md-6 mb-4">
                                                             <div className="form-outline">
-                                                                <input name="amount" type="text" id="validationCustom01" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange}/>
+                                                                <input name="amount" type="text" id="validationCustom01" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange} />
                                                                 <div className='d-flex justify-content-start'>
                                                                     <label className="form-label" htmlFor="validationCustom01">Amount</label>
                                                                 </div>
@@ -569,20 +593,40 @@ function HomePage() {
                                                 activatingBttn={<button type="button" className="btn btn-primary">Check Deposit</button>}
                                                 data-toggle="modal"
                                                 data-target="#exampleModal"
-                                                title={<div><h4>Deposit Check</h4></div>}
+                                                title={<div><h4>Check Deposit</h4></div>}
                                                 body={
                                                     <div className="row justify-content-center my-1">
                                                         <div className="col-md-6 mb-4">
-                                                            <div className="custom-file mt-2">
-                                                                <input type="file" className="custom-file-input" id="validatedCustomFile" />
-                                                                <div className="invalid-feedback">Invalid File</div>
+                                                            <label className='form-label' htmlFor='accountsList'>Accounts</label>
+                                                            <div className='overflow-container'>
+                                                                {userAccounts.length > 0 ? (
+
+                                                                    <ul className="list-group">
+                                                                        {
+                                                                            userAccounts.map((account) =>
+                                                                                <li key={account.account_id} className="list-group-item">
+                                                                                    <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id} onClick={handleCheckDepositAccountSelection} />
+                                                                                    <label className="form-check-label" htmlFor={account.account_id}>Account ID: {account.account_id}</label>
+                                                                                </li>
+                                                                            )
+                                                                        }
+                                                                    </ul>
+                                                                ) : (<div><p className="text-danger">There are no active accounts.</p></div>)
+                                                                }
                                                             </div>
+                                                        </div>
+                                                        <div className="col-md-6 mb-4">
+                                                            <div className="custom-file mt-2 overflow-wrap">
+                                                                <input type="file" className="custom-file-input" id="validatedCustomFile" onChange={handleFileUpload} />                                                            </div>
                                                         </div>
                                                     </div>
                                                 }
                                                 closeBttnText={"Confirm"}
                                                 additionalBttnText={"Cancel"}
+                                                closeOnSubmit={true}
+                                                submitAction={async () => checkDeposit(checkDepositData, await getCustomerToken())}
                                             />
+
                                         </div>
                                     </div>
                                 </div>
@@ -605,58 +649,8 @@ function HomePage() {
                     </header>
                 )
             }
-            {/*Account Section Title*/}
-            <div className="d-flex align-items-center justify-content-center mt-4">
-                <h3>Account Summaries</h3>
-            </div>
-
-            {/* <!-- Accounts section--> */}
-            <div className="container justify-content-center">
-                <div className="row justify-content-center my-5" style={{ backgroundColor: "rgba(211, 211, 211, 0.2)" }}>
-                    {isUserDataLoaded ? (
-                        userAccounts.map((account) => (
-                            <AccountCard
-                                key={account.account_id}
-                                account_id={account.account_id}
-                                account_type={account.account_type}
-                                account_balance={account.balance}
-                            />
-                        )).slice(0, 3) // Only display the first 3 account cards
-                    ) : (
-                        <div className="container px-5">
-                            <div className="row gx-5 justify-content-center">
-                                <div className="col-lg-6">
-                                    <div className="text-center my-5">
-                                        <div className="d-flex justify-content-center">
-                                            <div className="spinner-border text-primary" role="status"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {/* Display a button to expand the container when there are more than 3 accounts */}
-                    {userAccounts.length > 3 && (
-                        <button className="btn btn-outline-primary" onClick={toggleExpand}>
-                            {isAccountsExpanded ? "Show Less" : "Show More"}
-                        </button>
-                    )}
-                    {isAccountsExpanded && userAccounts.length > 3 && (
-                        <div className={`row justify-content-center my-5 collapse ${isAccountsExpanded ? 'show' : ''}`} id="accounts">
-                            {
-                                userAccounts.slice(3).map((account) => (
-                                    <AccountCard
-                                        key={account.account_id}
-                                        account_id={account.account_id}
-                                        account_type={account.account_type}
-                                        account_balance={account.balance}
-                                    />
-                                ))
-                            }
-                        </div>
-                    )}
-                </div>
-            </div>
+            {/*Accounts Section */}
+            <Accounts userAccounts={userAccounts} isUserDataLoaded={isUserDataLoaded} />
 
             {/*Transaction History Section*/}
 
@@ -665,15 +659,15 @@ function HomePage() {
             </div>
 
             <div className='row'>
-                <div className='col-6'>
-                    <div className="d-flex justify-content-start ms-4 my-1">
+                <div className='col-md-6 my-1'>
+                    <div className="d-flex justify-content-start ms-4">
                         <Dropdown
                             selectedOption={selectedNumEntries}
                             onSelectedOption={(option) => setSelectedNumEntries(option)}
                         />
                     </div>
                 </div>
-                <div className='col-6'>
+                <div className='col-md-6 my-1'>
                     <div className="d-flex justify-content-end me-4">
                         <div className="btn-group" id="historyOptions" role="group" aria-label="Basic radio toggle button group">
                             <input type="radio" value="Complete" className="btn-check" name="btnradio" id="btnradio1" autoComplete="off" checked={selectedHistoryOption === 'Complete'} onChange={() => setSelectedHistoryOption('Complete')} />
@@ -689,8 +683,8 @@ function HomePage() {
                 </div>
             </div>
 
-            <div className="d-flex align-items-center justify-content-center my-4">
-                <table className="table table-hover mx-4">
+            <div className="row overflow-auto my-4">
+                <table className="col-md-12 table table-hover mx-4">
                     <thead className="thead-dark">
                         <tr>
                             <th scope='col'>Transaction ID</th>

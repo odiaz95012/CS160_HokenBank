@@ -231,7 +231,7 @@ function Registration() {
 
   return (
 
-    <section className="background-radial-gradient overflow-hidden">
+    <section className="background-radial-gradient overflow-auto">
       <style>
         {`
           .background-radial-gradient {
@@ -280,13 +280,13 @@ function Registration() {
                   </div>
                   {/*Age, Zipcode, & Gender*/}
                   <div className="row">
-                    <div className="col">
-                      <div className="form-outline mb-4">
+                    <div className="col-md-6 mb-3">
+                      <div className="form-outline">
                         <input name="zipcode" type="text" id="form3Example1" className="form-control" onChange={handleChange} />
                         <label className="form-label" htmlFor="form3Example1">Zipcode</label>
                       </div>
                     </div>
-                    <div className="col">
+                    <div className="col-md-6 mb-2">
                       <div className="btn-group" id="genderBtns" role="group" aria-label="Basic radio toggle button group">
                         <input type="radio" value="M" className="btn-check" name="btnradio" id="btnradio1" autoComplete="off" onChange={() => updateGenderValue('M')} />
                         <label className="btn btn-outline-primary" htmlFor="btnradio1">Male</label>
@@ -297,10 +297,12 @@ function Registration() {
                         <input type="radio" value="O" className="btn-check" name="btnradio" id="btnradio3" autoComplete="off" onChange={() => updateGenderValue('O')} />
                         <label className="btn btn-outline-primary" htmlFor="btnradio3">Other</label>
                       </div>
-                      <label className="form-label" htmlFor="genderBtns">Gender</label>
+                      <div>
+                        <label className="form-label" htmlFor="genderBtns">Gender</label>
+                      </div>
                     </div>
                   </div>
-                  <div className="col">
+                  <div className="col-md-6 mb-4">
                     <DatePicker
                       placeholderText="Birthdate"
                       peekNextMonth={true}
@@ -323,12 +325,12 @@ function Registration() {
 
                   {/* Password input */}
                   <div className="form-outline mb-4">
-                    <input name="password" type="password" id="form3Example4" className="form-control" onChange={handleChange} />
-                    <label className="form-label" htmlFor="form3Example4">Password</label>
+                    <input name="password" type="password" id="password" className="form-control" onChange={handleChange} />
+                    <label className="form-label" htmlFor="password">Password</label>
                   </div>
                   <div className="form-outline mb-4">
-                    <input name="confirmPassword" type="password" id="form3Example4" className="form-control" onChange={handleChange}/>
-                    <label className="form-label" htmlFor="form3Example4">Confirm Password</label>
+                    <input name="confirmPassword" type="password" id="confirmPassword" className="form-control" onChange={handleChange}/>
+                    <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
                   </div>
 
 

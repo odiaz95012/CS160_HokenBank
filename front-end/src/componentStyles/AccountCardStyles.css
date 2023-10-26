@@ -1,0 +1,10 @@
+.account:hover {
+    cursor: pointer;
+    border: 1px solid blue;
+}
+
+.account-selected {
+    border: 1px solid blue;
+    cursor: pointer;
+}
+
