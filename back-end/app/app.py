@@ -515,19 +515,21 @@ def automatic_payment_job(payment_id):
     create_transaction_history_entry(account.account_id, 'Automatic Payment',
                                      -autopayment.amount)
 
-# go thru db + update all automatic jobs on the day
+
+# go through db + update all automatic jobs on the day
 def automatic_payment_cycle():
     due_today = (AutomaticPayments.query.filter(
-                  AutomaticPayments.date == datetime.now()))
-    if (due_today):
+        AutomaticPayments.date == datetime.now()))
+    if due_today:
         for due in due_today:
             automatic_payment_job(due.payment_id)
     over_due = (AutomaticPayments.query.filter(
-                  AutomaticPayments.date < datetime.now()))
-    if (over_due):
+        AutomaticPayments.date < datetime.now()))
+    if over_due:
         for due in over_due:
             automatic_payment_job(due.payment_id)
         return f'overdue payments detected and executed'
+
 
 # schedule this job once a year (5% annual interest)
 def interest_accumulation():
@@ -584,11 +586,11 @@ def get_customer_complete_history(number):
         if number == 0:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id)
-                .order_by(desc(TransactionHistory.date)).all())
+                       .order_by(desc(TransactionHistory.date)).all())
         else:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id)
-                .order_by(desc(TransactionHistory.date)).limit(
+                       .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         record_list = []
         for record in records:
@@ -616,13 +618,13 @@ def get_customer_transaction_history(number):
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                .order_by(desc(TransactionHistory.date)).all())
+                            .order_by(desc(TransactionHistory.date)).all())
         else:
             transactions = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                .order_by(desc(TransactionHistory.date)).limit(
+                            .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         transaction_list = []
         for transaction in transactions:
@@ -651,44 +653,47 @@ def get_customer_payment_history(number):
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                .order_by(desc(TransactionHistory.date)).all())
+                        .order_by(desc(TransactionHistory.date)).all())
         else:
             payments = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                .order_by(desc(TransactionHistory.date)).limit(
+                        .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         payment_list = []
         for payment in payments:
             payment_list.append(payment.serialize())
         return jsonify(payment_list)
 
+
 # upcoming automatic payments
 @app.route('/getUpcomingPayments/<int:number>', methods=['GET'])
 @is_authenticated
 def get_upcoming_payments(number):
-     customer_id = request.currentUser
-     if number < 0:
+    customer_id = request.currentUser
+    if number < 0:
         return f'Query number must be positive', 404
-     customer = CustomerInformation.query.get(customer_id)
-     if not customer:
+    customer = CustomerInformation.query.get(customer_id)
+    if not customer:
         return (f'Customer Account with customer_id {customer_id} not found',
                 404)
-     if customer.status == 'I':
+    if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
-     if request.method == 'GET':
-         if number == 0:
+    if request.method == 'GET':
+        if number == 0:
             upcoming = (AutomaticPayments.query.filter
                         (AutomaticPayments.customer_id == customer_id))
-         else:
+        else:
             upcoming = (AutomaticPayments.query.filter
-                        (AutomaticPayments.customer_id == customer_id)).limit(number)
+                        (AutomaticPayments.customer_id == customer_id)).limit(
+                number)
             upcoming_payments = []
-         for payment in upcoming:
+        for payment in upcoming:
             upcoming_payments.append(payment.serialize())
-         return jsonify(upcoming_payments)
+        return jsonify(upcoming_payments)
+
 
 # number = 0 to return all entries
 @app.route('/getAccountCompleteHistory/<int:account_id>/<int:number>',
@@ -708,11 +713,11 @@ def get_account_complete_history(account_id, number):
         if number == 0:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id)
-                .order_by(desc(TransactionHistory.date)).all())
+                       .order_by(desc(TransactionHistory.date)).all())
         else:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id)
-                .order_by(desc(TransactionHistory.date)).limit(
+                       .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         record_list = []
         for record in records:
@@ -740,13 +745,13 @@ def get_account_transaction_history(account_id, number):
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                .order_by(desc(TransactionHistory.date)).all())
+                            .order_by(desc(TransactionHistory.date)).all())
         else:
             transactions = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Deposit', 'Withdraw', 'Transfer')))
-                .order_by(desc(TransactionHistory.date)).limit(
+                            .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         transaction_list = []
         for transaction in transactions:
@@ -774,13 +779,13 @@ def get_account_payment_history(account_id, number):
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                .order_by(desc(TransactionHistory.date)).all())
+                        .order_by(desc(TransactionHistory.date)).all())
         else:
             payments = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id,
                 TransactionHistory.action.in_(
                     ('Normal Payment', 'Automatic Payment')))
-                .order_by(desc(TransactionHistory.date)).limit(
+                        .order_by(desc(TransactionHistory.date)).limit(
                 number).all())
         payment_list = []
         for payment in payments:
@@ -792,13 +797,16 @@ def get_account_payment_history(account_id, number):
 # min_balance, max_balance, min_age, max_age = 0
 # gender = 'A'
 # zip_code = 100000
-@app.route('/generateUserReport/<int:min_balance>/<int:max_balance>/<int:min_age>/<int:max_age>/<int:zip_code>/<string:gender>', methods=['GET'])
+@app.route(
+    '/generateUserReport/<float:min_balance>/<float:max_balance>/<int:min_age'
+    '>/<int:max_age>/<int:zip_code>/<string:gender>', methods=['GET'])
 @is_authenticated
 @is_admin
-def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code, gender):
-    if min_balance < 0:
+def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
+                         gender):
+    if min_balance < float(0):
         return f'Minimum balance must be positive', 404
-    if max_balance < 0:
+    if max_balance < float(0):
         return f'Maximum balance must be positive', 404
     if max_balance != 0 and max_balance < min_balance:
         return f'Minimum balance cannot exceed maximum balance', 404
@@ -816,9 +824,9 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code, g
     select_customers = (db.session.query(
         CustomerInformation, func.sum(AccountInformation.balance).label(
             "total_balance"))
-        .filter(CustomerInformation.customer_id ==
-                AccountInformation.customer_id)
-        .group_by(CustomerInformation.customer_id))
+                        .filter(CustomerInformation.customer_id ==
+                                AccountInformation.customer_id)
+                        .group_by(CustomerInformation.customer_id))
 
     select_customers = select_customers.filter(
         CustomerInformation.status == 'A')
@@ -841,7 +849,7 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code, g
     select_customers = select_customers.having(
         text(f'total_balance >= {min_balance}'))
 
-    if max_balance != 0.0:
+    if max_balance != float(0):
         select_customers = select_customers.having(
             text(f'total_balance <= {max_balance}'))
 
@@ -983,9 +991,10 @@ def create_dummy_accounts():
 
     db.session.commit()
 
+
 # add two jobs to sched
-sched.add_job(automatic_payment_cycle,'cron', hour=0, minute = 0)
-sched.add_job(interest_accumulation,'cron', month = 1, day = 1, hour = 0, minute = 0)
+sched.add_job(automatic_payment_cycle, 'cron', hour=0, minute=0)
+sched.add_job(interest_accumulation, 'cron', month=1, day=1, hour=0, minute=0)
 
 if __name__ == '__main__':
     with app.app_context():
