@@ -993,8 +993,11 @@ def create_dummy_accounts():
 
 
 # add two jobs to sched
-sched.add_job(automatic_payment_cycle, 'cron', hour=0, minute=0)
-sched.add_job(interest_accumulation, 'cron', month=1, day=1, hour=0, minute=0)
+# original times
+#sched.add_job(automatic_payment_cycle,'cron', hour=0, minute = 0)
+#sched.add_job(interest_accumulation,'cron', month = 1, day = 1, hour = 0, minute = 0)
+sched.add_job(automatic_payment_cycle, 'cron', minute = '*')
+sched.add_job(interest_accumulation, 'cron', minute = '*')
 
 if __name__ == '__main__':
     with app.app_context():
