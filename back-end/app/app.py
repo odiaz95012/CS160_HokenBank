@@ -211,6 +211,7 @@ def deactivate_customer():
             AccountInformation.customer_id == customer.customer_id,
             AccountInformation.status == 'A').update(
             {'balance': float(0), 'status': 'I'})
+        customer.status = 'I'
         db.session.commit()
         return (f'Customer Account with customer_id {customer_id} '
                 f'deactivated successfully')
