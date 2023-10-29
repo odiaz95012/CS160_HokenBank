@@ -207,12 +207,10 @@ def deactivate_customer():
                 f'inactive', 404)
     if request.method == 'PATCH':
         # set all active accounts to 0 balance and 'I' status
-        active_accounts = AccountInformation.query.filter(
-            AccountInformation.customer_id == customer.customer_id and
-            AccountInformation.status == 'A')
-        for acc in active_accounts:
-            close_account(acc.account_id)
-        customer.status = 'I'
+        db.session.query(AccountInformation).filter(
+            AccountInformation.customer_id == customer.customer_id,
+            AccountInformation.status == 'A').update(
+            {'balance': float(0), 'status': 'I'})
         db.session.commit()
         return (f'Customer Account with customer_id {customer_id} '
                 f'deactivated successfully')
