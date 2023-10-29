@@ -9,7 +9,7 @@ services:
   #   volumes:
   #     - ./init.sql:/init.sql
   #   environment:
-  #     MYSQL_ROOT_PASSWORD: "password" 
+  #     MYSQL_ROOT_PASSWORD: "password"
   #     MYSQL_DATABASE: "bankingdb"
   #   healthcheck:
   #     test: ["CMD", 'mysqladmin', 'ping', '-h', 'mysql', '-u', 'root', '-p$$MYSQL_ROOT_PASSWORD' ]
@@ -19,14 +19,17 @@ services:
     build: ./back-end
     container_name: flask_backend
     ports: ['8000:8000']
-    volumes: ['./back-end:/flask-app']
+    volumes:
+    - ./back-end:/flask-app
+    - /etc/timezone:/etc/timezone:ro
+    - /etc/localtime:/etc/localtime:ro
     # depends_on:
     #   database:
     #     condition: service_healthy
   front-end:
     build: ./front-end
     container_name: react_frontend
-    ports: ['3000:3000'] 
+    ports: ['3000:3000']
     volumes:
       - ./front-end:/app
       - /app/node_modules
