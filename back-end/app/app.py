@@ -7,7 +7,7 @@ from models.account import AccountInformation
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from sqlalchemy import exc, desc
-from sqlalchemy.sql import func, text
+from sqlalchemy.sql import func, text, or_
 from datetime import datetime
 from functools import wraps
 import jwt
@@ -551,8 +551,8 @@ def automatic_payment_cycle():
 @app.cli.command("interest_accumulation")
 def interest_accumulation():
     db.session.query(AccountInformation).filter(
-        AccountInformation.status == "A",
-        AccountInformation.account_type == "S").update(
+        or_(AccountInformation.status == "A",
+        AccountInformation.account_type == "S")).update(
         {'balance': AccountInformation.balance * INTEREST_RATE})
     db.session.commit()
 
