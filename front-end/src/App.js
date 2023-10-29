@@ -10,6 +10,8 @@ import ATMSearch from './components/ATMSearch';
 import InternalTransfer from './components/InternalTransfer';
 import ExternalTransfer from './components/ExternalTransfer';
 import ATMHome from './components/ATMHome';
+import AdminPage from './components/AdminPage.tsx';
+import AdminRoute from './components/AdminRoute.tsx';
 
 function App() {
 
@@ -20,6 +22,9 @@ function App() {
         <Route path="/registration" element={<Registration />} />
         <Route element={<ProtectedRoutes />}>
           <Route path="/home" element={<HomePage />} exact />
+          <Route element={<AdminRoute/>}>
+              <Route path="/admin" element={<AdminPage/>} exact/>
+          </Route>
           <Route path="/atm" element={<ATMHome/>} exact/>
           <Route path="/accountDetails/:accountID" element={<AccountDetails />} exact />
           <Route path="/atmSearch" element={<ATMSearch/>} exact/>

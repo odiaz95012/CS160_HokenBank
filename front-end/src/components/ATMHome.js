@@ -97,12 +97,12 @@ function ATMHome() {
     const deposit = (inputData, authToken) => {
         const { account_id, amount } = inputData;
 
-        if (account_id == '') {
+        if (account_id === '') {
             setAlert({ text: "Please select the target account", variant: "warning" });
             handleAlert();
             return;
         }
-        if (amount == 0) {
+        if (amount === 0) {
             setAlert({ text: "Please enter an amount to deposit.", variant: "warning" });
             handleAlert();
             return;
@@ -180,98 +180,72 @@ function ATMHome() {
 
 
     return (
-        <>
+        <div className='overflow-hidden'>
             <div className='row'>
-            <div className='col-md-12'>
-            <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-                <div className="container px-5">
-                    <img
-                        src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/lotus.webp"
-                        style={{ width: '85px' }}
-                        alt="logo"
-                        id="logo"
-                    />
-                    <a className="navbar-brand" id="home">Hoken</a>
-                    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span className="navbar-toggler-icon"></span></button>
-                    <div className="collapse navbar-collapse" id="navbarSupportedContent">
-                        <ul className="navbar-nav ms-auto mb-lg-0 my-2">
-                            <li className="nav-item my-2">
-                                <LogoutModal/>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </nav>
-            </div>
-        </div>
-        <div className='container'>
-        {isUserDataLoaded ? (
-                <>
-                    <div className='row my-4'>
-                        <div className='col text-center'>
-                            <h3>Welcome {userData.full_name}</h3>
-                        </div>
-                        <div className="d-flex justify-content-center mt-2" id='pop-up-alert'>
-                            {alert ? (
-                                <PopUpAlert text={alert.text} variant={alert.variant} />
-                            ) : (null)}
-                        </div>
-                    </div>
-                    <div className='ms-3 my-1'>
-                        <h5>Accounts</h5>
-                    </div>
-                    <div className='row overflow-auto my-2 mx-1' style={{ border: '1px solid rgba(211, 211, 211, 0.6)', borderRadius: '5px,' }}>
-                        <div className='container text-center pt-3'>
-                            <p className='h5'>Select the target account</p>
-                        </div>
-                        <div className='d-flex'>
-                            {userAccounts.length > 0 ? (
-                                userAccounts.map((account) => (
-                                    <AccountCard
-                                        key={account.account_id}
-                                        account_id={account.account_id}
-                                        account_type={account.account_type}
-                                        account_balance={account.balance}
-                                        showDetailsBttn={false}
-                                        onSelectAccount={handleAccountSelection}
-                                        isSelected={selectedAccount && account.account_id === selectedAccount.account_id}
-                                        caller="atm"
-                                    />))) : (<div className='container text-center'>No accounts found</div>)}
-                        </div>
-                    </div>
-                    <div className='row'>
-                        <div className='col'>
-                            <PopUpModal
-                                activatingBttn={<button className='btn btn-primary'>Deposit</button>}
-                                data-toggle="modal"
-                                data-target="#exampleModal"
-                                title={<div><h4>Deposit</h4></div>}
-                                body={
-                                    <div className="row justify-content-center my-1">
-                                        <div className="col-md-6 mb-4">
-                                            <div className="form-outline">
-                                                <input name="amount" type="text" id="validationCustom01" className="form-control" placeholder={"$"} onChange={handleTransactionData} />
-                                                <div className='d-flex justify-content-center'>
-                                                    <label className="form-label" htmlFor="validationCustom01">Amount</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                                closeBttnText={"Confirm Deposit"}
-                                additionalBttnText={"Cancel"}
-                                submitAction={async () => deposit(transactionData, await getCustomerToken())}
-                                closeOnSubmit={true}
+                <div className='col-md-12'>
+                    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+                        <div className="container px-5">
+                            <img
+                                src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/lotus.webp"
+                                style={{ width: '85px' }}
+                                alt="logo"
+                                id="logo"
                             />
-
+                            <a className="navbar-brand" id="home">Hoken</a>
+                            <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span className="navbar-toggler-icon"></span></button>
+                            <div className="collapse navbar-collapse" id="navbarSupportedContent">
+                                <ul className="navbar-nav ms-auto mb-lg-0 my-2">
+                                    <li className="nav-item my-2">
+                                        <LogoutModal />
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
-                        <div className='col'>
-                            <div className='d-flex justify-content-end'>
+                    </nav>
+                </div>
+            </div>
+            <div className='container'>
+                {isUserDataLoaded ? (
+                    <>
+                        <div className='row my-4'>
+                            <div className='col text-center'>
+                                <h3>Welcome {userData.full_name}</h3>
+                            </div>
+                            <div className="d-flex justify-content-center mt-2" id='pop-up-alert'>
+                                {alert ? (
+                                    <PopUpAlert text={alert.text} variant={alert.variant} />
+                                ) : (null)}
+                            </div>
+                        </div>
+                        <div className='ms-3 my-1'>
+                            <h5>Accounts</h5>
+                        </div>
+                        <div className='row overflow-auto my-2 mx-1' style={{ border: '1px solid rgba(211, 211, 211, 0.6)', borderRadius: '5px,' }}>
+                            <div className='container text-center pt-3'>
+                                <p className='h5'>Select the target account</p>
+                            </div>
+                            <div className='d-flex'>
+                                {userAccounts.length > 0 ? (
+                                    userAccounts.map((account) => (
+                                        <AccountCard
+                                            key={account.account_id}
+                                            account_id={account.account_id}
+                                            account_type={account.account_type}
+                                            account_balance={account.balance}
+                                            showDetailsBttn={false}
+                                            onSelectAccount={handleAccountSelection}
+                                            isSelected={selectedAccount && account.account_id === selectedAccount.account_id}
+                                            caller="atm"
+                                        />))) : (<div className='container text-center'>No accounts found</div>)}
+                            </div>
+                        </div>
+                        <div className='row'>
+                            <div className='col'>
                                 <PopUpModal
-                                    activatingBttn={<button className='btn btn-primary'>Withdraw</button>}
+                                    activatingBttn={<button className='btn btn-primary'>Deposit</button>}
                                     data-toggle="modal"
                                     data-target="#exampleModal"
-                                    title={<div><h4>Withdrawal</h4></div>}
+                                    title={<div><h4>Deposit</h4></div>}
                                     body={
                                         <div className="row justify-content-center my-1">
                                             <div className="col-md-6 mb-4">
@@ -284,22 +258,57 @@ function ATMHome() {
                                             </div>
                                         </div>
                                     }
-                                    closeBttnText={"Confirm Withdrawal"}
+                                    closeBttnText={"Confirm Deposit"}
                                     additionalBttnText={"Cancel"}
-                                    submitAction={async () => withdraw(transactionData, await getCustomerToken())}
+                                    submitAction={async () => deposit(transactionData, await getCustomerToken())}
                                     closeOnSubmit={true}
                                 />
+
                             </div>
+                            <div className='col'>
+                                <div className='d-flex justify-content-end'>
+                                    <PopUpModal
+                                        activatingBttn={<button className='btn btn-primary'>Withdraw</button>}
+                                        data-toggle="modal"
+                                        data-target="#exampleModal"
+                                        title={<div><h4>Withdrawal</h4></div>}
+                                        body={
+                                            <div className="row justify-content-center my-1">
+                                                <div className="col-md-6 mb-4">
+                                                    <div className="form-outline">
+                                                        <input name="amount" type="text" id="validationCustom01" className="form-control" placeholder={"$"} onChange={handleTransactionData} />
+                                                        <div className='d-flex justify-content-center'>
+                                                            <label className="form-label" htmlFor="validationCustom01">Amount</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        closeBttnText={"Confirm Withdrawal"}
+                                        additionalBttnText={"Cancel"}
+                                        submitAction={async () => withdraw(transactionData, await getCustomerToken())}
+                                        closeOnSubmit={true}
+                                    />
+                                </div>
+                            </div>
+
                         </div>
+                    </>
+                ) : (
+                    <div className="d-flex justify-content-center">
+                        <div className="spinner-border text-primary" role="status"> </div>
                     </div>
-                </>
-            ) : (
-                <div className="d-flex justify-content-center">
-                    <div className="spinner-border text-primary" role="status"> </div>
+                )}
+            </div>
+
+            {/* Footer */}
+            <footer className="py-5 bg-dark fixed-bottom">
+                <div className="container px-5">
+                    <p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p>
                 </div>
-            )}
+            </footer>
+
         </div>
-        </>
     )
 }
 

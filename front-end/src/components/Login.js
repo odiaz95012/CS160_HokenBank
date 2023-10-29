@@ -19,8 +19,10 @@ function Login() {
   const goToHome = (destination) => {
     if (destination === 'ATM') {
       navigate('/atm');
-    } else {
+    } else if (destination === 'Web') {
       navigate('/home');
+    }else{ // admin sign in
+      navigate('/admin');
     }
 
   }
@@ -48,31 +50,17 @@ function Login() {
     }).then((response) => {
       const authToken = response.data.token;
       Cookies.set('authToken', authToken);
+      if(data.username === 'bank_manager') { // if its an admin trying to sign in send them to the admin page
+        destination = 'Admin';
+      }
       loginSuccessMessage(destination);
-      //setAlert({ text: `Login successful! Redirecting to ${destination} home page.`, variant: 'success' });
-      //loginSuccessMessage(bttnId);
+
     }).catch((err) => {
       setAlert({ text: err.response.data, variant: 'danger' });
       handleAlert();
     })
   };
 
-  // const loginSuccessMessage = () => {
-  //   const loginStatusBody = document.getElementById('statusBody');
-  //   loginStatusBody.className = "text-success"; // Set the success class
-  //   let count = 5;
-  //   loginStatusBody.innerText = `Login Successful. \nRedirecting to the home page in ${count} seconds.`;
-
-  //   const countdownInterval = setInterval(() => {
-  //     count -= 1;
-  //     loginStatusBody.innerText = `Login Successful. \nRedirecting to the home page in ${count} seconds.`;
-
-  //     if (count === 0) {
-  //       clearInterval(countdownInterval); // Stop the countdown when it reaches 0
-  //       goToHome();
-  //     }
-  //   }, 1000);
-  // };
 
   const loginSuccessMessage = (destination) => {
     const alertElem = document.getElementById('pop-up-alert');
