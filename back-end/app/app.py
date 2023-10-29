@@ -18,6 +18,7 @@ import pytesseract
 from PIL import Image
 import re
 from apscheduler.schedulers.background import BackgroundScheduler
+import pytz
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformation.sqlite3'
@@ -470,15 +471,27 @@ def normal_payment(account_id, amount):
            methods=['PATCH'])
 @is_authenticated
 @account_owner
-def automatic_payment(account_id, amount, date):
+def automatic_payment(account_id, amount, date, timezone):
     # note: flask can't take datetime representation of date, so needs to be
     # converted to datetime
     # pandas parses datetime from string in format YYYY-MM-DD
     if amount <= 0:
         return f'Payment amount must be positive', 404
-    dtime = pandas.to_datetime(date).astimezone()
-    if dtime < datetime.now().astimezone():
-        return f'Date may not be in the past', 404
+
+    # take datetime with offset
+    timestamp = pandas.to_datetime(date)
+    # convert timestamp to datetime object
+    date_time = timestamp.to_pydatetime()
+
+    #take timezone & create local time
+    local_date = date_time.astimezone()
+    # convert local time to utc
+    utc_date = local_date.astimezone(pytz.utc)
+
+    # check that date is in future
+    if utc_date.date() < datetime.utcnow().date():
+        return f'Date must be in future', 404
+
     account = AccountInformation.query.get(account_id)
     if not account:
         return f'Bank Account with account_id {account_id} not found', 404
@@ -487,7 +500,8 @@ def automatic_payment(account_id, amount, date):
                 404)
     if request.method == 'PATCH':
         create_automatic_payment_entry(account.customer_id, account_id,
-                                       amount, dtime)
+                                       amount, utc_date)
+        # use local date
         return (f'Payment of ${amount} successfully scheduled for Bank '
                 f'Account with account_id {account_id} and date {date}')
 
@@ -516,16 +530,17 @@ def automatic_payment_job(payment_id):
                                      -autopayment.amount)
 
 
-# go through db + update all automatic jobs on the day
+# go thru db + update all automatic jobs on the day
 def automatic_payment_cycle():
+    # only checking date portion of "date"
     due_today = (AutomaticPayments.query.filter(
-        AutomaticPayments.date == datetime.now()))
-    if due_today:
+                  AutomaticPayments.date.date() == datetime.utcnow().date()))
+    if (due_today):
         for due in due_today:
             automatic_payment_job(due.payment_id)
     over_due = (AutomaticPayments.query.filter(
-        AutomaticPayments.date < datetime.now()))
-    if over_due:
+                  AutomaticPayments.date.date() < datetime.utcnow().date()))
+    if (over_due):
         for due in over_due:
             automatic_payment_job(due.payment_id)
         return f'overdue payments detected and executed'
