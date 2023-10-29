@@ -531,6 +531,7 @@ def automatic_payment_job(payment_id):
 
 
 # go thru db + update all automatic jobs on the day
+@app.cli.command("automatic_payment_cycle")
 def automatic_payment_cycle():
     # only checking date portion of "date"
     due_today = (AutomaticPayments.query.filter(
@@ -547,6 +548,7 @@ def automatic_payment_cycle():
 
 
 # schedule this job once a year (5% annual interest)
+@app.cli.command("interest_accumulation")
 def interest_accumulation():
     db.session.query(AccountInformation).filter(
         AccountInformation.status == "A",
