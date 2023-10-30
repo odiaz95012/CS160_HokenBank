@@ -27,12 +27,13 @@ function AdminPage() {
   }
 
   const [queryData, setQueryData] = useState<inputData>(defaultQueryData);
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState<boolean>(false);
 
   interface alert {
     text: string,
     variant: string
   }
+
   const defaultAlert = {
     text: '',
     variant: ''
@@ -42,11 +43,11 @@ function AdminPage() {
 
 
 
-  const handleDataChange = (e) => {
+  const handleDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
     // Define a mapping for the expected types
-    const typeMapping = {
+    const typeMapping: Record<string, string> = {
       minBalance: 'float',
       maxBalance: 'float',
       minAge: 'int',
@@ -56,7 +57,7 @@ function AdminPage() {
     };
 
     // Convert the value based on the expected type
-    let convertedValue;
+    let convertedValue: string | number;
     if (typeMapping[name] === 'float') {
       convertedValue = parseFloat(value).toFixed(2);
     } else if (typeMapping[name] === 'int') {
@@ -70,12 +71,12 @@ function AdminPage() {
 
 
 
-  const handleGenderSelection = (genderSelection) => {
+  const handleGenderSelection = (genderSelection: string ) => {
     setQueryData({ ...queryData, gender: genderSelection });
   }
 
 
-  const generateCustomerRow = (dataToRender) => {
+  const generateCustomerRow = (dataToRender:generatedReport[]) => {
     return dataToRender.map((account) => (
       <tr key={account.customer_id}>
         <th scope='row'>{account.customer_id}</th>
@@ -92,17 +93,25 @@ function AdminPage() {
     return authToken;
   };
 
+  interface generatedReport {
+    customer_id: number,
+    balance: number,
+    age: number,
+    gender: string,
+    zip_code: number
+  }
 
-  const [reportData, setReportData] = useState([]);
+  const [reportData, setReportData] = useState<(generatedReport)[]>([]);
 
-  const isValidZipCode = (zipCode) => {
+  const isValidZipCode = (zipCode:string) => {
     // Pattern that must include exactly 5 numeric digits
     const pattern = /^\d{5}$/;
 
     return pattern.test(zipCode);
   }
+  
 
-  const generateReport = (queryInfo, authToken) => {
+  const generateReport = (queryInfo:inputData, authToken : string) => {
     const { minBalance, maxBalance, minAge, maxAge, zipcode, gender } = queryInfo;
 
     if (!minBalance || !maxBalance || !minAge || !zipcode || !gender) {
@@ -110,7 +119,7 @@ function AdminPage() {
       handleAlert();
       return;
     }
-    if (!isValidZipCode(zipcode)) {
+    if (!isValidZipCode(zipcode.toString())) {
       setAlert({ text: 'The zipcode must be a 5 digit number.Please try again with a valid zipcode entry.', variant: 'warning' });
       handleAlert();
       return;
@@ -122,7 +131,8 @@ function AdminPage() {
         'authorization': `Bearer ${authToken}`
       }
     }).then((response) => {
-      setReportData(response.data);
+      const data:generatedReport[] = response.data;
+      setReportData(data);
       console.log(response);
       setIsGeneratingReport(false);
     }).catch((err) => {
@@ -146,7 +156,7 @@ function AdminPage() {
   }
 
 
-  const downloadTableData = (data, queryInfo) => {
+  const downloadTableData = (data:generatedReport[], queryInfo:inputData) => {
     if (!data || !queryInfo) {
       setAlert({ text: "There is no user report to download. Please generate a user report first.", variant: "warning" });
       handleAlert();

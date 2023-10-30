@@ -21,6 +21,11 @@ function AccountCard(props) {
     navigate(accountDetailsPath);
   };
 
+  const formatBalance = (balance) => {
+    // Use toLocaleString to format the balance with commas
+    return balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
 
   return (
     <div className="col-12 col-md-4 px-2" onClick={handleAccountSelection}>
@@ -39,7 +44,7 @@ function AccountCard(props) {
           </div>
           <h5 className="card-title mt-1 mb-4">Account ID: {account_id}</h5>
           <h5 className="card-title mb-4">Account Type: {account_type}</h5>
-          <h5 className="card-title mb-4">Balance: {account_balance}</h5>
+          <h5 className="card-title mb-4">Balance: ${formatBalance(parseFloat(account_balance))}</h5>
           {showDetailsBttn ? (
             <a href="#" className="btn btn-primary mb-3" onClick={viewAccountDetails}>View Account Details<i className="bi bi-arrow-left ms-2"></i></a>
           ) : (null)}
