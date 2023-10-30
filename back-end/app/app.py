@@ -530,30 +530,29 @@ def automatic_payment_job(payment_id):
 
 
 # go thru db + update all automatic jobs on the day
-@app.cli.command("automatic_payment_cycle")
 def automatic_payment_cycle():
     # only checking date portion of "date"
-    due_today = (AutomaticPayments.query.filter(
-                  AutomaticPayments.date.date() == datetime.utcnow().date()))
-    if (due_today):
-        for due in due_today:
-            automatic_payment_job(due.payment_id)
-    over_due = (AutomaticPayments.query.filter(
+    with app.app_context():
+        due_today = (AutomaticPayments.query.filter(
+                     AutomaticPayments.date.date() == datetime.utcnow().date()))
+        if (due_today):
+            for due in due_today:
+                 automatic_payment_job(due.payment_id)
+        over_due = (AutomaticPayments.query.filter(
                   AutomaticPayments.date.date() < datetime.utcnow().date()))
-    if (over_due):
-        for due in over_due:
-            automatic_payment_job(due.payment_id)
-        return f'overdue payments detected and executed'
-
+        if (over_due):
+            for due in over_due:
+                 automatic_payment_job(due.payment_id)
+            return f'overdue payments detected and executed'
 
 # schedule this job once a year (5% annual interest)
-@app.cli.command("interest_accumulation")
 def interest_accumulation():
-    db.session.query(AccountInformation).filter(
-        or_(AccountInformation.status == "A",
-        AccountInformation.account_type == "S")).update(
-        {'balance': AccountInformation.balance * INTEREST_RATE})
-    db.session.commit()
+    with app.app_context():
+         db.session.query(AccountInformation).filter(
+            or_(AccountInformation.status == "A",
+            AccountInformation.account_type == "S")).update(
+             {'balance': AccountInformation.balance * INTEREST_RATE})
+         db.session.commit()
 
 
 def create_transaction_history_entry(customer_id, account_id, action, amount):
@@ -1014,6 +1013,7 @@ def create_dummy_accounts():
 #sched.add_job(interest_accumulation,'cron', month = 1, day = 1, hour = 0, minute = 0)
 sched.add_job(automatic_payment_cycle, 'cron', minute = '*')
 sched.add_job(interest_accumulation, 'cron', minute = '*')
+sched.start()
 
 if __name__ == '__main__':
     with app.app_context():
@@ -1021,6 +1021,5 @@ if __name__ == '__main__':
         create_bank_manager()
         # create_dummy_customers()
         # create_dummy_accounts()
-        sched.start()
 
     app.run(debug=True, port=8000, host='0.0.0.0')
