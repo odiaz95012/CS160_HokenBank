@@ -542,8 +542,8 @@ def automatic_payment_cycle():
                   AutomaticPayments.date.date() < datetime.utcnow().date()))
         if (over_due):
             for due in over_due:
-             automatic_payment_job(due.payment_id)
-             return f'overdue payments detected and executed'
+                 automatic_payment_job(due.payment_id)
+            return f'overdue payments detected and executed'
 
 # schedule this job once a year (5% annual interest)
 def interest_accumulation():
