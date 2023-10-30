@@ -488,7 +488,7 @@ def automatic_payment(account_id, amount, date):
     utc_date = local_date.astimezone(pytz.utc)
 
     # check that date is in future
-    if utc_date.date() < datetime.utcnow().date():
+    if utc_date < datetime.datetime.now().astimezone(pytz.utc):
         return f'Date must be in future', 404
 
     account = AccountInformation.query.get(account_id)
@@ -534,12 +534,12 @@ def automatic_payment_cycle():
     # only checking date portion of "date"
     with app.app_context():
         due_today = (AutomaticPayments.query.filter(
-                     AutomaticPayments.date.date() == datetime.utcnow().date()))
+                     AutomaticPayments.date == datetime.now().astimezone(pytz.utc)))
         if (due_today):
             for due in due_today:
                  automatic_payment_job(due.payment_id)
         over_due = (AutomaticPayments.query.filter(
-                  AutomaticPayments.date.date() < datetime.utcnow().date()))
+                  AutomaticPayments.date < datetime.now().astimezone(pytz.utc)))
         if (over_due):
             for due in over_due:
                  automatic_payment_job(due.payment_id)
