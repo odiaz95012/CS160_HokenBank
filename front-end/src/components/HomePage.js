@@ -127,6 +127,10 @@ function HomePage() {
         fetchTransactionsData();
     }, [selectedHistoryOption, selectedNumEntries]);
 
+    const cancelAutomaticPayment = (paymentID) => {
+
+    };
+
 
 
     const renderTableData = (dataToRender, numOfEntries) => {
@@ -148,6 +152,11 @@ function HomePage() {
                     <td>{payment.action}</td>
                     <td>{formatDate(payment.date)}</td>
                     <td>{payment.amount < 0 ? `-$${Math.abs(payment.amount)}` : `$${payment.amount}`}</td>
+                    {payment.action === 'Automatic Payment' ? (
+                    <td>
+                        <button onClick={() => cancelAutomaticPayment(payment.transaction_id)}><i className="bi bi-x-square"></i></button> {/*Cancel automatic payment button*/}
+                    </td>
+                ) : null}
                 </tr>
             ));
         } else {
@@ -157,7 +166,7 @@ function HomePage() {
                     <td>{payment.account_id}</td>
                     <td>{payment.action}</td>
                     <td>{formatDate(payment.date)}</td>
-                    <td>{payment.amount < 0 ? `-$${Math.abs(payment.amount)}` : `$${payment.amount}`}</td>
+                    <td>{payment.amount < 0 ? `-$${Math.abs(payment.amount)}` : `$${payment.amount}`}</td>  
                 </tr>
             ));
         }
@@ -235,6 +244,11 @@ function HomePage() {
             handleAlert();
             return;
         }
+        if (!isValidAmount(amt)) {
+            setAlert({ text: "Please enter a valid amount (e.g. $250.00).", variant: "warning" });
+            handleAlert();
+            return;
+        }
         await axios.patch(`http://localhost:8000/normalPayment/${accountId}/${amt}`, {
             account_id: parseInt(accountId),
             amount: parseInt(amt)
@@ -292,14 +306,18 @@ function HomePage() {
             setAlert({ text: 'At least one required input field was not provided. Please try again.', variant: 'warning' });
             handleAlert();
             return;
-        }else{
+        } else if (!isValidAmount(amt)) {
+            setAlert({ text: "Please enter a valid amount for the payment (e.g. $250.00).", variant: "warning" });
+            handleAlert();
+            return;
+        } else {
             accountID = parseInt(accountID);
-            amt = parseFloat(amt).toFixed(2); // add .00 to the amount in case it wasn't included
+            amt = parseFloat(amt); // add .00 to the amount in case it wasn't included
         }
 
         await axios.patch(`http://localhost:8000/automaticPayment/${accountID}/${amt}/${paymentDate}`, {
             account_id: accountID,
-            amount: amt,
+            amount: parseFloat(amt),
             date: paymentDate
         }, {
             headers: {
@@ -309,9 +327,24 @@ function HomePage() {
             setAlert({ text: "The automatic payment was successfully set.", variant: "success" });
         }).catch((err) => {
             console.log(err);
-            setAlert({ text: err.response.data, variant: "danger" });
+            if (err.response && err.response.data != null) {
+                // If specific account related error occurs
+                setAlert({ text: err.response.data, variant: "danger" });
+            } else {
+                // uncaught errors
+                setAlert({ text: "Something went wrong while executing the automatic payment. Please try again.", variant: "danger" });
+            }
+
         })
         handleAlert();
+    };
+
+    const isValidAmount = (amount) => {
+        // {any_number_of_digits}.XX, where XX is exactly two digits
+        const pattern = /^\d+\.\d{2}$/;
+
+        // Test if the provided amount matches the pattern and the amount must be positive
+        return pattern.test(amount) && parseFloat(amount) > 0;
     };
 
 
@@ -427,11 +460,6 @@ function HomePage() {
         })
     };
 
-    useEffect(() => {
-        if (checkDepositData) {
-            console.log(checkDepositData.checkFile);
-        }
-    }, [checkDepositData]);
 
 
 
@@ -508,7 +536,7 @@ function HomePage() {
                                                                                 <li key={account.account_id} className="list-group-item">
                                                                                     <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id} onClick={handlePaymentDetailsChange} />
                                                                                     <label className="form-check-label" htmlFor={account.account_id}>Account ID: {account.account_id}</label>
-                                                                                </li>
+                                                                                    <label className="form-check-label ps-3" htmlFor={account.account_id}>Balance: ${parseFloat(account.balance).toFixed(2)}</label>                                                                              </li>
                                                                             )
                                                                         }
                                                                     </ul>
@@ -552,6 +580,7 @@ function HomePage() {
                                                                                 <li key={account.account_id} className="list-group-item">
                                                                                     <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id} onClick={handlePaymentDetailsChange} />
                                                                                     <label className="form-check-label" htmlFor={account.account_id}>Account ID: {account.account_id}</label>
+                                                                                    <label className="form-check-label ps-3" htmlFor={account.account_id}>Balance: ${parseFloat(account.balance).toFixed(2)}</label>
                                                                                 </li>
                                                                             )
                                                                         }
@@ -562,10 +591,10 @@ function HomePage() {
                                                         </div>
                                                         <div className="col-md-6 mb-4">
                                                             <div className="form-outline">
-                                                                <input name="amount" type="text" id="validationCustom01" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange} />
                                                                 <div className='d-flex justify-content-start'>
                                                                     <label className="form-label" htmlFor="validationCustom01">Amount</label>
                                                                 </div>
+                                                                <input name="amount" type="text" id="validationCustom01" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange} />
                                                             </div>
                                                         </div>
                                                         <div className="col-md-6 mb-4 d-flex justify-content-center align-items-center">
@@ -595,31 +624,40 @@ function HomePage() {
                                                 data-target="#exampleModal"
                                                 title={<div><h4>Check Deposit</h4></div>}
                                                 body={
-                                                    <div className="row justify-content-center my-1">
-                                                        <div className="col-md-6 mb-4">
-                                                            <label className='form-label' htmlFor='accountsList'>Accounts</label>
-                                                            <div className='overflow-container'>
-                                                                {userAccounts.length > 0 ? (
+                                                    <>
+                                                        <div className="row justify-content-center my-1">
+                                                            <div className="col-md-6 mb-4">
+                                                                <label className='form-label' htmlFor='accountsList'>Accounts</label>
+                                                                <div className='overflow-container'>
+                                                                    {userAccounts.length > 0 ? (
 
-                                                                    <ul className="list-group">
-                                                                        {
-                                                                            userAccounts.map((account) =>
-                                                                                <li key={account.account_id} className="list-group-item">
-                                                                                    <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id} onClick={handleCheckDepositAccountSelection} />
-                                                                                    <label className="form-check-label" htmlFor={account.account_id}>Account ID: {account.account_id}</label>
-                                                                                </li>
-                                                                            )
-                                                                        }
-                                                                    </ul>
-                                                                ) : (<div><p className="text-danger">There are no active accounts.</p></div>)
-                                                                }
+                                                                        <ul className="list-group">
+                                                                            {
+                                                                                userAccounts.map((account) =>
+                                                                                    <li key={account.account_id} className="list-group-item">
+                                                                                        <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id} onClick={handleCheckDepositAccountSelection} />
+                                                                                        <label className="form-check-label" htmlFor={account.account_id}>Account ID: {account.account_id}</label>
+                                                                                        <label className="form-check-label ps-3" htmlFor={account.account_id}>Balance: ${parseFloat(account.balance).toFixed(2)}</label>
+                                                                                    </li>
+                                                                                )
+                                                                            }
+                                                                        </ul>
+                                                                    ) : (<div><p className="text-danger">There are no active accounts.</p></div>)
+                                                                    }
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div className="col-md-6 mb-4">
-                                                            <div className="custom-file mt-2 overflow-wrap">
-                                                                <input type="file" className="custom-file-input" id="validatedCustomFile" onChange={handleFileUpload} />                                                            </div>
+                                                        <div className='row justify-content-center'>
+                                                            <div className="col-md-12 mb-4">
+                                                                
+                                                                    <div className="custom-file mt-2 overflow-wrap">
+                                                                        <input type="file" className="custom-file-input" id="validatedCustomFile" onChange={handleFileUpload} />
+                                                                    </div>
+                                                                
+                                                            </div>
+
                                                         </div>
-                                                    </div>
+                                                    </>
                                                 }
                                                 closeBttnText={"Confirm"}
                                                 additionalBttnText={"Cancel"}
@@ -724,4 +762,3 @@ function HomePage() {
     )
 }
 export default HomePage;
-

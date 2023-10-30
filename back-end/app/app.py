@@ -546,13 +546,13 @@ def automatic_payment_cycle():
             return f'overdue payments detected and executed'
 
 # schedule this job once a year (5% annual interest)
-def interest_accumulation():
-    with app.app_context():
-         db.session.query(AccountInformation).filter(
-            or_(AccountInformation.status == "A",
-            AccountInformation.account_type == "S")).update(
-             {'balance': AccountInformation.balance * INTEREST_RATE})
-         db.session.commit()
+# def interest_accumulation():
+#     with app.app_context():
+#          db.session.query(AccountInformation).filter(
+#             or_(AccountInformation.status == "A",
+#             AccountInformation.account_type == "Savings")).update(
+#              {'balance': AccountInformation.balance * INTEREST_RATE})
+#          db.session.commit()
 
 
 def create_transaction_history_entry(customer_id, account_id, action, amount):
@@ -576,6 +576,22 @@ def create_automatic_payment_entry(customer_id, account_id, amount, date):
     db.session.add(autopayment)
     db.session.commit()
 
+@app.route('/cancelAutomaticPayment/<int:payment_id>', methods=['PATCH'])
+@is_authenticated
+def cancel_automatic_payment(payment_id):
+    customer_id = request.currentUser
+    payment = AutomaticPayments.query.filter(
+        AutomaticPayments.payment_id == payment_id,
+        AutomaticPayments.customer_id == customer_id
+    ).first()
+
+    if payment:
+        db.session.delete(payment)  # Delete the record
+        db.session.commit()  # Commit the transaction
+        return jsonify(message=f'Automatic payment with the payment id: {payment_id} was successfully cancelled'), 200
+    else:
+        return jsonify(message=f'No automatic payment with the payment id: {payment_id} was found.'), 404
+    
 
 def delete_automatic_payment_entry(payment_id):
     AutomaticPayments.query.filter(AutomaticPayments.payment_id ==
@@ -697,6 +713,7 @@ def get_upcoming_payments(number):
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
     if request.method == 'GET':
+        upcoming = []
         if number == 0:
             upcoming = (AutomaticPayments.query.filter
                         (AutomaticPayments.customer_id == customer_id))
@@ -704,7 +721,7 @@ def get_upcoming_payments(number):
             upcoming = (AutomaticPayments.query.filter
                         (AutomaticPayments.customer_id == customer_id)).limit(
                 number)
-            upcoming_payments = []
+        upcoming_payments = []
         for payment in upcoming:
             upcoming_payments.append(payment.serialize())
         return jsonify(upcoming_payments)
@@ -895,6 +912,7 @@ def check_deposit(account_id):
     try:
         image = Image.open(file)
         text = pytesseract.image_to_string(image, lang="eng")
+        print(text)
         # extract full name of receiver on the check
         name_text = re.search('pay(\s)*to.*\|', text,
                               flags=re.IGNORECASE).group()
@@ -927,33 +945,33 @@ def index():
 def create_dummy_customers():
     customer_data = [
         {
-            'username': 'user_1',
-            'email': 'user_1@gmail.com',
+            'username': 'test_user1',
+            'email': 'testuser1@gmail.com',
             'password': '12345678',
-            'full_name': 'User Name 1',
+            'full_name': 'Test User 1',
             'age': 22,
             'gender': 'F',
-            'zip_code': 95142,
+            'zip_code': 95116,
             'status': 'A'
         },
         {
-            'username': 'user_2',
-            'email': 'user_2@gmail.com',
+            'username': 'test_user2',
+            'email': 'testuser2@gmail.com',
             'password': '12345678',
-            'full_name': 'User Name 2',
+            'full_name': 'Test User 2',
             'age': 22,
             'gender': 'M',
-            'zip_code': 95149,
+            'zip_code': 95116,
             'status': 'A'
         },
         {
-            'username': 'user_3',
-            'email': 'user_3@gmail.com',
+            'username': 'test_user3',
+            'email': 'testuser3@gmail.com',
             'password': '12345678',
-            'full_name': 'User Name 3',
+            'full_name': 'Test User 3',
             'age': 24,
             'gender': 'F',
-            'zip_code': 95122,
+            'zip_code': 95012,
             'status': 'I'
         }
     ]
@@ -978,19 +996,19 @@ def create_dummy_accounts():
     account_data = [
         {
             'customer_id': 2,
-            'account_type': 'C',
+            'account_type': 'Checking',
             'balance': 1111.11,
             'status': 'A'
         },
         {
             'customer_id': 3,
-            'account_type': 'S',
+            'account_type': 'Savings',
             'balance': 2222.22,
             'status': 'A'
         },
         {
             'customer_id': 4,
-            'account_type': 'C',
+            'account_type': 'Checking',
             'balance': 0,
             'status': 'I'
         }

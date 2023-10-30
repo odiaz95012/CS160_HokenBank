@@ -107,6 +107,11 @@ function ATMHome() {
             handleAlert();
             return;
         }
+        if(!isValidAmount(amount)){
+            setAlert({ text: "Please enter a valid amount to deposit (e.g. $25.99).", variant: "warning" });
+            handleAlert();
+            return;
+        }
 
         let parsedAccountId = parseInt(account_id);
         let parsedAmount = parseFloat(amount).toFixed(2);
@@ -139,6 +144,11 @@ function ATMHome() {
         }
         if (amount == 0) {
             setAlert({ text: "Please enter an amount to withdraw.", variant: "warning" });
+            handleAlert();
+            return;
+        }
+        if(!isValidAmount(amount)){
+            setAlert({ text: "Please enter a valid amount to withdraw (e.g. $25.99).", variant: "warning" });
             handleAlert();
             return;
         }
@@ -175,7 +185,15 @@ function ATMHome() {
             setAlert(null);
             alertElem.style.visibility = 'hidden';
         }, 3000);
-    }
+    };
+
+    const isValidAmount = (amount) => {
+        // {any_number_of_digits}.XX, where XX is exactly two digits
+        const pattern = /^\d+\.\d{2}$/;
+        
+        // Test if the provided amount matches the pattern and the amount must be positive
+        return pattern.test(amount) && parseFloat(amount) > 0;
+    };
 
 
 

@@ -160,16 +160,8 @@ function Login() {
                       </div>
 
 
-                      <div className="d-flex justify-content-center pt-1 mb-4 pb-1">
-                        <button
-                          className="btn btn-primary btn-block fa-lg gradient-custom-2 me-3"
-                          type="submit"
-                          id='loginATMBttn'
-                          onClick={() => login(formData, 'ATM')}
-                        >
-                          Login via ATM
-                        </button>
-                        <button
+                      <div className="d-flex justify-content-center pt-1 mb-4 pb-1 me-3">
+                      <button
                           className="btn btn-primary btn-block fa-lg gradient-custom-2"
                           type="submit"
                           id='loginWebBttn'
@@ -177,6 +169,15 @@ function Login() {
                         >
                           Login via Web
                         </button>
+                        <button
+                          className="btn btn-primary btn-block fa-lg gradient-custom-2 ms-3"
+                          type="submit"
+                          id='loginATMBttn'
+                          onClick={() => login(formData, 'ATM')}
+                        >
+                          Login via ATM
+                        </button>
+                        
                         {/* <PopUpModal
                           activatingBttn={
                             <button

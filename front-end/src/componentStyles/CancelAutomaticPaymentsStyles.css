@@ -1,0 +1,12 @@
+.payment:hover {
+    cursor: pointer;
+    border: 1px solid blue;
+}
+
+.payment-list {
+    border-radius: 5px;
+}
+.payment-selected {
+    border: 1px solid blue;
+    cursor: pointer;
+}
