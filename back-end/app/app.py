@@ -488,7 +488,7 @@ def automatic_payment(account_id, amount, date):
     utc_date = local_date.astimezone(pytz.utc)
 
     # check that date is in future
-    if utc_date < datetime.datetime.now().astimezone(pytz.utc):
+    if utc_date < datetime.now().astimezone(pytz.utc):
         return f'Date must be in future', 404
 
     account = AccountInformation.query.get(account_id)
