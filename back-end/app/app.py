@@ -7,7 +7,7 @@ from models.account import AccountInformation
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from sqlalchemy import exc, desc
-from sqlalchemy.sql import func, text, or_
+from sqlalchemy.sql import func, text, and_
 from datetime import datetime
 from functools import wraps
 import jwt
@@ -375,7 +375,7 @@ def deposit(account_id, amount):
 
 @app.route('/withdraw/<int:account_id>/<float:amount>', methods=['PATCH'])
 @is_authenticated
-@account_owner
+@account_owner  
 def withdraw(account_id, amount):
     customer_id = request.currentUser
     if amount <= 0:
@@ -546,13 +546,14 @@ def automatic_payment_cycle():
             return f'overdue payments detected and executed'
 
 # schedule this job once a year (5% annual interest)
-# def interest_accumulation():
-#     with app.app_context():
-#          db.session.query(AccountInformation).filter(
-#             or_(AccountInformation.status == "A",
-#             AccountInformation.account_type == "Savings")).update(
-#              {'balance': AccountInformation.balance * INTEREST_RATE})
-#          db.session.commit()
+
+def interest_accumulation():
+    with app.app_context():
+         db.session.query(AccountInformation).filter(
+            and_ (AccountInformation.status == "A",
+            AccountInformation.account_type == "Savings")).update(
+             {'balance': AccountInformation.balance * INTEREST_RATE})
+         db.session.commit()
 
 
 def create_transaction_history_entry(customer_id, account_id, action, amount):
