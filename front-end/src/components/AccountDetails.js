@@ -8,6 +8,7 @@ import ExternalTransfer from './ExternalTransfer';
 import CloseAccount from './CloseAccount';
 import NavBar from './NavBar';
 import Dropdown from './Dropdown';
+import '../componentStyles/AccountDetailsStyles.css';
 
 function AccountDetails() {
     const { accountID } = useParams();
@@ -132,7 +133,7 @@ function AccountDetails() {
                     <td>{payment.account_id}</td>
                     <td>{payment.action}</td>
                     <td>{formatDate(payment.date)}</td>
-                    <td>{payment.amount < 0 ? `-$${Math.abs(payment.amount)}` : `$${payment.amount}`}</td>
+                    <td>{payment.amount < 0 ? `-$${formatBalance(Math.abs(payment.amount))}` : `$${formatBalance(payment.amount)}`}</td>
                 </tr>
             ));
         } else {
@@ -142,7 +143,7 @@ function AccountDetails() {
                     <td>{payment.account_id}</td>
                     <td>{payment.action}</td>
                     <td>{formatDate(payment.date)}</td>
-                    <td>{payment.amount < 0 ? `-$${Math.abs(payment.amount)}` : `$${payment.amount}`}</td>
+                    <td>{payment.amount < 0 ? `-$${formatBalance(Math.abs(payment.amount))}` : `$${formatBalance(payment.amount)}`}</td>
                 </tr>
             ));
         }
@@ -163,6 +164,11 @@ function AccountDetails() {
         const formattedDate = `${formattedMonth}/${formattedDay}/${year}`;
 
         return formattedDate;
+    };
+
+    const formatBalance = (balance) => {
+        // Use toLocaleString to format the balance with commas
+        return balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
 
@@ -190,63 +196,30 @@ function AccountDetails() {
 
             {isUserDataLoaded ? (
                 <div className="container my-5" style={{ border: '1px solid grey', borderRadius: '15px' }}>
-                    {/* <header className="bg-dark py-5">
-                        <div className="container px-5">
-                            <div className="row gx-5 justify-content-center">
-                                <div className="col-lg-6">
-                                    <div className="text-center my-5">
-                                        <h1 className="display-5 fw-bolder text-white mb-2">Welcome</h1>
-                                        <div className="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                                            <div className="text-center pt-1 mb-5 pb-1">
-                                                <PopUpModal
-                                                    activatingBttn={<button className="btn btn-primary btn-lg px-4 me-sm-3">Internal Transfer</button>}
-                                                    title={<div style={{ textAlign: "center" }}><p className="h4">Internal Transfer</p></div>}
-                                                    body={<InternalTransfer />}
-                                                />
-                                            </div>
-                                            <div className="text-center pt-1 mb-5 pb-1">
-                                                <PopUpModal
-                                                    activatingBttn={<button className="btn btn-primary btn-lg px-4 me-sm-3">External Transfer</button>}
-                                                    title={<div style={{ textAlign: "center" }}><p className="h4">External Transfer</p></div>}
-                                                    body={<ExternalTransfer />}
-                                                />
-                                            </div>
-                                            <div className="text-center pt-1 mb-5 pb-1">
-                                                <PopUpModal
-                                                    activatingBttn={<button className="btn btn-primary btn-lg px-4 me-sm-3">Close Account</button>}
-                                                    title={<div style={{ textAlign: "center" }}><p className="h4">Close Account</p></div>}
-                                                    body={<CloseAccount />}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </header> */}
+
                     <div className='row'>
-                        <div className='col text-center'>
-                            <p className='h4 py-1'>Account ID: {accountID}</p>
+                        <div className='col-md-12 text-center'>
+                            <p className='h4 py-3'>Account ID: {accountID}</p>
                             <p className='py-1'>Account Type: {accountInfo.account_type}</p>
-                            <p className='py-1'>Balance: {accountInfo.balance}</p>
+                            <p className='py-1'>Balance: ${formatBalance(accountInfo.balance)}</p>
                         </div>
                     </div>
-                    <div className='row'>
-                        <div className='col-md-4'>
+                    <div className='row mb-3'>
+                        <div className='col-md-4 feature-bttn'>
                             <PopUpModal
                                 activatingBttn={<button className="btn btn-primary my-2">Internal Transfer</button>}
                                 title={<div style={{ textAlign: "center" }}><p className="h4">Internal Transfer</p></div>}
                                 body={<InternalTransfer />}
                             />
                         </div>
-                        <div className='col-md-4'>
+                        <div className='col-md-4 feature-bttn'>
                             <PopUpModal
                                 activatingBttn={<button className="btn btn-primary my-2">External Transfer</button>}
                                 title={<div style={{ textAlign: "center" }}><p className="h4">External Transfer</p></div>}
                                 body={<ExternalTransfer />}
                             />
                         </div>
-                        <div className='col-md-4'>
+                        <div className='col-md-4 feature-bttn'>
                             <PopUpModal
                                 activatingBttn={<button className="btn btn-primary my-2">Close Account</button>}
                                 title={<div style={{ textAlign: "center" }}><p className="h4">Close Account</p></div>}
@@ -254,6 +227,8 @@ function AccountDetails() {
                             />
                         </div>
                     </div>
+
+
                 </div>
             ) : (
                 <header className="bg-dark py-5">
@@ -322,7 +297,8 @@ function AccountDetails() {
                 </table>
             </div>
 
-            <footer className="py-5 bg-dark">
+            {/* Footer */}
+            <footer className="py-5 bg-dark fixed-bottom">
                 <div className="container px-5">
                     <p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p>
                 </div>

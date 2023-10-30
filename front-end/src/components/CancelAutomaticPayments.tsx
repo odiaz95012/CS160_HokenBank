@@ -8,6 +8,8 @@ function CancelAutomaticPayments() {
 
     const [isUpcomingPaymentsLoaded, setIsUpcomingPaymentsLoaded] = useState<boolean>(false);
 
+
+
     interface automaticPayment {
         payment_id: number,
         customer_id: number,
@@ -48,14 +50,33 @@ function CancelAutomaticPayments() {
         const fetchUpcomingPayments = async () => {
             try {
                 const authToken = await getCustomerToken();
-                await getAutomaticPayments(authToken);
-                setIsUpcomingPaymentsLoaded(true)
+                if (authToken) {
+                    await getAutomaticPayments(authToken);
+                    setIsUpcomingPaymentsLoaded(true);
+                }
             } catch (err) {
                 console.log(err);
             }
         };
         fetchUpcomingPayments();
     }, [])
+
+    const fetchUpcomingPayments = async () => {
+        const authToken = await getCustomerToken();
+        if (authToken) {
+          try {
+            const response = await axios.get(`http://localhost:8000/getUpcomingPayments/${0}`, {
+              headers: {
+                'authorization': `Bearer ${authToken}`
+              }
+            });
+            setUpcomingPayments(response.data);
+          } catch (err) {
+            console.log(err);
+          }
+        }
+      };
+      
 
     const formatDate = (inputDate: string) => {
         const date = new Date(inputDate);
@@ -131,11 +152,6 @@ function CancelAutomaticPayments() {
             }
         }).catch((err) => console.log(err));
     };
-    
-
-    
-
-
 
     return (
         <>
@@ -143,7 +159,8 @@ function CancelAutomaticPayments() {
                 activatingBttn={
                     <button type="button" className="nav-link btn btn-outline-secondary nav-bar-bttn">
                         <i className="bi bi-kanban me-2"></i>Manage Automatic Payments
-                    </button>}
+                    </button>
+                }
                 data-toggle="modal"
                 data-target="#exampleModal"
                 title={<div>Cancel Upcoming Automatic Payment</div>}
@@ -155,20 +172,22 @@ function CancelAutomaticPayments() {
                             <div className='container text-center'>
                                 <p>Loading upcoming payments.</p>
                             </div>
-                        )
-
-                        }
-
+                        )}
                     </>
                 }
                 closeBttnText={"Confirm"}
                 additionalBttnText={"Cancel"}
                 closeOnSubmit={true}
-                submitAction={async () => cancelAutomaticPayment(selectedAutomaticPayment.payment_id, await getCustomerToken())}
-                buttonOnClick={null}
+                submitAction={async () => {
+                    const authToken = await getCustomerToken();
+                    if (authToken) {
+                        cancelAutomaticPayment(selectedAutomaticPayment.payment_id, authToken);
+                    }
+                }}
+                buttonOnClick={async () => await fetchUpcomingPayments()}
             />
         </>
     )
 }
 
-export default CancelAutomaticPayments
+export default CancelAutomaticPayments;

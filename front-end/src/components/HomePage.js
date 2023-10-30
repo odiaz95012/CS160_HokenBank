@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 import '../componentStyles/HomeStyles.css';
 import axios from 'axios';
 import NavBar from './NavBar';
-import AccountCard from './AccountCard';
 import Dropdown from './Dropdown';
 import PopUpModal from './PopUpModal';
 import DatePicker from './DatePicker';
@@ -13,7 +11,7 @@ import Accounts from './Accounts';
 
 
 function HomePage() {
-    const navigate = useNavigate();
+    
 
     const [userData, setUserData] = useState({
         customer_id: '',
@@ -127,11 +125,11 @@ function HomePage() {
         fetchTransactionsData();
     }, [selectedHistoryOption, selectedNumEntries]);
 
-    const cancelAutomaticPayment = (paymentID) => {
 
-    };
-
-
+    const formatBalance = (balance) => {
+        // Use toLocaleString to format the balance with commas
+        return balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
 
     const renderTableData = (dataToRender, numOfEntries) => {
         if (!dataToRender || dataToRender.length === 0) {
@@ -151,12 +149,7 @@ function HomePage() {
                     <td>{payment.account_id}</td>
                     <td>{payment.action}</td>
                     <td>{formatDate(payment.date)}</td>
-                    <td>{payment.amount < 0 ? `-$${Math.abs(payment.amount)}` : `$${payment.amount}`}</td>
-                    {payment.action === 'Automatic Payment' ? (
-                    <td>
-                        <button onClick={() => cancelAutomaticPayment(payment.transaction_id)}><i className="bi bi-x-square"></i></button> {/*Cancel automatic payment button*/}
-                    </td>
-                ) : null}
+                    <td>{payment.amount < 0 ? `-$${formatBalance(Math.abs(payment.amount))}` : `$${formatBalance(payment.amount)}`}</td>
                 </tr>
             ));
         } else {
@@ -166,7 +159,8 @@ function HomePage() {
                     <td>{payment.account_id}</td>
                     <td>{payment.action}</td>
                     <td>{formatDate(payment.date)}</td>
-                    <td>{payment.amount < 0 ? `-$${Math.abs(payment.amount)}` : `$${payment.amount}`}</td>  
+                    <td>{payment.amount < 0 ? `-$${formatBalance(Math.abs(payment.amount))}` : `$${formatBalance(payment.amount)}`}</td>
+ 
                 </tr>
             ));
         }
@@ -312,7 +306,7 @@ function HomePage() {
             return;
         } else {
             accountID = parseInt(accountID);
-            amt = parseFloat(amt); // add .00 to the amount in case it wasn't included
+            amt = parseFloat(amt).toFixed(2); // add .00 to the amount in case it wasn't included
         }
 
         await axios.patch(`http://localhost:8000/automaticPayment/${accountID}/${amt}/${paymentDate}`, {
