@@ -336,7 +336,7 @@ def get_accounts():
 def get_customer_accounts():
     customer_id = request.currentUser
     active_accounts = AccountInformation.query.filter(
-        AccountInformation.customer_id == customer_id and
+        AccountInformation.customer_id == customer_id,
         AccountInformation.status == 'A').all()
     account_list = []
 
