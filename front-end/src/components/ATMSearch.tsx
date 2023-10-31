@@ -16,17 +16,18 @@ function ATMSearch() {
         name: string;
         address: string;
         geometry: {
-          location: {
-            lat: number;
-            lng: number;
-          };
+            location: {
+                lat: number;
+                lng: number;
+            };
         };
-      }
+    }
     const [userLocation, setUserLocation] = useState<coordinates>({ latitude: null, longitude: null });
     const [userCoords, setUserCoords] = useState<coordinates>({ latitude: null, longitude: null });
-    const [atmLocations, setAtmLocations] = useState<ATM[]>([]);
+    const [atmLocations, setAtmLocations] = useState<ATM[] | null>(null);
     const [radius, setRadius] = useState<number>(500);
     const [isSearching, setIsSearching] = useState<boolean>(false);
+
 
     const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const radiusInMiles = e.target.value;
@@ -45,7 +46,7 @@ function ATMSearch() {
         return miles * 1609.34;
     };
 
-    const apiKey = 'YOUR_GOOGLE_API_KEY';
+    const apiKey = 'YOUR_API_KEY_HERE';
 
     const handleGetLocation = () => {
         setIsSearching(true);
@@ -62,7 +63,7 @@ function ATMSearch() {
     };
 
     const formatAddress = (address: string) => {
-        return address.replaceAll(' ', '%20').replaceAll(',', '');
+        return address ? address.replaceAll(' ', '%20').replaceAll(',', '') : '';
     };
 
     const getCoordsOfAddress = async (startingAddress: string) => {
@@ -137,27 +138,14 @@ function ATMSearch() {
                     });
                 } else {
                     console.error('Error searching for Chase Bank ATMs:', status);
+                    setAtmLocations(null);
                 }
             });
         }
         setIsSearching(false);
     };
 
-    useEffect(() => {
-        const getCoords = async (location: any) => {
-            if (location) {
-                const address = formatAddress(location.label);
-                getCoordsOfAddress(address);
-            }
-        };
-        getCoords(userLocation);
-    }, [userLocation]);
 
-    useEffect(() => {
-        if (userCoords && radius < milesToMeters(20)) {
-            findNearestChaseATMs(userCoords, radius);
-        }
-    }, [userCoords]);
 
     const [alert, setAlert] = useState<any>(null);
 
@@ -175,15 +163,41 @@ function ATMSearch() {
         }
     };
 
-    const handleLocationChange = (selectedLocation: SingleValue<any>, actionMeta: ActionMeta<any>) => {
-        if (selectedLocation && selectedLocation.value && selectedLocation.value.geometry) {
-            const { lat, lng } = selectedLocation.value.geometry.location;
-            setUserLocation({ latitude: lat, longitude: lng });
+    type LocationOption = {
+        label: string;
+        value: string;
+
+    };
+
+    // Define the type for the selected location
+    type SelectedLocation = SingleValue<LocationOption>;
+
+    const [selectedLocation, setSelectedLocation] = useState<SelectedLocation | null>(null);
+
+    const handleLocationChange = (selectedLocation: SelectedLocation, actionMeta: ActionMeta<LocationOption>) => {
+        if (selectedLocation) {
+            setSelectedLocation(selectedLocation);
         } else {
-            // Handle null or invalid location
-            setUserLocation({ latitude: null, longitude: null });
+            // Handle the case where selectedLocation is not available
+            setSelectedLocation(null); // Clear the selected location
         }
     };
+
+
+    useEffect(() => {
+        if (userCoords && radius < milesToMeters(20)) {
+            findNearestChaseATMs(userCoords, radius);
+        }
+    }, [userCoords]);
+
+    useEffect(() => {
+        if (selectedLocation) {
+            const address = formatAddress(selectedLocation.label);
+            getCoordsOfAddress(address);
+        }
+    }, [selectedLocation]);
+
+   
 
     return (
         <>
@@ -219,7 +233,7 @@ function ATMSearch() {
                                 <div className="form-outline">
                                     <GooglePlacesAutocomplete
                                         selectProps={{
-                                            value: { value: userLocation, label: '' },
+                                            value: selectedLocation,
                                             onChange: handleLocationChange,
                                         }}
                                     />
@@ -235,8 +249,12 @@ function ATMSearch() {
                                             <span className="visually-hidden">Loading...</span>
                                         </div>
                                     </div>
+                                ) : atmLocations && atmLocations.length === 0 ? (
+                                    <div className="text-center">
+                                        <p>No Chase Bank ATMs found within the specified radius.</p>
+                                    </div>
                                 ) : (
-                                    <MapComponent atmLocations={atmLocations} />
+                                    <MapComponent atmLocations={atmLocations ? atmLocations : []} />
                                 )}
                             </div>
                         </div>
