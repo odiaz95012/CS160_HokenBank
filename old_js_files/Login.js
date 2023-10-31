@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 // import PopUpModal from './PopUpModal';
 import Cookies from 'js-cookie';
-import PopUpAlert from './PopUpAlert';
+import PopUpAlert from '../front-end/src/components/PopUpAlert';
 
 function Login() {
 

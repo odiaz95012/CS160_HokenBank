@@ -15,7 +15,7 @@ const initialCenter = {
 function MapComponent({ atmLocations }) {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: ''
+    googleMapsApiKey: 'YOUR_API_KEY_HERE'
   });
 
   const [map, setMap] = useState(null);

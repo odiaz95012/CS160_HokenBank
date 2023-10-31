@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
-import AccountCard from './AccountCard';
+import AccountCard from '../front-end/src/components/AccountCard.js';
+
+
 
 
 function Accounts({ userAccounts, isUserDataLoaded }) {

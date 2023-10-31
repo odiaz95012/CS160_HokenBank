@@ -46,8 +46,13 @@ function CloseAccountModal() {
                 closeBttnText={"Yes, I'm sure"}
                 additionalBttnText={"Cancel"}
                 closeOnSubmit={true}
-                submitAction={async () => closeAccount(await getCustomerToken())}
-                buttonOnClick={null}
+                submitAction={async () => {
+                    const authToken = await getCustomerToken();
+                    if (authToken) {
+                        closeAccount(authToken);
+                    }
+                }}
+
             />
         </>
     )

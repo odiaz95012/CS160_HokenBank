@@ -1,19 +1,30 @@
 import React, { useEffect, useState } from 'react'
 import Cookies from 'js-cookie';
 import '../componentStyles/HomeStyles.css';
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import NavBar from './NavBar';
 import Dropdown from './Dropdown';
 import PopUpModal from './PopUpModal';
 import DatePicker from './DatePicker';
 import PopUpAlert from './PopUpAlert';
-import Accounts from './Accounts';
+import Accounts from './Accounts.tsx';
+import { get } from 'http';
 
 
 function HomePage() {
-    
 
-    const [userData, setUserData] = useState({
+    interface UserData {
+        customer_id: string,
+        username: string,
+        email: string,
+        full_name: string,
+        age: number,
+        gender: string,
+        zip_code: number,
+        status: string
+    }
+
+    const defaultUserData: UserData = {
         customer_id: '',
         username: '',
         email: '',
@@ -22,23 +33,25 @@ function HomePage() {
         gender: '',
         zip_code: 0,
         status: ''
-    });
+    }
+
+    const [userData, setUserData] = useState<UserData>(defaultUserData);
 
 
 
-    const [isUserDataLoaded, setIsUserDataLoaded] = useState(false);
-    const [selectedNumEntries, setSelectedNumEntries] = useState(0);
+    const [isUserDataLoaded, setIsUserDataLoaded] = useState<boolean>(false);
+    const [selectedNumEntries, setSelectedNumEntries] = useState<number>(0);
 
 
 
 
-    const getUserData = async (authToken) => {
+    const getUserData = async (authToken: string) => {
         await axios.get(`http://localhost:8000/getCustomer`, {
             headers: {
                 'authorization': `Bearer ${authToken}`
             }
         })
-            .then((response) => {
+            .then((response: AxiosResponse) => {
                 setUserData(response.data);
             }).catch((err) => {
                 console.log(err);
@@ -47,12 +60,20 @@ function HomePage() {
 
     // this variable controls whether 'Complete', 'Transactions', or 'Payments' are displayed in the corresponding table
     //Default is 'Complete'
-    const [selectedHistoryOption, setSelectedHistoryOption] = useState('Complete');
-    const [userCompleteHistory, setUserCompleteHistory] = useState([]);
-    const [userTransactionHistory, setUserTransactionHistory] = useState([]);
-    const [userPaymentHistory, setUserPaymentHistory] = useState([]);
+    const [selectedHistoryOption, setSelectedHistoryOption] = useState<string>('Complete');
+    const [userCompleteHistory, setUserCompleteHistory] = useState<Transaction[]>([]);
+    const [userTransactionHistory, setUserTransactionHistory] = useState<Transaction[]>([]);
+    const [userPaymentHistory, setUserPaymentHistory] = useState<Transaction[]>([]);
 
-    const getUserCompleteHistory = async (numberOfEntries, authToken) => {
+    interface Transaction {
+        transaction_id: number,
+        account_id: number,
+        action: string,
+        date: string,
+        amount: number
+    };
+
+    const getUserCompleteHistory = async (numberOfEntries: number, authToken: string) => {
         try {
             const response = await axios.get(`http://localhost:8000/getCustomerCompleteHistory/${numberOfEntries}`, {
                 headers: {
@@ -68,7 +89,7 @@ function HomePage() {
 
 
 
-    const getUserTransactionHistory = async (numberTransactions, authToken) => {
+    const getUserTransactionHistory = async (numberTransactions: number, authToken: string) => {
         try {
             const response = await axios.get(`http://localhost:8000/getCustomerTransactionHistory/${numberTransactions}`, {
                 headers: {
@@ -83,7 +104,7 @@ function HomePage() {
     };
 
 
-    const getUserPaymentHistory = async (numberPayments, authToken) => {
+    const getUserPaymentHistory = async (numberPayments: number, authToken: string) => {
         try {
             const response = await axios.get(`http://localhost:8000/getCustomerPaymentHistory/${numberPayments}`, {
                 headers: {
@@ -98,21 +119,22 @@ function HomePage() {
     };
 
 
-    const [dataToRender, setDataToRender] = useState([]);
+    const [dataToRender, setDataToRender] = useState<Transaction[]>([]);
+
     useEffect(() => {
         const fetchTransactionsData = async () => {
             try {
                 const authToken = await getCustomerToken();
                 // Fetch transaction data based on selected option
-                if (selectedHistoryOption === 'Complete') {
+                if (selectedHistoryOption === 'Complete' && authToken) {
                     const completeHistory = await getUserCompleteHistory(selectedNumEntries, authToken);
                     setUserCompleteHistory(completeHistory);
                     setDataToRender(completeHistory);
-                } else if (selectedHistoryOption === 'Transaction') {
+                } else if (selectedHistoryOption === 'Transaction' && authToken) {
                     const transactionHistory = await getUserTransactionHistory(selectedNumEntries, authToken);
                     setUserPaymentHistory(transactionHistory);
                     setDataToRender(transactionHistory);
-                } else if (selectedHistoryOption === 'Payment') {
+                } else if (selectedHistoryOption === 'Payment' && authToken) {
                     const paymentHistory = await getUserPaymentHistory(selectedNumEntries, authToken);
                     setUserPaymentHistory(paymentHistory);
                     setDataToRender(paymentHistory);
@@ -126,16 +148,16 @@ function HomePage() {
     }, [selectedHistoryOption, selectedNumEntries]);
 
 
-    const formatBalance = (balance) => {
+    const formatBalance = (balance: number) => {
         // Use toLocaleString to format the balance with commas
         return balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
+    };
 
-    const renderTableData = (dataToRender, numOfEntries) => {
+    const renderTableData = (dataToRender: Transaction[], numOfEntries: number) => {
         if (!dataToRender || dataToRender.length === 0) {
             return (
                 <tr>
-                    <td colSpan="5" className="text-center py-4">
+                    <td colSpan={5} className="text-center py-4">
                         <h5>No Payment History</h5>
                     </td>
                 </tr>
@@ -160,14 +182,20 @@ function HomePage() {
                     <td>{payment.action}</td>
                     <td>{formatDate(payment.date)}</td>
                     <td>{payment.amount < 0 ? `-$${formatBalance(Math.abs(payment.amount))}` : `$${formatBalance(payment.amount)}`}</td>
- 
+
                 </tr>
             ));
         }
     };
 
-    const [userAccounts, setUserAccounts] = useState([]);
-    const getUserAccounts = async (authToken) => {
+    interface Account {
+        account_id: number,
+        account_type: string,
+        balance: number
+    }
+
+    const [userAccounts, setUserAccounts] = useState<Account[]>([]);
+    const getUserAccounts = async (authToken: string) => {
         await axios.get(`http://localhost:8000/getCustomerAccounts`, {
             headers: {
                 'authorization': `Bearer ${authToken}`
@@ -180,14 +208,27 @@ function HomePage() {
     };
 
 
-    const [selectedAccountType, setSelectedAccountType] = useState(null);
 
-    const handleAccountTypeSelection = (event) => {
-        const selectedType = event.target.value;
+
+    const [selectedAccountType, setSelectedAccountType] = useState<string>();
+
+    const handleAccountTypeSelection = (event: React.MouseEvent<HTMLInputElement>) => {
+        const selectedType = (event.target as HTMLInputElement).value;
         setSelectedAccountType(selectedType);
     };
 
-    const openAccount = async (authToken, accountType) => {
+    //To display success & error alerts after they execute some feature
+    interface Alert {
+        text: string,
+        variant: string
+    }
+    const defaultAlert: Alert = {
+        text: '',
+        variant: ''
+    }
+    const [alert, setAlert] = useState<Alert>(defaultAlert);
+
+    const openAccount = async (authToken: string, accountType: string) => {
         if (accountType === null) {
             setAlert({ text: "The account type was not provided. Please try again", variant: "warning" });
             handleAlert();
@@ -203,7 +244,7 @@ function HomePage() {
         }).then((response) => {
             const newAccount = response.data;
             setUserAccounts([...userAccounts, newAccount]);
-            setSelectedAccountType(null); //reset account type selection
+            setSelectedAccountType(''); //reset account type selection
             setAlert({ text: "Account creation successful", variant: "success" })
         }).catch((err) => {
             console.log(err);
@@ -213,26 +254,33 @@ function HomePage() {
     }
 
     //Date attribute is for automatic payments only
-    const [paymentData, setPaymentData] = useState({ accountID: '', amount: '', date: null });
-    const [automaticPaymentDate, setAutomaticPaymentDate] = useState(null);
+    interface PaymentData {
+        accountID: string | number, // can be string or number because the value is retrieved from the radio button
+        amount: string | number, //can be string or number because the value is retrieved from the input field
+        date: Date | string | null
+    }
+    const defaultPaymentData: PaymentData = {
+        accountID: '',
+        amount: '',
+        date: null
+    }
+    const [paymentData, setPaymentData] = useState<PaymentData>(defaultPaymentData);
+    const [automaticPaymentDate, setAutomaticPaymentDate] = useState<string>('');
 
-    const handlePaymentDetailsChange = (e) => {
-        const { name, value } = e.target;
+    const handlePaymentDetailsChange = (e: React.MouseEvent<HTMLElement> | React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target as HTMLInputElement;
         setPaymentData({ ...paymentData, [name]: value });
     };
 
-    const handleAutomaticPaymentDateChange = (date) => {
+    const handleAutomaticPaymentDateChange = (date: Date) => {
         const formattedDate = formatAutomaticPaymentDate(date);
         setAutomaticPaymentDate(formattedDate);
         setPaymentData({ ...paymentData, date: formattedDate });
     };
 
 
-    //To display success & error alerts after they execute some feature
-    const [alert, setAlert] = useState(null);
 
-
-    const normalPayment = async (accountId, amt, authToken) => {
+    const normalPayment = async (accountId: string, amt: string, authToken: string) => {
         if (accountId === '' || amt === '') {
             setAlert({ text: 'At least one required input field was not provided. Please try again.', variant: 'warning' });
             handleAlert();
@@ -277,16 +325,16 @@ function HomePage() {
     };
 
     const handleAlert = () => {
-        const alertElem = document.getElementById('pop-up-alert');
+        const alertElem = document.getElementById('pop-up-alert') as HTMLElement;
         alertElem.style.visibility = 'visible';
         // Automatically dismiss the alert after 3 seconds
         setTimeout(() => {
-            setAlert(null);
+            setAlert(defaultAlert); // reset alert
             alertElem.style.visibility = 'hidden';
         }, 3000);
     }
 
-    const formatAutomaticPaymentDate = (date) => {
+    const formatAutomaticPaymentDate = (date: Date) => {
         const year = date.getFullYear();
         const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed, so add 1
         const day = date.getDate().toString().padStart(2, '0');
@@ -295,53 +343,60 @@ function HomePage() {
     };
 
 
-    const automaticPayment = async (accountID, amt, paymentDate, authToken) => {
+    const automaticPayment = async (accountID: string, amt: string | number, paymentDate: string, authToken: string) => {
         if (accountID === '' || amt === '' || paymentDate === null) {
             setAlert({ text: 'At least one required input field was not provided. Please try again.', variant: 'warning' });
             handleAlert();
             return;
-        } else if (!isValidAmount(amt)) {
+        } else if (!isValidAmount(amt.toString())) {
             setAlert({ text: "Please enter a valid amount for the payment (e.g. $250.00).", variant: "warning" });
             handleAlert();
             return;
         } else {
-            accountID = parseInt(accountID);
-            amt = parseFloat(amt).toFixed(2); // add .00 to the amount in case it wasn't included
+
+            const accountIDValue = parseInt(accountID);
+            const amtValue = typeof amt === 'number' ? amt.toFixed(2) : parseFloat(amt as string).toFixed(2);
+
+
+            const requestData: PaymentData = {
+                accountID: accountIDValue,
+                amount: amtValue,
+                date: paymentDate,
+            };
+
+
+            await axios.patch(`http://localhost:8000/automaticPayment/${requestData.accountID}/${requestData.amount}/${requestData.date}`, {
+                account_id: requestData.accountID,
+                amount: requestData.amount,
+                date: requestData.date
+            }, {
+                headers: {
+                    'authorization': `Bearer ${authToken}`
+                }
+            }).then(() => {
+                setAlert({ text: "The automatic payment was successfully set.", variant: "success" });
+            }).catch((err) => {
+                console.log(err);
+                if (err.response && err.response.data != null) {
+                    // If specific account related error occurs
+                    setAlert({ text: err.response.data, variant: "danger" });
+                } else {
+                    // uncaught errors
+                    setAlert({ text: "Something went wrong while executing the automatic payment. Please try again.", variant: "danger" });
+                }
+
+            })
+            handleAlert();
         }
-
-        await axios.patch(`http://localhost:8000/automaticPayment/${accountID}/${amt}/${paymentDate}`, {
-            account_id: accountID,
-            amount: parseFloat(amt),
-            date: paymentDate
-        }, {
-            headers: {
-                'authorization': `Bearer ${authToken}`
-            }
-        }).then(() => {
-            setAlert({ text: "The automatic payment was successfully set.", variant: "success" });
-        }).catch((err) => {
-            console.log(err);
-            if (err.response && err.response.data != null) {
-                // If specific account related error occurs
-                setAlert({ text: err.response.data, variant: "danger" });
-            } else {
-                // uncaught errors
-                setAlert({ text: "Something went wrong while executing the automatic payment. Please try again.", variant: "danger" });
-            }
-
-        })
-        handleAlert();
     };
 
-    const isValidAmount = (amount) => {
+    const isValidAmount = (amount: string) => {
         // {any_number_of_digits}.XX, where XX is exactly two digits
         const pattern = /^\d+\.\d{2}$/;
 
         // Test if the provided amount matches the pattern and the amount must be positive
         return pattern.test(amount) && parseFloat(amount) > 0;
     };
-
-
 
 
     const getCustomerToken = async () => {
@@ -355,16 +410,18 @@ function HomePage() {
                 //Retrieve the customer id and auth token, authToken is at index 0 and customer_id is at index 1 
                 const customerAuth = await getCustomerToken();
                 //Retrieve the customer details
-                await getUserData(customerAuth);
+                if(customerAuth){
+                    await getUserData(customerAuth);
 
-                await getUserAccounts(customerAuth);
-
-                //set the Transaction History Section to display the complete history on intial page render
-                const completeHistory = await getUserCompleteHistory(selectedNumEntries, customerAuth);
-                setUserCompleteHistory(completeHistory);
-                setDataToRender(completeHistory);
-
-                setIsUserDataLoaded(true);
+                    await getUserAccounts(customerAuth);
+    
+                    //set the Transaction History Section to display the complete history on intial page render
+                    const completeHistory = await getUserCompleteHistory(selectedNumEntries, customerAuth);
+                    setUserCompleteHistory(completeHistory);
+                    setDataToRender(completeHistory);
+    
+                    setIsUserDataLoaded(true);
+                }
             } catch (err) {
                 setIsUserDataLoaded(false);
                 console.log(err);
@@ -377,7 +434,7 @@ function HomePage() {
 
 
 
-    const formatDate = (inputDate) => {
+    const formatDate = (inputDate: string) => {
         const date = new Date(inputDate);
 
         // Extract the date components
@@ -395,27 +452,35 @@ function HomePage() {
         return formattedDate;
     }
 
-    const [checkDepositData, setCheckDepositData] = useState({
-        accountID: '',
-        checkFile: null
-    });
-
-    const handleFileUpload = (event) => {
-        const file = event.target.files[0];
-        setCheckDepositData({ ...checkDepositData, checkFile: file });
+    interface CheckDepositData {
+        accountID: number | string, // can be string or number because the value is retrieved from the radio button
+        checkFile: File | null
+    };
+    const defaultCheckDepositData: CheckDepositData = {
+        accountID: 0,
+        checkFile: null,
     }
 
-    const handleCheckDepositAccountSelection = (e) => {
-        const { name, value } = e.target;
+    const [checkDepositData, setCheckDepositData] = useState<CheckDepositData>(defaultCheckDepositData);
+
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files.length > 0) {
+            const file = event.target.files[0];
+            setCheckDepositData({ ...checkDepositData, checkFile: file });
+        }
+    };
+
+    const handleCheckDepositAccountSelection = (e: React.MouseEvent<HTMLInputElement>) => {
+        const { name, value } = e.target as HTMLInputElement;
         setCheckDepositData({ ...checkDepositData, [name]: value });
     };
 
 
-    const checkFileType = (file) => {
+    const checkFileType = (file: File) => {
         return file && (file.type === 'image/png' || file.type === 'image/jpeg');
     }
 
-    const checkDeposit = (depositData, authToken) => {
+    const checkDeposit = (depositData: CheckDepositData, authToken: string) => {
 
         if (depositData.accountID === '') {
             setAlert({ text: "Please select an account to deposit into.", variant: "warning" });
@@ -423,6 +488,11 @@ function HomePage() {
             return;
         }
 
+        if (!depositData.checkFile) {
+            setAlert({ text: "Please select a check image to deposit.", variant: "warning" });
+            handleAlert();
+            return;
+        }
 
         if (!checkFileType(depositData.checkFile)) {
             setAlert({ text: "Check file must be a .png or .jpg file.", variant: "warning" });
@@ -430,11 +500,11 @@ function HomePage() {
             return;
         }
 
-        let accountID = parseInt(depositData.accountID);
+        let accountID = parseInt(depositData.accountID.toString());
 
         // Create a FormData object and append the file to it
         const formData = new FormData();
-        formData.append("account_id", accountID);
+        formData.append("account_id", accountID.toString());
         formData.append("check", depositData.checkFile);
 
 
@@ -506,7 +576,12 @@ function HomePage() {
                                                 closeBttnText={"Confirm"}
                                                 additionalBttnText={"Cancel"}
                                                 closeOnSubmit={true}
-                                                submitAction={async () => openAccount(await getCustomerToken(), selectedAccountType)}
+                                                submitAction={async () => {
+                                                    const authToken = await getCustomerToken();
+                                                    if (selectedAccountType && authToken) {
+                                                        await openAccount(authToken, selectedAccountType);
+                                                    }
+                                                }}
                                             />
                                             <PopUpModal
                                                 activatingBttn={<button type="button" className="btn btn-primary">Normal Payment</button>}
@@ -528,9 +603,10 @@ function HomePage() {
                                                                         {
                                                                             userAccounts.map((account) =>
                                                                                 <li key={account.account_id} className="list-group-item">
-                                                                                    <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id} onClick={handlePaymentDetailsChange} />
-                                                                                    <label className="form-check-label" htmlFor={account.account_id}>Account ID: {account.account_id}</label>
-                                                                                    <label className="form-check-label ps-3" htmlFor={account.account_id}>Balance: ${parseFloat(account.balance).toFixed(2)}</label>                                                                              </li>
+                                                                                    <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id.toString()} onClick={handlePaymentDetailsChange} />
+                                                                                    <label className="form-check-label" htmlFor={account.account_id.toString()}>Account ID: {account.account_id}</label>
+                                                                                    <label className="form-check-label ps-3" htmlFor={account.account_id.toString()}>Balance: ${account.balance.toFixed(2)}</label>
+                                                                                </li>
                                                                             )
                                                                         }
                                                                     </ul>
@@ -551,7 +627,14 @@ function HomePage() {
                                                 }
                                                 closeBttnText={"Confirm"}
                                                 additionalBttnText={"Cancel"}
-                                                submitAction={async () => normalPayment(paymentData.accountID, paymentData.amount, await getCustomerToken())}
+                                                submitAction={async () => {
+                                                    const authToken = await getCustomerToken();
+                                                    if (authToken) {
+                                                        normalPayment(paymentData.accountID.toString(), paymentData.amount.toString(), authToken)
+                                                    }
+                                                }}
+
+
                                             />
                                             <PopUpModal
                                                 activatingBttn={<button type="button" className="btn btn-primary">Automatic Payment</button>}
@@ -572,9 +655,9 @@ function HomePage() {
                                                                         {
                                                                             userAccounts.map((account) =>
                                                                                 <li key={account.account_id} className="list-group-item">
-                                                                                    <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id} onClick={handlePaymentDetailsChange} />
-                                                                                    <label className="form-check-label" htmlFor={account.account_id}>Account ID: {account.account_id}</label>
-                                                                                    <label className="form-check-label ps-3" htmlFor={account.account_id}>Balance: ${parseFloat(account.balance).toFixed(2)}</label>
+                                                                                    <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id.toString()} onClick={handlePaymentDetailsChange} />
+                                                                                    <label className="form-check-label" htmlFor={account.account_id.toString()}>Account ID: {account.account_id}</label>
+                                                                                    <label className="form-check-label ps-3" htmlFor={account.account_id.toString()}>Balance: ${formatBalance(account.balance)}</label>
                                                                                 </li>
                                                                             )
                                                                         }
@@ -610,7 +693,13 @@ function HomePage() {
                                                 closeBttnText={"Confirm"}
                                                 closeOnSubmit={true}
                                                 additionalBttnText={"Cancel"}
-                                                submitAction={async () => automaticPayment(paymentData.accountID, paymentData.amount, paymentData.date, await getCustomerToken())}
+                                                submitAction={async () => {
+                                                    const authToken = await getCustomerToken();
+                                                    if (authToken && paymentData.date) {
+                                                        automaticPayment(paymentData.accountID.toString(), paymentData.amount, paymentData.date.toString(), authToken)
+                                                    }
+                                                }
+                                                }
                                             />
                                             <PopUpModal
                                                 activatingBttn={<button type="button" className="btn btn-primary">Check Deposit</button>}
@@ -620,7 +709,7 @@ function HomePage() {
                                                 body={
                                                     <>
                                                         <div className="row justify-content-center my-1">
-                                                            <div className="col-md-6 mb-4">
+                                                            <div className="col-md-8 mb-4">
                                                                 <label className='form-label' htmlFor='accountsList'>Accounts</label>
                                                                 <div className='overflow-container'>
                                                                     {userAccounts.length > 0 ? (
@@ -629,9 +718,9 @@ function HomePage() {
                                                                             {
                                                                                 userAccounts.map((account) =>
                                                                                     <li key={account.account_id} className="list-group-item">
-                                                                                        <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id} onClick={handleCheckDepositAccountSelection} />
-                                                                                        <label className="form-check-label" htmlFor={account.account_id}>Account ID: {account.account_id}</label>
-                                                                                        <label className="form-check-label ps-3" htmlFor={account.account_id}>Balance: ${parseFloat(account.balance).toFixed(2)}</label>
+                                                                                        <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id.toString()} onClick={handleCheckDepositAccountSelection} />
+                                                                                        <label className="form-check-label" htmlFor={account.account_id.toString()}>Account ID: {account.account_id}</label>
+                                                                                        <label className="form-check-label ps-3" htmlFor={account.account_id.toString()}>Balance: ${formatBalance(account.balance)}</label>
                                                                                     </li>
                                                                                 )
                                                                             }
@@ -643,11 +732,11 @@ function HomePage() {
                                                         </div>
                                                         <div className='row justify-content-center'>
                                                             <div className="col-md-12 mb-4">
-                                                                
-                                                                    <div className="custom-file mt-2 overflow-wrap">
-                                                                        <input type="file" className="custom-file-input" id="validatedCustomFile" onChange={handleFileUpload} />
-                                                                    </div>
-                                                                
+
+                                                                <div className="custom-file mt-2 overflow-wrap">
+                                                                    <input type="file" className="custom-file-input" id="validatedCustomFile" onChange={handleFileUpload} />
+                                                                </div>
+
                                                             </div>
 
                                                         </div>
@@ -656,7 +745,12 @@ function HomePage() {
                                                 closeBttnText={"Confirm"}
                                                 additionalBttnText={"Cancel"}
                                                 closeOnSubmit={true}
-                                                submitAction={async () => checkDeposit(checkDepositData, await getCustomerToken())}
+                                                submitAction={async () => {
+                                                    const authToken = await getCustomerToken();
+                                                    if (authToken) {
+                                                        checkDeposit(checkDepositData, authToken);
+                                                    }
+                                                }}
                                             />
 
                                         </div>
@@ -695,7 +789,7 @@ function HomePage() {
                     <div className="d-flex justify-content-start ms-4">
                         <Dropdown
                             selectedOption={selectedNumEntries}
-                            onSelectedOption={(option) => setSelectedNumEntries(option)}
+                            onSelectedOption={(option: number) => setSelectedNumEntries(option)}
                         />
                     </div>
                 </div>
@@ -732,7 +826,7 @@ function HomePage() {
                             renderTableData(dataToRender, selectedNumEntries)
                         ) : (
                             <tr>
-                                <td colSpan="5" className="text-center py-4">
+                                <td colSpan={5} className="text-center py-4">
                                     <h5>Fetching data...</h5>
                                 </td>
                             </tr>
