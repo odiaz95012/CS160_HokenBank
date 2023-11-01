@@ -838,9 +838,9 @@ def get_account_payment_history(account_id, number):
 @is_admin
 def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
                          gender):
-    if min_balance < Decimal(0):
+    if min_balance < 0:
         return f'Minimum balance must be positive', 404
-    if max_balance < Decimal(0):
+    if max_balance < 0:
         return f'Maximum balance must be positive', 404
     if max_balance != 0 and max_balance < min_balance:
         return f'Minimum balance cannot exceed maximum balance', 404
