@@ -355,7 +355,7 @@ function HomePage() {
         } else {
 
             const accountIDValue = parseInt(accountID);
-            const amtValue = typeof amt === 'number' ? amt.toFixed(2) : parseFloat(amt as string).toFixed(2);
+            const amtValue = typeof amt === 'number' ? amt : parseFloat(amt as string);
 
 
             const requestData: PaymentData = {
@@ -605,7 +605,7 @@ function HomePage() {
                                                                                 <li key={account.account_id} className="list-group-item">
                                                                                     <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id.toString()} onClick={handlePaymentDetailsChange} />
                                                                                     <label className="form-check-label" htmlFor={account.account_id.toString()}>Account ID: {account.account_id}</label>
-                                                                                    <label className="form-check-label ps-3" htmlFor={account.account_id.toString()}>Balance: ${account.balance.toFixed(2)}</label>
+                                                                                    <label className="form-check-label ps-3" htmlFor={account.account_id.toString()}>Balance: ${account.balance}</label>
                                                                                 </li>
                                                                             )
                                                                         }
