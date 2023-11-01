@@ -7,7 +7,7 @@ from models.account import AccountInformation
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from sqlalchemy import exc, desc
-from sqlalchemy.sql import func, text, and_
+from sqlalchemy.sql import func, text
 from datetime import datetime
 from functools import wraps
 import jwt
@@ -19,9 +19,10 @@ from PIL import Image
 import re
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
+from decimal import Decimal
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformation.sqlite3'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///CustomerInformationRevised.sqlite3'
 # app.config['SQLALCHEMY_DATABASE_URI'] =
 # 'mysql+pymysql://root:password@mysql/bankingdb'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -211,7 +212,7 @@ def deactivate_customer():
         db.session.query(AccountInformation).filter(
             AccountInformation.customer_id == customer.customer_id,
             AccountInformation.status == 'A').update(
-            {'balance': float(0), 'status': 'I'})
+            {'balance': Decimal(0), 'status': 'I'})
         customer.status = 'I'
         db.session.commit()
         return (f'Customer Account with customer_id {customer_id} '
@@ -243,7 +244,7 @@ def open_account():
     account = AccountInformation(
         customer_id=customer_id,
         account_type=account_type,
-        balance=float(0),
+        balance=Decimal(0),
         status='A'
     )
 
@@ -265,7 +266,7 @@ def close_account(account_id):
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
     if request.method == 'PATCH':
-        account.balance = float(0)
+        account.balance = Decimal(0)
         account.status = 'I'
         db.session.commit()
         return (f'Bank Account with account_id {account_id} '
@@ -365,17 +366,17 @@ def deposit(account_id, amount):
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
     if request.method == 'PATCH':
-        account.balance += amount
+        account.balance += Decimal(amount)
         db.session.commit()
         create_transaction_history_entry(
-            customer_id, account_id, 'Deposit', amount)
-        return (f'${amount} successfully deposited to Bank Account '
+            customer_id, account_id, 'Deposit', Decimal(amount))
+        return (f'${Decimal(amount)} successfully deposited to Bank Account '
                 f'with account_id {account_id}')
 
 
 @app.route('/withdraw/<int:account_id>/<float:amount>', methods=['PATCH'])
 @is_authenticated
-@account_owner  
+@account_owner
 def withdraw(account_id, amount):
     customer_id = request.currentUser
     if amount <= 0:
@@ -387,15 +388,15 @@ def withdraw(account_id, amount):
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
     if request.method == 'PATCH':
-        new_balance = account.balance - amount
+        new_balance = account.balance - Decimal(amount)
         if new_balance < 0:
             return (f'Withdrawal will put Bank Account with account_id '
                     f'{account_id} into negative balance', 404)
         account.balance = new_balance
         db.session.commit()
         create_transaction_history_entry(
-            customer_id, account_id, 'Withdraw', -amount)
-        return (f'${amount} successfully withdrawn from Bank Account '
+            customer_id, account_id, 'Withdraw', -Decimal(amount))
+        return (f'${Decimal(amount)} successfully withdrawn from Bank Account '
                 f'with account_id {account_id}')
 
 
@@ -423,19 +424,19 @@ def transfer(from_account_id, to_account_id, amount):
                 f'inactive', 404)
     to_customer_id = AccountInformation.query.get(to_account_id).customer_id
     if request.method == 'PATCH':
-        new_balance = from_account.balance - amount
+        new_balance = from_account.balance - Decimal(amount)
         if new_balance < 0:
             return (f'Transfer from Bank Account with account_id '
                     f'{from_account_id} will put it into negative balance',
                     404)
         from_account.balance = new_balance
-        to_account.balance += amount
+        to_account.balance += Decimal(amount)
         db.session.commit()
         create_transaction_history_entry(
-            from_customer_id, from_account_id, 'Transfer', -amount)
+            from_customer_id, from_account_id, 'Transfer', -Decimal(amount))
         create_transaction_history_entry(
-            to_customer_id, to_account_id, 'Transfer', amount)
-        return (f'${amount} successfully transferred from Bank Account '
+            to_customer_id, to_account_id, 'Transfer', Decimal(amount))
+        return (f'${Decimal(amount)} successfully transferred from Bank Account '
                 f'with account_id {from_account_id} to Bank Account with '
                 f'account_id {to_account_id}')
 
@@ -454,42 +455,26 @@ def normal_payment(account_id, amount):
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
     if request.method == 'PATCH':
-        new_balance = account.balance - amount
+        new_balance = account.balance - Decimal(amount)
         if new_balance < 0:
             return (f'Bill payment will put the account with Account ID: '
                     f'{account_id} into negative balance.', 404)
         account.balance = new_balance
         db.session.commit()
         create_transaction_history_entry(
-            customer_id, account_id, 'Normal Payment', -amount)
+            customer_id, account_id, 'Normal Payment', -Decimal(amount))
         return jsonify(account.serialize())
 
 
 # setting up automatic payment
+# note: flask can't take datetime representation of date, so needs to be
+# converted to datetime from string
+# pandas parses datetime from string in format YYYY-MM-DD
 @app.route('/automaticPayment/<int:account_id>/<float:amount>/<string:date>',
            methods=['PATCH'])
 @is_authenticated
 @account_owner
 def automatic_payment(account_id, amount, date):
-    # note: flask can't take datetime representation of date, so needs to be
-    # converted to datetime
-    # pandas parses datetime from string in format YYYY-MM-DD
-    if amount <= 0:
-        return f'Payment amount must be positive', 404
-
-    # take datetime with offset
-    timestamp = pandas.to_datetime(date)
-    # convert timestamp to datetime object
-    date_time = timestamp.to_pydatetime()
-
-    #take timezone & create local time
-    local_date = date_time.astimezone()
-    # convert local time to utc
-    utc_date = local_date.astimezone(pytz.utc)
-
-    # check that date is in future
-    if utc_date < datetime.now().astimezone(pytz.utc):
-        return f'Date must be in future', 404
 
     account = AccountInformation.query.get(account_id)
     if not account:
@@ -497,35 +482,53 @@ def automatic_payment(account_id, amount, date):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
+    
+    # check valid amount
+    if Decimal(amount) <= 0:
+        return f'Payment amount must be positive', 404
+    elif Decimal(amount) > account.balance:
+        return f'Payment may not exceed balance', 404
+
+    # take datetime
+    date_time = pandas.to_datetime(date).to_pydatetime()
+
+    # take timezone & create local time
+    local_date = date_time.astimezone()
+
+    # convert local time to utc for storage
+    utc_date = local_date.astimezone(pytz.utc)
+
+    # check that date is in future
+    if utc_date < datetime.now().astimezone(pytz.utc):
+        return f'Date must not be in past', 404
+    
+
     if request.method == 'PATCH':
         create_automatic_payment_entry(account.customer_id, account_id,
-                                       amount, utc_date)
-        # use local date
-        return (f'Payment of ${amount} successfully scheduled for Bank '
+                                       Decimal(amount), utc_date)
+        return (f'Payment of ${Decimal(amount)} successfully scheduled for Bank '
                 f'Account with account_id {account_id} and date {date}')
 
 
 # executing automatic payment, job should auto-execute when server is running
 def automatic_payment_job(payment_id):
-    # access payment
-    autopayment = AutomaticPayments.query.get(payment_id)
-    # access account
-    account = AccountInformation.query.get(autopayment.account_id)
+    with app.app_context():
+        # access payment
+        autopayment = AutomaticPayments.query.get(payment_id)
+        # access account
+        account = AccountInformation.query.get(autopayment.account_id)
 
-    new_balance = account.balance - autopayment.amount
-    # placeholder before grace period implement
-    if new_balance < 0:
-        delete_automatic_payment_entry(payment_id)
-        return (f'Scheduled payment with account_id '
-                f'{autopayment.account_id} failed due to negative balance',
-                404)
+        new_balance = account.balance - autopayment.amount
+        # placeholder before grace period implement
+        if new_balance < 0:
+           delete_automatic_payment_entry(payment_id)
 
-    # set new balance and reset date for one month from original date,
-    # add transaction
-    account.balance = new_balance
-    autopayment.date = autopayment.date + pandas.DateOffset(months=1)
-    db.session.commit()
-    create_transaction_history_entry(account.account_id, 'Automatic Payment',
+     # set new balance and reset date for one month from original date,
+     # add transaction
+        account.balance = new_balance
+        autopayment.date = autopayment.date + pandas.DateOffset(months=1)
+        db.session.commit()
+        create_transaction_history_entry(account.account_id, 'Automatic Payment',
                                      -autopayment.amount)
 
 
@@ -534,26 +537,24 @@ def automatic_payment_cycle():
     # only checking date portion of "date"
     with app.app_context():
         due_today = (AutomaticPayments.query.filter(
-                     AutomaticPayments.date == datetime.now().astimezone(pytz.utc)))
+                     AutomaticPayments.date == datetime.now().astimezone(pytz.utc).date()))
         if (due_today):
             for due in due_today:
                  automatic_payment_job(due.payment_id)
         over_due = (AutomaticPayments.query.filter(
-                  AutomaticPayments.date < datetime.now().astimezone(pytz.utc)))
+                  AutomaticPayments.date < datetime.now().astimezone(pytz.utc).date()))
         if (over_due):
             for due in over_due:
                  automatic_payment_job(due.payment_id)
-            return f'overdue payments detected and executed'
 
-# schedule this job once a year (5% annual interest)
-
+#schedule this job once a year (5% annual interest)
 def interest_accumulation():
-    with app.app_context():
-         db.session.query(AccountInformation).filter(
-            and_ (AccountInformation.status == "A",
-            AccountInformation.account_type == "Savings")).update(
-             {'balance': AccountInformation.balance * INTEREST_RATE})
-         db.session.commit()
+     with app.app_context():
+          db.session.query(AccountInformation).filter(
+             AccountInformation.status == "A",
+             AccountInformation.account_type == "Savings").update(
+              {'balance': AccountInformation.balance * INTEREST_RATE})
+          db.session.commit()
 
 
 def create_transaction_history_entry(customer_id, account_id, action, amount):
@@ -837,9 +838,9 @@ def get_account_payment_history(account_id, number):
 @is_admin
 def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
                          gender):
-    if min_balance < float(0):
+    if min_balance < Decimal(0):
         return f'Minimum balance must be positive', 404
-    if max_balance < float(0):
+    if max_balance < Decimal(0):
         return f'Maximum balance must be positive', 404
     if max_balance != 0 and max_balance < min_balance:
         return f'Minimum balance cannot exceed maximum balance', 404
@@ -882,7 +883,7 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
     select_customers = select_customers.having(
         text(f'total_balance >= {min_balance}'))
 
-    if max_balance != float(0):
+    if max_balance != Decimal(0):
         select_customers = select_customers.having(
             text(f'total_balance <= {max_balance}'))
 
@@ -920,7 +921,7 @@ def check_deposit(account_id):
         name = name_text.split(':')[1].split('|')[0].strip()
         # extract the amount deposited
         amount_text = re.search('\$\s[0-9,.]+', text).group().replace(",", "")
-        amount = float(re.split('\s', amount_text)[1])
+        amount = Decimal(re.split('\s', amount_text)[1])
     except Exception:
         return "Can not scan the check. Not in valid format", 400
 
@@ -1031,8 +1032,9 @@ def create_dummy_accounts():
 #sched.add_job(automatic_payment_cycle,'cron', hour=0, minute = 0)
 #sched.add_job(interest_accumulation,'cron', month = 1, day = 1, hour = 0, minute = 0)
 sched.add_job(automatic_payment_cycle, 'cron', minute = '*')
-sched.add_job(interest_accumulation, 'cron', minute = '*')
+#sched.add_job(interest_accumulation, 'cron', minute = '*')
 sched.start()
+#atexit.register(lambda: sched.shutdown())
 
 if __name__ == '__main__':
     with app.app_context():
