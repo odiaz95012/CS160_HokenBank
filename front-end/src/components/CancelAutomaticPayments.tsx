@@ -117,7 +117,7 @@ function CancelAutomaticPayments() {
                                         </div>
                                         <div className='d-flex align-items-center justify-content-start my-1'>
                                             <h6 className='mb-0'>Amount: </h6>
-                                            <p className='fs-6 mb-0 ps-1'>${payment.amount.toFixed(2)}</p>
+                                            <p className='fs-6 mb-0 ps-1'>${payment.amount}</p>
                                         </div>
                                         <div className='d-flex align-items-center justify-content-start my-1'>
                                             <h6 className='mb-0'>Monthly Recurring Payment Date: </h6>

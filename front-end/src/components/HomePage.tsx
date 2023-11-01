@@ -355,7 +355,7 @@ function HomePage() {
         } else {
 
             const accountIDValue = parseInt(accountID);
-            const amtValue = typeof amt === 'number' ? amt : parseFloat(amt as string);
+            const amtValue = typeof amt === 'number' ? amt.toFixed(2) : parseFloat(amt as string).toFixed(2);
 
 
             const requestData: PaymentData = {

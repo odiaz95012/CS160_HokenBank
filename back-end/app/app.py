@@ -475,7 +475,7 @@ def normal_payment(account_id, amount):
 @is_authenticated
 @account_owner
 def automatic_payment(account_id, amount, date):
-    # check account exists
+
     account = AccountInformation.query.get(account_id)
     if not account:
         return f'Bank Account with account_id {account_id} not found', 404
@@ -484,7 +484,7 @@ def automatic_payment(account_id, amount, date):
                 404)
     
     # check valid amount
-    if amount <= 0:
+    if Decimal(amount) <= 0:
         return f'Payment amount must be positive', 404
     elif Decimal(amount) > account.balance:
         return f'Payment may not exceed balance', 404
@@ -496,11 +496,12 @@ def automatic_payment(account_id, amount, date):
     local_date = date_time.astimezone()
 
     # convert local time to utc for storage
-    utc_date = local_date.astimezone(pytz.utc).date()
+    utc_date = local_date.astimezone(pytz.utc)
 
     # check that date is in future
-    if local_date.date() < datetime.now().date():
+    if utc_date < datetime.now().astimezone(pytz.utc):
         return f'Date must not be in past', 404
+    
 
     if request.method == 'PATCH':
         create_automatic_payment_entry(account.customer_id, account_id,
