@@ -7,7 +7,7 @@ from models.account import AccountInformation
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from sqlalchemy import exc, desc
-from sqlalchemy.sql import func, text, or_
+from sqlalchemy.sql import func, text
 from datetime import datetime
 from functools import wraps
 import jwt
