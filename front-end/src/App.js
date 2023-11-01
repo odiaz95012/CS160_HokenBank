@@ -1,15 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Login from './components/Login';
-import Registration from './components/Registration';
-import HomePage from './components/HomePage';
-import ProtectedRoutes from './components/ProtectedRoutes';
-import AccountDetails from './components/AccountDetails';
-import CloseAccount from './components/CloseAccount';
-import ATMSearch from './components/ATMSearch';
-import InternalTransfer from './components/InternalTransfer';
-import ExternalTransfer from './components/ExternalTransfer';
-import ATMHome from './components/ATMHome';
+import Login from './components/Login.tsx';
+import Registration from './components/Registration.tsx';
+import HomePage from './components/HomePage.tsx';
+import ProtectedRoutes from './components/ProtectedRoutes.tsx';
+import AccountDetails from './components/AccountDetails.tsx';
+import CloseAccount from './components/CloseAccount.tsx';
+import ATMSearch from './components/ATMSearch.tsx';
+import InternalTransfer from './components/InternalTransfer.tsx';
+import ExternalTransfer from './components/ExternalTransfer.tsx';
+import ATMHome from './components/ATMHome.tsx';
 import AdminPage from './components/AdminPage.tsx';
 import AdminRoute from './components/AdminRoute.tsx';
 

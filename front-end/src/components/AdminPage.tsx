@@ -71,12 +71,12 @@ function AdminPage() {
 
 
 
-  const handleGenderSelection = (genderSelection: string ) => {
+  const handleGenderSelection = (genderSelection: string) => {
     setQueryData({ ...queryData, gender: genderSelection });
   }
 
 
-  const generateCustomerRow = (dataToRender:generatedReport[]) => {
+  const generateCustomerRow = (dataToRender: generatedReport[]) => {
     return dataToRender.map((account) => (
       <tr key={account.customer_id}>
         <th scope='row'>{account.customer_id}</th>
@@ -103,15 +103,15 @@ function AdminPage() {
 
   const [reportData, setReportData] = useState<(generatedReport)[]>([]);
 
-  const isValidZipCode = (zipCode:string) => {
+  const isValidZipCode = (zipCode: string) => {
     // Pattern that must include exactly 5 numeric digits
     const pattern = /^\d{5}$/;
 
     return pattern.test(zipCode);
   }
-  
 
-  const generateReport = (queryInfo:inputData, authToken : string) => {
+
+  const generateReport = (queryInfo: inputData, authToken: string) => {
     const { minBalance, maxBalance, minAge, maxAge, zipcode, gender } = queryInfo;
 
     if (!minBalance || !maxBalance || !minAge || !zipcode || !gender) {
@@ -131,7 +131,7 @@ function AdminPage() {
         'authorization': `Bearer ${authToken}`
       }
     }).then((response) => {
-      const data:generatedReport[] = response.data;
+      const data: generatedReport[] = response.data;
       setReportData(data);
       console.log(response);
       setIsGeneratingReport(false);
@@ -156,7 +156,7 @@ function AdminPage() {
   }
 
 
-  const downloadTableData = (data:generatedReport[], queryInfo:inputData) => {
+  const downloadTableData = (data: generatedReport[], queryInfo: inputData) => {
     if (!data || !queryInfo) {
       setAlert({ text: "There is no user report to download. Please generate a user report first.", variant: "warning" });
       handleAlert();
@@ -233,7 +233,12 @@ function AdminPage() {
               <div className="text-center my-5">
                 <h1 className="display-6 fw-bolder text-white mb-2">Welcome Bank Manager</h1>
                 <p className="lead text-white-50 mb-4">What user reports would you like to generate today?</p>
-                <button className='btn btn-primary' onClick={async () => generateReport(queryData, await getCustomerToken())}>Generate Report</button>
+                <button className='btn btn-primary' onClick={async () => {
+                  const authToken = await getCustomerToken();
+                  if (authToken) {
+                    generateReport(queryData, authToken)
+                  }
+                }}>Generate Report</button>
               </div>
             </div>
           </div>
@@ -253,7 +258,7 @@ function AdminPage() {
               <input type='number' min={0} className='form-control' name="minBalance" id="minBalance" placeholder='Min Balance' onChange={handleDataChange} />
               <label className='form-label h6' htmlFor='minBalance'>Minimum Balance</label>
               <input type='number' min={0} className='form-control' name="maxBalance" id="maxBalance" placeholder='Max Balance' onChange={handleDataChange} />
-              <label className='form-label h6' htmlFor='maxBalance'>Maximum Balance</label> 
+              <label className='form-label h6' htmlFor='maxBalance'>Maximum Balance</label>
             </div>
           </div>
           <div className='col-md-3 my-1'>

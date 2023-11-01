@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import NavBar from './NavBar';
-import MapComponent from './MapComponent';
+import NavBar from '../front-end/src/components/NavBar';
+import MapComponent from '../front-end/src/components/MapComponent';
 import '../componentStyles/ATMSearchStyles.css';
 import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
 import axios from 'axios';
-import PopUpAlert from './PopUpAlert';
+import PopUpAlert from '../front-end/src/components/PopUpAlert';
 
 
 function ATMSearch() {
@@ -32,7 +32,7 @@ function ATMSearch() {
         return miles * 1609.34;
     }
 
-    const apiKey = '';
+    const apiKey = 'YOUR_API_KEY_HERE';
 
 
     const handleGetLocation = () => {
@@ -168,7 +168,7 @@ function ATMSearch() {
     return (
         <>
             <NavBar />
-            <div className='container'>
+            <div className='container mt-2 mb-5'>
                 <div className='row'>
                     <div className='col-md-12'>
                         <div className='d-flex justify-content-center my-3'>
@@ -220,9 +220,14 @@ function ATMSearch() {
                                 )}
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
+            {/* <!-- Footer--> */}
+            <footer className="py-5 bg-dark">
+                <div className="container px-5"><p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p></div>
+            </footer>
         </>
     )
 }

@@ -1,5 +1,5 @@
 import React from 'react'
-import PopUpModal from './PopUpModal';
+import PopUpModal from '../front-end/src/components/PopUpModal';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 

@@ -8,19 +8,27 @@ import ExternalTransfer from './ExternalTransfer';
 import CloseAccount from './CloseAccount';
 import NavBar from './NavBar';
 import Dropdown from './Dropdown';
+import '../componentStyles/AccountDetailsStyles.css';
 
 function AccountDetails() {
     const { accountID } = useParams();
-    const [selectedNumEntries, setSelectedNumEntries] = useState(0);
-    const [isUserDataLoaded, setIsUserDataLoaded] = useState(false);
+    const [selectedNumEntries, setSelectedNumEntries] = useState<number>(0);
+    const [isUserDataLoaded, setIsUserDataLoaded] = useState<boolean>(false);
     // this variable controls whether 'Complete', 'Transactions', or 'Payments' are displayed in the corresponding table
     //Default is 'Complete'
-    const [selectedHistoryOption, setSelectedHistoryOption] = useState('Complete');
-    const [userCompleteHistory, setUserCompleteHistory] = useState([]);
-    const [userTransactionHistory, setUserTransactionHistory] = useState([]);
-    const [userPaymentHistory, setUserPaymentHistory] = useState([]);
+    const [selectedHistoryOption, setSelectedHistoryOption] = useState<string>('Complete');
+    const [userCompleteHistory, setUserCompleteHistory] = useState<AccountInfo[]>([]);
+    const [userTransactionHistory, setUserTransactionHistory] = useState<AccountInfo[]>([]);
+    const [userPaymentHistory, setUserPaymentHistory] = useState<AccountInfo[]>([]);
 
-    const [accountInfo, setAccountInfo] = useState({
+    interface AccountInfo {
+        accountID: string | number,
+        balance: number,
+        account_type: string
+    }
+
+
+    const [accountInfo, setAccountInfo] = useState<AccountInfo>({
         accountID: '',
         balance: 0.00,
         account_type: ''
@@ -29,7 +37,7 @@ function AccountDetails() {
 
 
     useEffect(() => {
-        const fetchAccountDetails = async (accountID) => {
+        const fetchAccountDetails = async (accountID:string) => {
             axios.get(`http://localhost:8000/getAccount/${accountID}`, {
                 headers: {
                     'authorization': `Bearer ${await getCustomerToken()}`
@@ -41,12 +49,15 @@ function AccountDetails() {
                 console.log(err);
             });
         };
-        fetchAccountDetails(accountID);
-        setIsUserDataLoaded(true);
+
+        if (accountID) {
+            fetchAccountDetails(accountID);
+            setIsUserDataLoaded(true);
+        }
     }, []);
 
     //history transaction
-    const getUserCompleteHistory = async (accountID, numberOfEntries, authToken) => {
+    const getUserCompleteHistory = async (accountID:string, numberOfEntries:number, authToken:string) => {
         try {
             const response = await axios.get(`http://localhost:8000/getAccountCompleteHistory/${accountID}/${numberOfEntries}`, {
                 headers: {
@@ -60,7 +71,7 @@ function AccountDetails() {
             return null;
         }
     };
-    const getUserTransactionHistory = async (accountID, numberTransactions, authToken) => {
+    const getUserTransactionHistory = async (accountID:string, numberTransactions:number, authToken:string) => {
         try {
             const response = await axios.get(`http://localhost:8000/getAccountTransactionHistory/${accountID}/${numberTransactions}`, {
                 headers: {
@@ -73,7 +84,7 @@ function AccountDetails() {
             return null; // Handle the error or return an appropriate value
         }
     };
-    const getUserPaymentHistory = async (numberPayments, authToken) => {
+    const getUserPaymentHistory = async (accountID:string, numberPayments:number, authToken:string) => {
         try {
             const response = await axios.get(`http://localhost:8000/getAccountPaymentHistory/${accountID}/${numberPayments}`, {
                 headers: {
@@ -87,21 +98,21 @@ function AccountDetails() {
         }
     };
 
-    const [dataToRender, setDataToRender] = useState([]);
+    const [dataToRender, setDataToRender] = useState<Payment[]>([]);
     useEffect(() => {
         const fetchTransactionsData = async () => {
             try {
                 const authToken = await getCustomerToken();
                 // Fetch transaction data based on selected option
-                if (selectedHistoryOption === 'Complete') {
+                if (selectedHistoryOption === 'Complete' && accountID && authToken) {
                     const completeHistory = await getUserCompleteHistory(accountID, selectedNumEntries, authToken);
                     setUserCompleteHistory(completeHistory);
                     setDataToRender(completeHistory);
-                } else if (selectedHistoryOption === 'Transaction') {
+                } else if (selectedHistoryOption === 'Transaction' && accountID && authToken) {
                     const transactionHistory = await getUserTransactionHistory(accountID, selectedNumEntries, authToken);
                     setUserPaymentHistory(transactionHistory);
                     setDataToRender(transactionHistory);
-                } else if (selectedHistoryOption === 'Payment') {
+                } else if (selectedHistoryOption === 'Payment' && accountID && authToken) {
                     const paymentHistory = await getUserPaymentHistory(accountID, selectedNumEntries, authToken);
                     setUserPaymentHistory(paymentHistory);
                     setDataToRender(paymentHistory);
@@ -114,11 +125,19 @@ function AccountDetails() {
         fetchTransactionsData();
     }, [selectedHistoryOption, selectedNumEntries]);
 
-    const renderTableData = (dataToRender, numOfEntries) => {
+    interface Payment {
+        transaction_id: string | number,
+        account_id: string | number,
+        action: string,
+        date: string,
+        amount: number
+    }
+
+    const renderTableData = (dataToRender:Payment[], numOfEntries:number) => {
         if (!dataToRender || dataToRender.length === 0) {
             return (
                 <tr>
-                    <td colSpan="5" className="text-center py-4">
+                    <td colSpan={5} className="text-center py-4">
                         <h5>No Payment History</h5>
                     </td>
                 </tr>
@@ -132,7 +151,7 @@ function AccountDetails() {
                     <td>{payment.account_id}</td>
                     <td>{payment.action}</td>
                     <td>{formatDate(payment.date)}</td>
-                    <td>{payment.amount < 0 ? `-$${Math.abs(payment.amount)}` : `$${payment.amount}`}</td>
+                    <td>{payment.amount < 0 ? `-$${formatBalance(Math.abs(payment.amount))}` : `$${formatBalance(payment.amount)}`}</td>
                 </tr>
             ));
         } else {
@@ -142,12 +161,12 @@ function AccountDetails() {
                     <td>{payment.account_id}</td>
                     <td>{payment.action}</td>
                     <td>{formatDate(payment.date)}</td>
-                    <td>{payment.amount < 0 ? `-$${Math.abs(payment.amount)}` : `$${payment.amount}`}</td>
+                    <td>{payment.amount < 0 ? `-$${formatBalance(Math.abs(payment.amount))}` : `$${formatBalance(payment.amount)}`}</td>
                 </tr>
             ));
         }
     };
-    const formatDate = (inputDate) => {
+    const formatDate = (inputDate:string) => {
         const date = new Date(inputDate);
 
         // Extract the date components
@@ -163,6 +182,11 @@ function AccountDetails() {
         const formattedDate = `${formattedMonth}/${formattedDay}/${year}`;
 
         return formattedDate;
+    };
+
+    const formatBalance = (balance:number) => {
+        // Use toLocaleString to format the balance with commas
+        return balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
 
@@ -190,63 +214,30 @@ function AccountDetails() {
 
             {isUserDataLoaded ? (
                 <div className="container my-5" style={{ border: '1px solid grey', borderRadius: '15px' }}>
-                    {/* <header className="bg-dark py-5">
-                        <div className="container px-5">
-                            <div className="row gx-5 justify-content-center">
-                                <div className="col-lg-6">
-                                    <div className="text-center my-5">
-                                        <h1 className="display-5 fw-bolder text-white mb-2">Welcome</h1>
-                                        <div className="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                                            <div className="text-center pt-1 mb-5 pb-1">
-                                                <PopUpModal
-                                                    activatingBttn={<button className="btn btn-primary btn-lg px-4 me-sm-3">Internal Transfer</button>}
-                                                    title={<div style={{ textAlign: "center" }}><p className="h4">Internal Transfer</p></div>}
-                                                    body={<InternalTransfer />}
-                                                />
-                                            </div>
-                                            <div className="text-center pt-1 mb-5 pb-1">
-                                                <PopUpModal
-                                                    activatingBttn={<button className="btn btn-primary btn-lg px-4 me-sm-3">External Transfer</button>}
-                                                    title={<div style={{ textAlign: "center" }}><p className="h4">External Transfer</p></div>}
-                                                    body={<ExternalTransfer />}
-                                                />
-                                            </div>
-                                            <div className="text-center pt-1 mb-5 pb-1">
-                                                <PopUpModal
-                                                    activatingBttn={<button className="btn btn-primary btn-lg px-4 me-sm-3">Close Account</button>}
-                                                    title={<div style={{ textAlign: "center" }}><p className="h4">Close Account</p></div>}
-                                                    body={<CloseAccount />}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </header> */}
+
                     <div className='row'>
-                        <div className='col text-center'>
-                            <p className='h4 py-1'>Account ID: {accountID}</p>
+                        <div className='col-md-12 text-center'>
+                            <p className='h4 py-3'>Account ID: {accountID}</p>
                             <p className='py-1'>Account Type: {accountInfo.account_type}</p>
-                            <p className='py-1'>Balance: {accountInfo.balance}</p>
+                            <p className='py-1'>Balance: ${formatBalance(accountInfo.balance)}</p>
                         </div>
                     </div>
-                    <div className='row'>
-                        <div className='col-md-4'>
+                    <div className='row mb-3'>
+                        <div className='col-md-4 feature-bttn'>
                             <PopUpModal
                                 activatingBttn={<button className="btn btn-primary my-2">Internal Transfer</button>}
                                 title={<div style={{ textAlign: "center" }}><p className="h4">Internal Transfer</p></div>}
                                 body={<InternalTransfer />}
                             />
                         </div>
-                        <div className='col-md-4'>
+                        <div className='col-md-4 feature-bttn'>
                             <PopUpModal
                                 activatingBttn={<button className="btn btn-primary my-2">External Transfer</button>}
                                 title={<div style={{ textAlign: "center" }}><p className="h4">External Transfer</p></div>}
                                 body={<ExternalTransfer />}
                             />
                         </div>
-                        <div className='col-md-4'>
+                        <div className='col-md-4 feature-bttn'>
                             <PopUpModal
                                 activatingBttn={<button className="btn btn-primary my-2">Close Account</button>}
                                 title={<div style={{ textAlign: "center" }}><p className="h4">Close Account</p></div>}
@@ -254,6 +245,8 @@ function AccountDetails() {
                             />
                         </div>
                     </div>
+
+
                 </div>
             ) : (
                 <header className="bg-dark py-5">
@@ -307,11 +300,11 @@ function AccountDetails() {
                         </tr>
                     </thead>
                     <tbody>
-                        {isUserDataLoaded ? (
+                        {isUserDataLoaded && dataToRender? (
                             renderTableData(dataToRender, selectedNumEntries)
                         ) : (
                             <tr>
-                                <td colSpan="5" className="text-center py-4">
+                                <td colSpan={5} className="text-center py-4">
                                     <h5>Fetching data...</h5>
                                 </td>
                             </tr>
@@ -322,6 +315,7 @@ function AccountDetails() {
                 </table>
             </div>
 
+            {/* Footer */}
             <footer className="py-5 bg-dark">
                 <div className="container px-5">
                     <p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p>

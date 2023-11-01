@@ -22,6 +22,7 @@ export default function PopUpModal({
 }) {
     const [basicModal, setBasicModal] = useState(false);
 
+
     const toggleShow = () => setBasicModal(!basicModal);
 
     // Close the modal after submit action if closeOnSubmit is passed in as true, else only execute the passed in function
@@ -29,7 +30,7 @@ export default function PopUpModal({
         if (closeOnSubmit && typeof submitAction === 'function') {
             submitAction();
             toggleShow();
-        } else if ((!closeOnSubmit || closeOnSubmit == null) && typeof submitAction === 'function'){
+        } else if ((!closeOnSubmit || closeOnSubmit == null) && typeof submitAction === 'function') {
             submitAction();
         }
     };
