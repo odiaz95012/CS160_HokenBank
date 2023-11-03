@@ -7,7 +7,7 @@ import CancelAutomaticPayments from './CancelAutomaticPayments.tsx';
 
 function NavBar() {
     const navigate = useNavigate();
-//latest 
+//latest version
 
     return (
         <div className='row'>

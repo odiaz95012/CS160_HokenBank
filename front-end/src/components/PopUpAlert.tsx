@@ -7,7 +7,7 @@ interface PopUpAlertProps {
 }
 
 const PopUpAlert: React.FC<PopUpAlertProps> = ({ text, variant }) => {
-  //latest 
+  //latest version
   return (
     <Alert variant={variant}>
       {text}

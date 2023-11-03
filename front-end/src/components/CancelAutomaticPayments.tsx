@@ -5,7 +5,7 @@ import Cookies from 'js-cookie';
 import '../componentStyles/CancelAutomaticPaymentsStyles.css';
 
 function CancelAutomaticPayments() {
-//latest 
+//latest version
     const [isUpcomingPaymentsLoaded, setIsUpcomingPaymentsLoaded] = useState<boolean>(false);
 
 

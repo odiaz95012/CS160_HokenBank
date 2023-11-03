@@ -13,7 +13,7 @@ interface AccountCardProps {
   }
 function AccountCard(props:AccountCardProps): JSX.Element {
 
-  //latest
+  //latest version
 
   const navigate = useNavigate();
 

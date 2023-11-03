@@ -10,7 +10,7 @@ interface DropdownState {
 }
 
 class Dropdown extends Component<DropdownProps, DropdownState> {
-  //latest 
+  //latest version
   state: DropdownState = {
     isOpen: false,
   };

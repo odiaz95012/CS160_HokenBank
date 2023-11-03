@@ -7,7 +7,7 @@ interface InternalTransferProps {
 }
 
 function InternalTransfer({ onChange, onClose }: InternalTransferProps) {
-  //latest 
+  //latest version
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');

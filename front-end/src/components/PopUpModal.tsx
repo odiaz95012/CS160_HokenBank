@@ -22,7 +22,7 @@ interface PopUpModalProps {
 }
 
 function PopUpModal(props: PopUpModalProps) { // Use props as an argument
-    //latest 
+    //latest version
     const [basicModal, setBasicModal] = useState(false);
 
     const toggleShow = () => setBasicModal(!basicModal);

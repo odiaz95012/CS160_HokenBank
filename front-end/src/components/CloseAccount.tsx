@@ -7,7 +7,7 @@ interface CloseAccountProps {
 }
 
 function CloseAccount({ onSubmit, onClose }: CloseAccountProps) {
-  //latest 
+//latest version
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string>('');

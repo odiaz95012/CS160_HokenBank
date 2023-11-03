@@ -7,7 +7,7 @@ interface ExternalTransferProps {
 }
 
 function ExternalTransfer({ onSubmit, onClose }: ExternalTransferProps) {
-  //latest 
+  //latest version
   const navigate = useNavigate();
   const [accountID, setAccountID] = useState('');
   const [amount, setAmount] = useState('');

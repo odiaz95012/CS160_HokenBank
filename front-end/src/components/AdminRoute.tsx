@@ -5,7 +5,7 @@ import axios from 'axios';
 
 const AdminRoute = () => {
 
-    //latest 
+ //latest version
     const [isLoading, setIsLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(false);
 

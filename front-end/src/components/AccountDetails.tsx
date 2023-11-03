@@ -11,7 +11,7 @@ import Dropdown from './Dropdown';
 import '../componentStyles/AccountDetailsStyles.css';
 
 function AccountDetails() {
-    //latest 
+    //latest version
     const { accountID } = useParams();
     const [selectedNumEntries, setSelectedNumEntries] = useState<number>(0);
     const [isUserDataLoaded, setIsUserDataLoaded] = useState<boolean>(false);

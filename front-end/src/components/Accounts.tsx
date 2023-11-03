@@ -10,7 +10,7 @@ interface userAccount {
 
 function Accounts({ userAccounts, isUserDataLoaded }: { userAccounts: userAccount[], isUserDataLoaded: boolean }) {
 
-    //latest 
+    //latest version 
 
     const [isAccountsExpanded, setIsAccountsExpanded] = useState<boolean>(false); // Change the name to isAccountExpanded
 

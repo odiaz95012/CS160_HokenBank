@@ -15,7 +15,7 @@ interface CustomerCardProps {
 }
 
 function CustomerCard({ customer_id, full_name, username, email, age, gender, zip_code, status }: CustomerCardProps): JSX.Element {
-    //latest 
+    //latest version
     return (
         <Card style={{ width: '25rem' }}>
             <Card.Body>

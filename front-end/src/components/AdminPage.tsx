@@ -6,7 +6,7 @@ import PopUpAlert from './PopUpAlert';
 import '../componentStyles/AdminPageStyles.css';
 
 function AdminPage() {
-//latest 
+//latest version
 
   interface inputData {
     minBalance: number,

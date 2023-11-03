@@ -34,7 +34,7 @@ interface Alert {
 }
 
 function ATMHome() {
-    //latest 
+    //latest version
     const [alert, setAlert] = useState<Alert>({ text: '', variant: '' });
 
     const getCustomerToken = async () => {

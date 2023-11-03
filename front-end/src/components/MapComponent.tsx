@@ -28,7 +28,7 @@ const initialCenter = {
 };
 
 function MapComponent({ atmLocations }: MapComponentProps) {
-  //latest 
+  //latest version
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: 'YOUR_GOOGLE_MAP_API_KEY'

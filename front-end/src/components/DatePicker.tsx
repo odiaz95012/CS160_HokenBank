@@ -23,7 +23,7 @@ interface DatePickerState {
 }
 
 class CustomDatePicker extends Component<DatePickerProps, DatePickerState> {
-  //latest 
+  //latest version
   constructor(props: DatePickerProps) {
     super(props);
     this.state = {
