@@ -17,6 +17,7 @@ interface FormData {
 }
 
 function Registration() {
+  //latest 
   const navigate = useNavigate();
 
   const goToLoginPage = () => {

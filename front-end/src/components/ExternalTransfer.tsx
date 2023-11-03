@@ -7,6 +7,7 @@ interface ExternalTransferProps {
 }
 
 function ExternalTransfer({ onSubmit, onClose }: ExternalTransferProps) {
+  //latest 
   const navigate = useNavigate();
   const [accountID, setAccountID] = useState('');
   const [amount, setAmount] = useState('');
@@ -34,6 +35,7 @@ function ExternalTransfer({ onSubmit, onClose }: ExternalTransferProps) {
   }
 
   return (
+
     <div>
       {/* main form */}
       <div className="container mt-5">

@@ -3,6 +3,7 @@ import { Outlet, Navigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
 const ProtectedRoutes: React.FC = () => {
+  //latest 
   // Check if the user is authenticated to navigate to protected routes
   const isAuthenticated = !!Cookies.get('authToken');
   return isAuthenticated ? <Outlet /> : <Navigate to="/" />;

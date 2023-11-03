@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
 function CloseAccountModal() {
+    //latest 
     const navigate = useNavigate();
     const closeAccount = (authToken: string) => {
         axios.patch("http://localhost:8000/deactivateCustomer", {}, {
