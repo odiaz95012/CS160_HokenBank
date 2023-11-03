@@ -207,7 +207,7 @@ def deactivate_customer():
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
-    if request.method == 'PATCH':
+    try:
         # set all active accounts to 0 balance and 'I' status
         db.session.query(AccountInformation).filter(
             AccountInformation.customer_id == customer.customer_id,
@@ -217,6 +217,8 @@ def deactivate_customer():
         db.session.commit()
         return (f'Customer Account with customer_id {customer_id} '
                 f'deactivated successfully')
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # Retrieve customer info by customer_id
@@ -224,13 +226,15 @@ def deactivate_customer():
 @is_authenticated
 def get_customer_by_id():
     customer_id = request.currentUser
-    if request.method == 'GET':
+    try:
         customer = CustomerInformation.query.get(customer_id)
         if not customer:
             return jsonify({'error': f'Customer Account with customer_id '
                                      f'{customer_id} not found'}), 404
         # add additional check for 'I' status?
         return jsonify(customer.serialize())
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 @app.route('/openAccount', methods=['POST'])
@@ -240,19 +244,22 @@ def open_account():
     customer_id = request.currentUser
     account_type = request.get_json().get('account_type')
 
-    # Create a customer object with the provided values
-    account = AccountInformation(
-        customer_id=customer_id,
-        account_type=account_type,
-        balance=Decimal(0),
-        status='A'
-    )
+    try:
+        # Create a customer object with the provided values
+        account = AccountInformation(
+            customer_id=customer_id,
+            account_type=account_type,
+            balance=Decimal(0),
+            status='A'
+        )
 
-    # Add the account to the database session and commit the changes
-    db.session.add(account)
-    db.session.commit()
+        # Add the account to the database session and commit the changes
+        db.session.add(account)
+        db.session.commit()
 
-    return jsonify(account.serialize())
+        return jsonify(account.serialize())
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 @app.route('/closeAccount/<int:account_id>', methods=['PATCH'])
@@ -265,12 +272,14 @@ def close_account(account_id):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    if request.method == 'PATCH':
+    try:
         account.balance = Decimal(0)
         account.status = 'I'
         db.session.commit()
         return (f'Bank Account with account_id {account_id} '
                 f'closed successfully')
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # Assuming you have a serialize method in your model
@@ -278,57 +287,65 @@ def close_account(account_id):
 @is_authenticated
 @account_owner
 def get_account_by_id(account_id: int):
-    if request.method == 'GET':
+    try:
         account = AccountInformation.query.get(account_id)
         if not account:
             return jsonify({'error': f'Bank Account with account_id '
                                      f'{account_id} not found'}), 404
         # add additional check for 'I' status?
         return jsonify(account.serialize())
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # Get all customers
 @app.route('/getCustomers', methods=['GET'])
 @is_authenticated
 def get_customers():
-    customers = CustomerInformation.query.all()
-    customer_list = []
+    try:
+        customers = CustomerInformation.query.all()
+        customer_list = []
 
-    for customer in customers:
-        customer_data = {
-            'customer_id': customer.customer_id,
-            'username': customer.username,
-            'email': customer.email,
-            'password': customer.password,
-            'full_name': customer.full_name,
-            'age': customer.age,
-            'gender': customer.gender,
-            'zip_code': customer.zip_code,
-            'status': customer.status
-        }
-        customer_list.append(customer_data)
+        for customer in customers:
+            customer_data = {
+                'customer_id': customer.customer_id,
+                'username': customer.username,
+                'email': customer.email,
+                'password': customer.password,
+                'full_name': customer.full_name,
+                'age': customer.age,
+                'gender': customer.gender,
+                'zip_code': customer.zip_code,
+                'status': customer.status
+            }
+            customer_list.append(customer_data)
 
-    return jsonify(customer_list)
+        return jsonify(customer_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # Get all accounts, including inactive ones
 @app.route('/getAccounts', methods=['GET'])
 @is_authenticated
 def get_accounts():
-    accounts = AccountInformation.query.all()
-    account_list = []
+    try:
+        accounts = AccountInformation.query.all()
+        account_list = []
 
-    for account in accounts:
-        account_data = {
-            'account_id': account.account_id,
-            'customer_id': account.customer_id,
-            'account_type': account.account_type,
-            'balance': account.balance,
-            'status': account.status
-        }
-        account_list.append(account_data)
+        for account in accounts:
+            account_data = {
+                'account_id': account.account_id,
+                'customer_id': account.customer_id,
+                'account_type': account.account_type,
+                'balance': account.balance,
+                'status': account.status
+            }
+            account_list.append(account_data)
 
-    return jsonify(account_list)
+        return jsonify(account_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # Get all active accounts associated with the customer ID
@@ -336,20 +353,23 @@ def get_accounts():
 @is_authenticated
 def get_customer_accounts():
     customer_id = request.currentUser
-    active_accounts = AccountInformation.query.filter(
-        AccountInformation.customer_id == customer_id,
-        AccountInformation.status == 'A').all()
-    account_list = []
+    try:
+        active_accounts = AccountInformation.query.filter(
+            AccountInformation.customer_id == customer_id,
+            AccountInformation.status == 'A').all()
+        account_list = []
 
-    for account in active_accounts:
-        account_data = {
-            'account_id': account.account_id,
-            'account_type': account.account_type,
-            'balance': account.balance
-        }
-        account_list.append(account_data)
+        for account in active_accounts:
+            account_data = {
+                'account_id': account.account_id,
+                'account_type': account.account_type,
+                'balance': account.balance
+            }
+            account_list.append(account_data)
 
-    return jsonify(account_list)
+        return jsonify(account_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 @app.route('/deposit/<int:account_id>/<float:amount>', methods=['PATCH'])
@@ -365,13 +385,15 @@ def deposit(account_id, amount):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    if request.method == 'PATCH':
+    try:
         account.balance += Decimal(amount)
         db.session.commit()
         create_transaction_history_entry(
             customer_id, account_id, 'Deposit', Decimal(amount))
         return (f'${Decimal(amount)} successfully deposited to Bank Account '
                 f'with account_id {account_id}')
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 @app.route('/withdraw/<int:account_id>/<float:amount>', methods=['PATCH'])
@@ -387,7 +409,7 @@ def withdraw(account_id, amount):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    if request.method == 'PATCH':
+    try:
         new_balance = account.balance - Decimal(amount)
         if new_balance < 0:
             return (f'Withdrawal will put Bank Account with account_id '
@@ -398,6 +420,8 @@ def withdraw(account_id, amount):
             customer_id, account_id, 'Withdraw', -Decimal(amount))
         return (f'${Decimal(amount)} successfully withdrawn from Bank Account '
                 f'with account_id {account_id}')
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 @app.route('/transfer/<int:from_account_id>/<int:to_account_id>/<float:amount'
@@ -422,8 +446,8 @@ def transfer(from_account_id, to_account_id, amount):
     if to_account.status == 'I':
         return (f'Receiving Account with account_id {to_account_id} is '
                 f'inactive', 404)
-    to_customer_id = AccountInformation.query.get(to_account_id).customer_id
-    if request.method == 'PATCH':
+    to_customer_id = to_account.customer_id
+    try:
         new_balance = from_account.balance - Decimal(amount)
         if new_balance < 0:
             return (f'Transfer from Bank Account with account_id '
@@ -439,6 +463,8 @@ def transfer(from_account_id, to_account_id, amount):
         return (f'${Decimal(amount)} successfully transferred from Bank Account '
                 f'with account_id {from_account_id} to Bank Account with '
                 f'account_id {to_account_id}')
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 @app.route('/normalPayment/<int:account_id>/<float:amount>', methods=['PATCH'])
@@ -454,7 +480,7 @@ def normal_payment(account_id, amount):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    if request.method == 'PATCH':
+    try:
         new_balance = account.balance - Decimal(amount)
         if new_balance < 0:
             return (f'Bill payment will put the account with Account ID: '
@@ -464,6 +490,8 @@ def normal_payment(account_id, amount):
         create_transaction_history_entry(
             customer_id, account_id, 'Normal Payment', -Decimal(amount))
         return jsonify(account.serialize())
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # setting up automatic payment
@@ -482,7 +510,7 @@ def automatic_payment(account_id, amount, date):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    
+
     # check valid amount
     if Decimal(amount) <= 0:
         return f'Payment amount must be positive', 404
@@ -501,13 +529,14 @@ def automatic_payment(account_id, amount, date):
     # check that date is in future
     if utc_date < datetime.now().astimezone(pytz.utc):
         return f'Date must not be in past', 404
-    
 
-    if request.method == 'PATCH':
+    try:
         create_automatic_payment_entry(account.customer_id, account_id,
                                        Decimal(amount), utc_date)
         return (f'Payment of ${Decimal(amount)} successfully scheduled for Bank '
                 f'Account with account_id {account_id} and date {date}')
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # executing automatic payment, job should auto-execute when server is running
@@ -558,47 +587,92 @@ def interest_accumulation():
 
 
 def create_transaction_history_entry(customer_id, account_id, action, amount):
-    transaction = TransactionHistory(
-        customer_id=customer_id,
-        account_id=account_id,
-        action=action,
-        amount=amount
-    )
-    db.session.add(transaction)
-    db.session.commit()
+    try:
+        transaction = TransactionHistory(
+            customer_id=customer_id,
+            account_id=account_id,
+            action=action,
+            amount=amount
+        )
+        db.session.add(transaction)
+        db.session.commit()
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 def create_automatic_payment_entry(customer_id, account_id, amount, date):
-    autopayment = AutomaticPayments(
-        customer_id=customer_id,
-        account_id=account_id,
-        amount=amount,
-        date=date
-    )
-    db.session.add(autopayment)
-    db.session.commit()
+    try:
+        autopayment = AutomaticPayments(
+            customer_id=customer_id,
+            account_id=account_id,
+            amount=amount,
+            date=date
+        )
+        db.session.add(autopayment)
+        db.session.commit()
+    except Exception:
+        return 'Unexpected error occurred.'
 
 @app.route('/cancelAutomaticPayment/<int:payment_id>', methods=['PATCH'])
 @is_authenticated
 def cancel_automatic_payment(payment_id):
     customer_id = request.currentUser
-    payment = AutomaticPayments.query.filter(
-        AutomaticPayments.payment_id == payment_id,
-        AutomaticPayments.customer_id == customer_id
-    ).first()
+    try:
+        payment = AutomaticPayments.query.filter(
+            AutomaticPayments.payment_id == payment_id,
+            AutomaticPayments.customer_id == customer_id
+        ).first()
 
-    if payment:
-        db.session.delete(payment)  # Delete the record
-        db.session.commit()  # Commit the transaction
-        return jsonify(message=f'Automatic payment with the payment id: {payment_id} was successfully cancelled'), 200
-    else:
-        return jsonify(message=f'No automatic payment with the payment id: {payment_id} was found.'), 404
-    
+        if payment:
+            db.session.delete(payment)  # Delete the record
+            db.session.commit()  # Commit the transaction
+            return jsonify(
+                message=f'Automatic payment with the payment id: {payment_id} was successfully cancelled'), 200
+        else:
+            return jsonify(
+                message=f'No automatic payment with the payment id: {payment_id} was found.'), 404
+    except Exception:
+        return 'Unexpected error occurred.'
+
 
 def delete_automatic_payment_entry(payment_id):
-    AutomaticPayments.query.filter(AutomaticPayments.payment_id ==
-                                   payment_id).delete()
-    db.session.commit()
+    try:
+        AutomaticPayments.query.filter(AutomaticPayments.payment_id ==
+                                       payment_id).delete()
+        db.session.commit()
+    except Exception:
+        return 'Unexpected error occurred.'
+
+
+# upcoming automatic payments
+@app.route('/getUpcomingPayments/<int:number>', methods=['GET'])
+@is_authenticated
+def get_upcoming_payments(number):
+    customer_id = request.currentUser
+    if number < 0:
+        return f'Query number must be positive', 404
+    customer = CustomerInformation.query.get(customer_id)
+    if not customer:
+        return (f'Customer Account with customer_id {customer_id} not found',
+                404)
+    if customer.status == 'I':
+        return (f'Customer Account with customer_id {customer_id} is '
+                f'inactive', 404)
+    try:
+        upcoming = []
+        if number == 0:
+            upcoming = (AutomaticPayments.query.filter
+                        (AutomaticPayments.customer_id == customer_id))
+        else:
+            upcoming = (AutomaticPayments.query.filter
+                        (AutomaticPayments.customer_id == customer_id)).limit(
+                number)
+        upcoming_payments = []
+        for payment in upcoming:
+            upcoming_payments.append(payment.serialize())
+        return jsonify(upcoming_payments)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # number = 0 to return all entries
@@ -615,7 +689,7 @@ def get_customer_complete_history(number):
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
-    if request.method == 'GET':
+    try:
         if number == 0:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id)
@@ -629,6 +703,8 @@ def get_customer_complete_history(number):
         for record in records:
             record_list.append(record.serialize())
         return jsonify(record_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # number = 0 to return all entries
@@ -645,7 +721,7 @@ def get_customer_transaction_history(number):
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
-    if request.method == 'GET':
+    try:
         if number == 0:
             transactions = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id,
@@ -663,6 +739,8 @@ def get_customer_transaction_history(number):
         for transaction in transactions:
             transaction_list.append(transaction.serialize())
         return jsonify(transaction_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # number = 0 to return all entries
@@ -680,7 +758,7 @@ def get_customer_payment_history(number):
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
 
-    if request.method == 'GET':
+    try:
         if number == 0:
             payments = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id,
@@ -698,35 +776,8 @@ def get_customer_payment_history(number):
         for payment in payments:
             payment_list.append(payment.serialize())
         return jsonify(payment_list)
-
-
-# upcoming automatic payments
-@app.route('/getUpcomingPayments/<int:number>', methods=['GET'])
-@is_authenticated
-def get_upcoming_payments(number):
-    customer_id = request.currentUser
-    if number < 0:
-        return f'Query number must be positive', 404
-    customer = CustomerInformation.query.get(customer_id)
-    if not customer:
-        return (f'Customer Account with customer_id {customer_id} not found',
-                404)
-    if customer.status == 'I':
-        return (f'Customer Account with customer_id {customer_id} is '
-                f'inactive', 404)
-    if request.method == 'GET':
-        upcoming = []
-        if number == 0:
-            upcoming = (AutomaticPayments.query.filter
-                        (AutomaticPayments.customer_id == customer_id))
-        else:
-            upcoming = (AutomaticPayments.query.filter
-                        (AutomaticPayments.customer_id == customer_id)).limit(
-                number)
-        upcoming_payments = []
-        for payment in upcoming:
-            upcoming_payments.append(payment.serialize())
-        return jsonify(upcoming_payments)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # number = 0 to return all entries
@@ -743,7 +794,7 @@ def get_account_complete_history(account_id, number):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    if request.method == 'GET':
+    try:
         if number == 0:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id)
@@ -757,6 +808,8 @@ def get_account_complete_history(account_id, number):
         for record in records:
             record_list.append(record.serialize())
         return jsonify(record_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # number = 0 to return all entries
@@ -773,7 +826,7 @@ def get_account_transaction_history(account_id, number):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    if request.method == 'GET':
+    try:
         if number == 0:
             transactions = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id,
@@ -791,6 +844,8 @@ def get_account_transaction_history(account_id, number):
         for transaction in transactions:
             transaction_list.append(transaction.serialize())
         return jsonify(transaction_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # number = 0 to return all entries
@@ -807,7 +862,7 @@ def get_account_payment_history(account_id, number):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    if request.method == 'GET':
+    try:
         if number == 0:
             payments = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id,
@@ -825,6 +880,8 @@ def get_account_payment_history(account_id, number):
         for payment in payments:
             payment_list.append(payment.serialize())
         return jsonify(payment_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # default values:
@@ -855,52 +912,89 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
     if zip_code < 10000 or zip_code > 100000:
         return f'Zip code must be a 5-digit integer', 404
 
-    select_customers = (db.session.query(
-        CustomerInformation, func.sum(AccountInformation.balance).label(
-            "total_balance"))
-                        .filter(CustomerInformation.customer_id ==
-                                AccountInformation.customer_id)
-                        .group_by(CustomerInformation.customer_id))
+    try:
+        select_customers = (db.session.query(
+            CustomerInformation, func.sum(AccountInformation.balance).label(
+                "total_balance"))
+                            .filter(CustomerInformation.customer_id ==
+                                    AccountInformation.customer_id)
+                            .group_by(CustomerInformation.customer_id))
 
-    select_customers = select_customers.filter(
-        CustomerInformation.status == 'A')
-
-    select_customers = select_customers.filter(
-        CustomerInformation.age >= min_age)
-
-    if max_age != 0:
         select_customers = select_customers.filter(
-            CustomerInformation.age <= max_age)
+            CustomerInformation.status == 'A')
 
-    if gender != 'A':
         select_customers = select_customers.filter(
-            CustomerInformation.gender == gender)
+            CustomerInformation.age >= min_age)
 
-    if zip_code != 100000:
-        select_customers = select_customers.filter(
-            CustomerInformation.zip_code == zip_code)
+        if max_age != 0:
+            select_customers = select_customers.filter(
+                CustomerInformation.age <= max_age)
 
-    select_customers = select_customers.having(
-        text(f'total_balance >= {min_balance}'))
+        if gender != 'A':
+            select_customers = select_customers.filter(
+                CustomerInformation.gender == gender)
 
-    if max_balance != Decimal(0):
+        if zip_code != 100000:
+            select_customers = select_customers.filter(
+                CustomerInformation.zip_code == zip_code)
+
         select_customers = select_customers.having(
-            text(f'total_balance <= {max_balance}'))
+            text(f'total_balance >= {min_balance}'))
 
-    customer_list = []
+        if max_balance != Decimal(0):
+            select_customers = select_customers.having(
+                text(f'total_balance <= {max_balance}'))
 
-    for record in select_customers.all():
-        customer = record[0]
+        customer_list = []
+
+        for record in select_customers.all():
+            customer = record[0]
+            customer_data = {
+                'customer_id': customer.customer_id,
+                'age': customer.age,
+                'gender': customer.gender,
+                'zip_code': customer.zip_code,
+                'balance': record[1]
+            }
+            customer_list.append(customer_data)
+
+        return jsonify(customer_list)
+    except Exception:
+        return 'Unexpected error occurred.'
+
+
+@app.route('/generateIndividualReport/<int:customer_id>/', methods=['GET'])
+@is_authenticated
+@is_admin
+def generate_individual_report(customer_id):
+    # try:
+        select_customer = (db.session.query(
+            CustomerInformation,
+            func.sum(AccountInformation.balance).label("total_balance"),
+            func.count(AccountInformation.account_id).label("account_count"))
+                            .filter(CustomerInformation.customer_id ==
+                                    customer_id,
+                                    AccountInformation.customer_id ==
+                                    CustomerInformation.customer_id,
+                                    AccountInformation.status == 'A').group_by(
+            CustomerInformation.customer_id)).first()
+
+        customer = select_customer[0]
         customer_data = {
             'customer_id': customer.customer_id,
+            'username': customer.username,
+            'email': customer.email,
+            'full_name': customer.full_name,
             'age': customer.age,
             'gender': customer.gender,
             'zip_code': customer.zip_code,
-            'balance': record[1]
+            'status': customer.status,
+            'balance': select_customer[1],
+            'accounts': select_customer[2]
         }
-        customer_list.append(customer_data)
-
-    return jsonify(customer_list)
+        return jsonify(customer_data)
+    # except Exception:
+    #     return 'Unexpected error occurred.'
 
 
 @app.route('/checkDeposit/<int:account_id>', methods=["POST"])
@@ -925,18 +1019,22 @@ def check_deposit(account_id):
     except Exception:
         return "Can not scan the check. Not in valid format", 400
 
-    # check if the name on the check matches current user's name
-    account = AccountInformation.query.filter_by(account_id=account_id).first()
-    if account.customer.full_name != name:
-        return "Check does not belong to current user", 403
+    try:
+        # check if the name on the check matches current user's name
+        account = AccountInformation.query.filter_by(
+            account_id=account_id).first()
+        if account.customer.full_name != name:
+            return "Check does not belong to current user", 403
 
-    # deposit the amount to the account
-    account.balance += amount
-    create_transaction_history_entry(
-        customer_id, account_id, 'Deposit', amount)
-    db.session.commit()
+        # deposit the amount to the account
+        account.balance += amount
+        create_transaction_history_entry(
+            customer_id, account_id, 'Deposit', amount)
+        db.session.commit()
 
-    return jsonify(account.serialize())
+        return jsonify(account.serialize())
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 @app.route('/')
