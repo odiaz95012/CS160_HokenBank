@@ -195,7 +195,6 @@ def register():
     return jsonify(customer.serialize()), 200
 
 
-
 # Deactivate Customer Account
 @app.route('/deactivateCustomer', methods=['PATCH'])
 @is_authenticated
@@ -267,26 +266,20 @@ def open_account():
 @is_authenticated
 @account_owner
 def close_account(account_id):
-    if request.method == 'PATCH':
-        try:
-            customer_id = request.currentUser
-            password = request.get_json().get('password')
-            hashed_password = CustomerInformation.query.get(customer_id).password
-            if not bcrypt.check_password_hash(hashed_password, password):
-                return f'Invalid password', 404
-            account = AccountInformation.query.get(account_id)
-            if not account:
-                return f'Bank Account with account_id {account_id} not found', 404
-            if account.status == 'I':
-                return (f'Bank Account with account_id {account_id} is inactive',
-                        404)
-            account.balance = Decimal(0)
-            account.status = 'I'
-            db.session.commit()
-            return (f'Bank Account with account_id {account_id} '
-                    f'closed successfully')
-        except Exception:
-            return 'Unexpected error occurred.'
+    account = AccountInformation.query.get(account_id)
+    if not account:
+        return f'Bank Account with account_id {account_id} not found', 404
+    if account.status == 'I':
+        return (f'Bank Account with account_id {account_id} is inactive',
+                404)
+    try:
+        account.balance = Decimal(0)
+        account.status = 'I'
+        db.session.commit()
+        return (f'Bank Account with account_id {account_id} '
+                f'closed successfully')
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # Assuming you have a serialize method in your model
@@ -902,9 +895,9 @@ def get_account_payment_history(account_id, number):
 @is_admin
 def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
                          gender):
-    if min_balance < Decimal(0):
+    if min_balance < 0:
         return f'Minimum balance must be positive', 404
-    if max_balance < Decimal(0):
+    if max_balance < 0:
         return f'Maximum balance must be positive', 404
     if max_balance != 0 and max_balance < min_balance:
         return f'Minimum balance cannot exceed maximum balance', 404

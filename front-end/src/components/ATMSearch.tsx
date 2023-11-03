@@ -201,7 +201,7 @@ function ATMSearch() {
 
     return (
         <>
-            <NavBar caller='atmSearch'/>
+            <NavBar />
             <div className='container mt-2 mb-5'>
                 <div className='row'>
                     <div className='col-md-12'>
@@ -226,7 +226,7 @@ function ATMSearch() {
                             <div className='col-12 col-md-4 my-2'>
                                 <div className='form-outline'>
                                     <input type="number" min={1} max={20} id="radius" className="form-control" name="radius" placeholder='Radius(Miles)' onChange={handleRadiusChange} />
-                                    <label className="form-label" htmlFor='radius'>Search Radius (Miles)</label>
+                                    <label className="form-label" htmlFor='radius'>Radius (Miles)</label>
                                 </div>
                             </div>
                             <div className='col-12 col-md-4 my-2'>

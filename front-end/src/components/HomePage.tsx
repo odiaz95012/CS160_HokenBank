@@ -287,7 +287,7 @@ function HomePage() {
             return;
         }
         if (!isValidAmount(amt)) {
-            setAlert({ text: "Please enter a valid amount (e.g. 250.00).", variant: "warning" });
+            setAlert({ text: "Please enter a valid amount (e.g. $250.00).", variant: "warning" });
             handleAlert();
             return;
         }
@@ -349,7 +349,7 @@ function HomePage() {
             handleAlert();
             return;
         } else if (!isValidAmount(amt.toString())) {
-            setAlert({ text: "Please enter a valid amount for the payment (e.g. 250.00).", variant: "warning" });
+            setAlert({ text: "Please enter a valid amount for the payment (e.g. $250.00).", variant: "warning" });
             handleAlert();
             return;
         } else {
@@ -530,7 +530,7 @@ function HomePage() {
     return (
 
         <div className='overflow-hidden'>
-            <NavBar caller='home'/>
+            <NavBar />
             {/* <!-- Welcome Banner--> */}
             {
                 isUserDataLoaded ? (
