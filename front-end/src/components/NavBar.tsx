@@ -5,7 +5,10 @@ import LogoutModal from './LogoutModal';
 import CloseAccountModal from './CloseAccountModal.tsx';
 import CancelAutomaticPayments from './CancelAutomaticPayments.tsx';
 
-function NavBar() {
+interface NavBarProps {
+    caller: string
+}
+function NavBar({ caller }: NavBarProps): JSX.Element {
     const navigate = useNavigate();
 
 
@@ -25,13 +28,34 @@ function NavBar() {
                         <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span className="navbar-toggler-icon"></span></button>
                         <div className="collapse navbar-collapse" id="navbarSupportedContent">
                             <ul className="navbar-nav ms-auto mb-lg-0 my-2">
-                                <li className="nav-item my-2"><button type="button" className="nav-link btn btn-outline-secondary nav-bar-bttn" onClick={() => navigate('/atmSearch')}><i className="bi bi-search me-2"></i>ATM Search</button></li>
+                                {caller !== 'atmSearch' ? (
+                                    <li className="nav-item my-2">
+                                        <button
+                                            type="button"
+                                            className="nav-link btn btn-outline-secondary nav-bar-bttn"
+                                            onClick={() => navigate('/atmSearch')}>
+                                            <i className="bi bi-search me-2"></i>ATM Search
+                                        </button>
+                                    </li>
+                                ) : (
+                                    <li className="nav-item my-2">
+                                        <button
+                                            type="button"
+                                            className="nav-link btn btn-outline-secondary nav-bar-bttn"
+                                            onClick={() => navigate('/home')}>
+                                            <i className="bi bi-arrow-left pe-1"></i>Return Home
+                                        </button>
+                                    </li>
+                                )}
+
                                 <li className="nav-item my-2">
-                                    <CancelAutomaticPayments/>
+                                    <CancelAutomaticPayments />
                                 </li>
-                                <li className="nav-item my-2">
-                                    <CloseAccountModal/>
+                                { caller !== 'accountDetails' ? (
+                                     <li className="nav-item my-2">
+                                    <CloseAccountModal />
                                 </li>
+                                ):(null)}
                                 <li className="nav-item my-2">
                                     <LogoutModal />
                                 </li>

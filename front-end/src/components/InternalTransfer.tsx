@@ -49,7 +49,8 @@ function InternalTransfer({ onChange, onClose }: InternalTransferProps) {
     } else {
       setAmountError("");
     }
-  }
+  };
+
 
   return (
     <div>
@@ -61,7 +62,7 @@ function InternalTransfer({ onChange, onClose }: InternalTransferProps) {
             <input
               type="text"
               className="form-control rounded"
-              placeholder="Add/Search for email or phone number"
+              placeholder="Please enter the account ID of the recipient account" 
               aria-label="Search"
               aria-describedby="search-addon"
               value={email}

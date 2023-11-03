@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import '../componentStyles/LoginStyles.css';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -97,6 +97,12 @@ function Login() {
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
     };
+
+    useEffect(() => { // navigate to home page if user is already logged in
+        if(Cookies.get('authToken')) {
+            navigate('/home');
+        }
+    }, [navigate]);
 
     return (
         <section className="background-radial-gradient overflow-auto">
