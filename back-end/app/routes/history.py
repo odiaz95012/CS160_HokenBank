@@ -26,7 +26,7 @@ def get_customer_complete_history(number):
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
-    if request.method == 'GET':
+    try:
         if number == 0:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id)
@@ -40,6 +40,8 @@ def get_customer_complete_history(number):
         for record in records:
             record_list.append(record.serialize())
         return jsonify(record_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # number = 0 to return all entries
@@ -56,7 +58,7 @@ def get_customer_transaction_history(number):
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
-    if request.method == 'GET':
+    try:
         if number == 0:
             transactions = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id,
@@ -74,6 +76,8 @@ def get_customer_transaction_history(number):
         for transaction in transactions:
             transaction_list.append(transaction.serialize())
         return jsonify(transaction_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # number = 0 to return all entries
@@ -91,7 +95,7 @@ def get_customer_payment_history(number):
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
 
-    if request.method == 'GET':
+    try:
         if number == 0:
             payments = (TransactionHistory.query.filter(
                 TransactionHistory.customer_id == customer_id,
@@ -109,6 +113,8 @@ def get_customer_payment_history(number):
         for payment in payments:
             payment_list.append(payment.serialize())
         return jsonify(payment_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # number = 0 to return all entries
@@ -125,7 +131,7 @@ def get_account_complete_history(account_id, number):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    if request.method == 'GET':
+    try:
         if number == 0:
             records = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id)
@@ -139,6 +145,8 @@ def get_account_complete_history(account_id, number):
         for record in records:
             record_list.append(record.serialize())
         return jsonify(record_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # number = 0 to return all entries
@@ -155,7 +163,7 @@ def get_account_transaction_history(account_id, number):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    if request.method == 'GET':
+    try:
         if number == 0:
             transactions = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id,
@@ -173,6 +181,8 @@ def get_account_transaction_history(account_id, number):
         for transaction in transactions:
             transaction_list.append(transaction.serialize())
         return jsonify(transaction_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # number = 0 to return all entries
@@ -189,7 +199,7 @@ def get_account_payment_history(account_id, number):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    if request.method == 'GET':
+    try:
         if number == 0:
             payments = (TransactionHistory.query.filter(
                 TransactionHistory.account_id == account.account_id,
@@ -207,6 +217,8 @@ def get_account_payment_history(account_id, number):
         for payment in payments:
             payment_list.append(payment.serialize())
         return jsonify(payment_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # default values:
@@ -237,49 +249,86 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
     if zip_code < 10000 or zip_code > 100000:
         return f'Zip code must be a 5-digit integer', 404
 
-    select_customers = (db.session.query(
-        CustomerInformation, func.sum(AccountInformation.balance).label(
-            "total_balance"))
-        .filter(CustomerInformation.customer_id ==
-                AccountInformation.customer_id)
-        .group_by(CustomerInformation.customer_id))
+    try:
+        select_customers = (db.session.query(
+            CustomerInformation, func.sum(AccountInformation.balance).label(
+                "total_balance"))
+            .filter(CustomerInformation.customer_id ==
+                    AccountInformation.customer_id)
+            .group_by(CustomerInformation.customer_id))
 
-    select_customers = select_customers.filter(
-        CustomerInformation.status == 'A')
-
-    select_customers = select_customers.filter(
-        CustomerInformation.age >= min_age)
-
-    if max_age != 0:
         select_customers = select_customers.filter(
-            CustomerInformation.age <= max_age)
+            CustomerInformation.status == 'A')
 
-    if gender != 'A':
         select_customers = select_customers.filter(
-            CustomerInformation.gender == gender)
+            CustomerInformation.age >= min_age)
 
-    if zip_code != 100000:
-        select_customers = select_customers.filter(
-            CustomerInformation.zip_code == zip_code)
+        if max_age != 0:
+            select_customers = select_customers.filter(
+                CustomerInformation.age <= max_age)
 
-    select_customers = select_customers.having(
-        text(f'total_balance >= {min_balance}'))
+        if gender != 'A':
+            select_customers = select_customers.filter(
+                CustomerInformation.gender == gender)
 
-    if max_balance != Decimal(0):
+        if zip_code != 100000:
+            select_customers = select_customers.filter(
+                CustomerInformation.zip_code == zip_code)
+
         select_customers = select_customers.having(
-            text(f'total_balance <= {max_balance}'))
+            text(f'total_balance >= {min_balance}'))
 
-    customer_list = []
+        if max_balance != Decimal(0):
+            select_customers = select_customers.having(
+                text(f'total_balance <= {max_balance}'))
 
-    for record in select_customers.all():
-        customer = record[0]
-        customer_data = {
-            'customer_id': customer.customer_id,
-            'age': customer.age,
-            'gender': customer.gender,
-            'zip_code': customer.zip_code,
-            'balance': record[1]
-        }
-        customer_list.append(customer_data)
+        customer_list = []
 
-    return jsonify(customer_list)
+        for record in select_customers.all():
+            customer = record[0]
+            customer_data = {
+                'customer_id': customer.customer_id,
+                'age': customer.age,
+                'gender': customer.gender,
+                'zip_code': customer.zip_code,
+                'balance': record[1]
+            }
+            customer_list.append(customer_data)
+
+        return jsonify(customer_list)
+    except Exception:
+        return 'Unexpected error occurred.'
+
+
+@history.route('/generateIndividualReport/<int:customer_id>/', methods=['GET'])
+@is_authenticated
+@is_admin
+def generate_individual_report(customer_id):
+    # try:
+    select_customer = (db.session.query(
+        CustomerInformation,
+        func.sum(AccountInformation.balance).label("total_balance"),
+        func.count(AccountInformation.account_id).label("account_count"))
+        .filter(CustomerInformation.customer_id ==
+                customer_id,
+                AccountInformation.customer_id ==
+                CustomerInformation.customer_id,
+                AccountInformation.status == 'A').group_by(
+        CustomerInformation.customer_id)).first()
+
+    customer = select_customer[0]
+    customer_data = {
+        'customer_id': customer.customer_id,
+        'username': customer.username,
+        'email': customer.email,
+        'full_name': customer.full_name,
+        'age': customer.age,
+        'gender': customer.gender,
+        'zip_code': customer.zip_code,
+        'status': customer.status,
+        'balance': select_customer[1],
+        'accounts': select_customer[2]
+    }
+    return jsonify(customer_data)
+    # except Exception:
+    #     return 'Unexpected error occurred.'
