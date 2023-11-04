@@ -98,11 +98,6 @@ function Login() {
         e.preventDefault();
     };
 
-    useEffect(() => { // navigate to home page if user is already logged in
-        if(Cookies.get('authToken')) {
-            navigate('/home');
-        }
-    }, [navigate]);
 
     return (
         <section className="background-radial-gradient overflow-auto">

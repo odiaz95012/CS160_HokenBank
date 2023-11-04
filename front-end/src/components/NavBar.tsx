@@ -1,70 +1,68 @@
-import React from 'react'
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../componentStyles/NavBarStyles.css';
+import { Navbar, Nav, Button } from 'react-bootstrap';
 import LogoutModal from './LogoutModal';
 import CloseAccountModal from './CloseAccountModal.tsx';
 import CancelAutomaticPayments from './CancelAutomaticPayments.tsx';
 
 interface NavBarProps {
-    caller: string
+    caller: string;
 }
+
 function NavBar({ caller }: NavBarProps): JSX.Element {
     const navigate = useNavigate();
 
-
     return (
-        <div className='row'>
-            {/* <!-- Responsive navbar--> */}
-            <div className='col-md-12'>
-                <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-                    <div className="container px-5">
-                        <img
-                            src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/lotus.webp"
-                            style={{ width: '85px' }}
-                            alt="logo"
-                            id="logo"
-                        />
-                        <a className="navbar-brand" id="home" onClick={() => navigate('/home')}>Hoken</a>
-                        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span className="navbar-toggler-icon"></span></button>
-                        <div className="collapse navbar-collapse" id="navbarSupportedContent">
-                            <ul className="navbar-nav ms-auto mb-lg-0 my-2">
-                                {caller !== 'atmSearch' ? (
-                                    <li className="nav-item my-2">
-                                        <button
-                                            type="button"
-                                            className="nav-link btn btn-outline-secondary nav-bar-bttn"
-                                            onClick={() => navigate('/atmSearch')}>
-                                            <i className="bi bi-search me-2"></i>ATM Search
-                                        </button>
-                                    </li>
-                                ) : (
-                                    <li className="nav-item my-2">
-                                        <button
-                                            type="button"
-                                            className="nav-link btn btn-outline-secondary nav-bar-bttn"
-                                            onClick={() => navigate('/home')}>
-                                            <i className="bi bi-arrow-left pe-1"></i>Return Home
-                                        </button>
-                                    </li>
-                                )}
+        <Navbar expand="lg" bg="dark" variant="dark">
+            <Navbar.Brand onClick={() => navigate('/home')} className='ms-2'>
+                <img
+                    src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/lotus.webp"
+                    style={{ width: '85px' }}
+                    alt="logo"
+                    id="logo"
+                />
+                Hoken
+            </Navbar.Brand>
+            <Navbar.Toggle aria-controls="navbarNav" />
+            <Navbar.Collapse id="navbarNav">
+                <Nav className="ms-auto mb-lg-0">
+                    {caller !== 'atmSearch' ? (
+                        <Nav.Item className="my-2">
+                            <Button
+                                variant="outline-secondary"
+                                className="nav-bar-bttn"
+                                onClick={() => navigate('/atmSearch')}
+                            >
+                                <i className="bi bi-search me-2"></i>ATM Search
+                            </Button>
+                        </Nav.Item>
+                    ) : (
+                        <Nav.Item className="my-2">
+                            <Button
+                                variant="outline-secondary"
+                                className="nav-bar-bttn"
+                                onClick={() => navigate('/home')}
+                            >
+                                <i className="bi bi-arrow-left pe-1"></i>Return Home
+                            </Button>
+                        </Nav.Item>
+                    )}
 
-                                <li className="nav-item my-2">
-                                    <CancelAutomaticPayments />
-                                </li>
-                                {caller !== 'accountDetails' ? (
-                                    <li className="nav-item my-2">
-                                        <CloseAccountModal />
-                                    </li>
-                                ) : (null)}
-                                <li className="nav-item my-2">
-                                    <LogoutModal />
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </nav>
-            </div>
-        </div>
-    )
+                    <Nav.Item className="my-2">
+                        <CancelAutomaticPayments />
+                    </Nav.Item>
+                    {caller !== 'accountDetails' ? (
+                        <Nav.Item className="my-2">
+                            <CloseAccountModal />
+                        </Nav.Item>
+                    ) : null}
+                    <Nav.Item className="my-2">
+                        <LogoutModal />
+                    </Nav.Item>
+                </Nav>
+            </Navbar.Collapse>
+        </Navbar>
+    );
 }
+
 export default NavBar;
