@@ -56,7 +56,7 @@ function NavBar({ caller }: NavBarProps): JSX.Element {
                             <CloseAccountModal />
                         </Nav.Item>
                     ) : null}
-                    <Nav.Item className="my-2">
+                    <Nav.Item className="my-2 me-4">
                         <LogoutModal />
                     </Nav.Item>
                 </Nav>

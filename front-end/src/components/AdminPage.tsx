@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 import PopUpAlert from './PopUpAlert';
 import '../componentStyles/AdminPageStyles.css';
 import CustomerCard from './CustomerCard';
-import NavBar from './NavBar';
+import AdminPageNavBar from './AdminPageNavbar';
 import axios from 'axios';
 
 function AdminPage() {
@@ -363,7 +363,7 @@ function AdminPage() {
 
   return (
     <div className='overflow-hidden'>
-      <NavBar caller='adminPage' />
+      <AdminPageNavBar/>
       {isLoading ? (
         <div className="spinner-border" role="status">
           <span className="visually-hidden">Loading...</span>
