@@ -87,7 +87,7 @@ def deactivate_customer():
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
-    if request.method == 'PATCH':
+    try:
         # set all active accounts to 0 balance and 'I' status
         db.session.query(AccountInformation).filter(
             AccountInformation.customer_id == customer.customer_id,
@@ -97,6 +97,8 @@ def deactivate_customer():
         db.session.commit()
         return (f'Customer Account with customer_id {customer_id} '
                 f'deactivated successfully')
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # Retrieve customer info by customer_id
@@ -104,13 +106,16 @@ def deactivate_customer():
 @is_authenticated
 def get_customer_by_id():
     customer_id = request.currentUser
-    if request.method == 'GET':
+    try:
         customer = CustomerInformation.query.get(customer_id)
         if not customer:
             return jsonify({'error': f'Customer Account with customer_id '
                                      f'{customer_id} not found'}), 404
         # add additional check for 'I' status?
         return jsonify(customer.serialize())
+
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # Get all customers
@@ -120,18 +125,21 @@ def get_customers():
     customers = CustomerInformation.query.all()
     customer_list = []
 
-    for customer in customers:
-        customer_data = {
-            'customer_id': customer.customer_id,
-            'username': customer.username,
-            'email': customer.email,
-            'password': customer.password,
-            'full_name': customer.full_name,
-            'age': customer.age,
-            'gender': customer.gender,
-            'zip_code': customer.zip_code,
-            'status': customer.status
-        }
-        customer_list.append(customer_data)
+    try:
+        for customer in customers:
+            customer_data = {
+                'customer_id': customer.customer_id,
+                'username': customer.username,
+                'email': customer.email,
+                'password': customer.password,
+                'full_name': customer.full_name,
+                'age': customer.age,
+                'gender': customer.gender,
+                'zip_code': customer.zip_code,
+                'status': customer.status
+            }
+            customer_list.append(customer_data)
 
-    return jsonify(customer_list)
+        return jsonify(customer_list)
+    except Exception:
+        return 'Unexpected error occurred.'

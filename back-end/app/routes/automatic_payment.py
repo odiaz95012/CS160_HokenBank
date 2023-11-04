@@ -49,28 +49,35 @@ def automatic_payment(account_id, amount, date):
     if utc_date < datetime.now().astimezone(pytz.utc):
         return f'Date must not be in past', 404
 
-    if request.method == 'PATCH':
+    try:
         create_automatic_payment_entry(account.customer_id, account_id,
                                        Decimal(amount), utc_date)
         return (f'Payment of ${Decimal(amount)} successfully scheduled for Bank '
                 f'Account with account_id {account_id} and date {date}')
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 @automaticPayment.route('/cancelAutomaticPayment/<int:payment_id>', methods=['PATCH'])
 @is_authenticated
 def cancel_automatic_payment(payment_id):
     customer_id = request.currentUser
-    payment = AutomaticPayments.query.filter(
-        AutomaticPayments.payment_id == payment_id,
-        AutomaticPayments.customer_id == customer_id
-    ).first()
+    try:
+        payment = AutomaticPayments.query.filter(
+            AutomaticPayments.payment_id == payment_id,
+            AutomaticPayments.customer_id == customer_id
+        ).first()
 
-    if payment:
-        db.session.delete(payment)  # Delete the record
-        db.session.commit()  # Commit the transaction
-        return jsonify(message=f'Automatic payment with the payment id: {payment_id} was successfully cancelled'), 200
-    else:
-        return jsonify(message=f'No automatic payment with the payment id: {payment_id} was found.'), 404
+        if payment:
+            db.session.delete(payment)  # Delete the record
+            db.session.commit()  # Commit the transaction
+            return jsonify(
+                message=f'Automatic payment with the payment id: {payment_id} was successfully cancelled'), 200
+        else:
+            return jsonify(
+                message=f'No automatic payment with the payment id: {payment_id} was found.'), 404
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # upcoming automatic payments
@@ -87,7 +94,7 @@ def get_upcoming_payments(number):
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
                 f'inactive', 404)
-    if request.method == 'GET':
+    try:
         upcoming = []
         if number == 0:
             upcoming = (AutomaticPayments.query.filter
@@ -100,3 +107,5 @@ def get_upcoming_payments(number):
         for payment in upcoming:
             upcoming_payments.append(payment.serialize())
         return jsonify(upcoming_payments)
+    except Exception:
+        return 'Unexpected error occurred.'

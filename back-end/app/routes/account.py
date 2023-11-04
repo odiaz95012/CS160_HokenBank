@@ -15,18 +15,21 @@ def open_account():
     account_type = request.get_json().get('account_type')
 
     # Create a customer object with the provided values
-    account = AccountInformation(
-        customer_id=customer_id,
-        account_type=account_type,
-        balance=Decimal(0),
-        status='A'
-    )
+    try:
+        # Create a customer object with the provided values
+        account = AccountInformation(
+            customer_id=customer_id,
+            account_type=account_type,
+            balance=Decimal(0),
+            status='A'
+        )
+        # Add the account to the database session and commit the changes
+        db.session.add(account)
+        db.session.commit()
 
-    # Add the account to the database session and commit the changes
-    db.session.add(account)
-    db.session.commit()
-
-    return jsonify(account.serialize())
+        return jsonify(account.serialize())
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 @account.route('/closeAccount/<int:account_id>', methods=['PATCH'])
@@ -39,12 +42,15 @@ def close_account(account_id):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-    if request.method == 'PATCH':
+    try:
         account.balance = Decimal(0)
         account.status = 'I'
         db.session.commit()
         return (f'Bank Account with account_id {account_id} '
                 f'closed successfully')
+
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # Assuming you have a serialize method in your model
@@ -67,18 +73,20 @@ def get_account_by_id(account_id: int):
 def get_accounts():
     accounts = AccountInformation.query.all()
     account_list = []
+    try:
+        for account in accounts:
+            account_data = {
+                'account_id': account.account_id,
+                'customer_id': account.customer_id,
+                'account_type': account.account_type,
+                'balance': account.balance,
+                'status': account.status
+            }
+            account_list.append(account_data)
 
-    for account in accounts:
-        account_data = {
-            'account_id': account.account_id,
-            'customer_id': account.customer_id,
-            'account_type': account.account_type,
-            'balance': account.balance,
-            'status': account.status
-        }
-        account_list.append(account_data)
-
-    return jsonify(account_list)
+        return jsonify(account_list)
+    except Exception:
+        return 'Unexpected error occurred.'
 
 
 # Get all active accounts associated with the customer ID
@@ -86,17 +94,20 @@ def get_accounts():
 @is_authenticated
 def get_customer_accounts():
     customer_id = request.currentUser
-    active_accounts = AccountInformation.query.filter(
-        AccountInformation.customer_id == customer_id,
-        AccountInformation.status == 'A').all()
-    account_list = []
+    try:
+        active_accounts = AccountInformation.query.filter(
+            AccountInformation.customer_id == customer_id,
+            AccountInformation.status == 'A').all()
+        account_list = []
 
-    for account in active_accounts:
-        account_data = {
-            'account_id': account.account_id,
-            'account_type': account.account_type,
-            'balance': account.balance
-        }
-        account_list.append(account_data)
+        for account in active_accounts:
+            account_data = {
+                'account_id': account.account_id,
+                'account_type': account.account_type,
+                'balance': account.balance
+            }
+            account_list.append(account_data)
 
-    return jsonify(account_list)
+        return jsonify(account_list)
+    except Exception:
+        return 'Unexpected error occurred.'
