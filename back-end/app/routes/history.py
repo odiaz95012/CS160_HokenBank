@@ -304,31 +304,31 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
 @is_authenticated
 @is_admin
 def generate_individual_report(customer_id):
-    # try:
-    select_customer = (db.session.query(
-        CustomerInformation,
-        func.sum(AccountInformation.balance).label("total_balance"),
-        func.count(AccountInformation.account_id).label("account_count"))
+    try:
+        select_customer = (db.session.query(
+            CustomerInformation,
+            func.sum(AccountInformation.balance).label("total_balance"),
+            func.count(AccountInformation.account_id).label("account_count"))
         .filter(CustomerInformation.customer_id ==
                 customer_id,
                 AccountInformation.customer_id ==
                 CustomerInformation.customer_id,
                 AccountInformation.status == 'A').group_by(
-        CustomerInformation.customer_id)).first()
+            CustomerInformation.customer_id)).first()
 
-    customer = select_customer[0]
-    customer_data = {
-        'customer_id': customer.customer_id,
-        'username': customer.username,
-        'email': customer.email,
-        'full_name': customer.full_name,
-        'age': customer.age,
-        'gender': customer.gender,
-        'zip_code': customer.zip_code,
-        'status': customer.status,
-        'balance': select_customer[1],
-        'accounts': select_customer[2]
-    }
-    return jsonify(customer_data)
-    # except Exception:
-    #     return 'Unexpected error occurred.'
+        customer = select_customer[0]
+        customer_data = {
+            'customer_id': customer.customer_id,
+            'username': customer.username,
+            'email': customer.email,
+            'full_name': customer.full_name,
+            'age': customer.age,
+            'gender': customer.gender,
+            'zip_code': customer.zip_code,
+            'status': customer.status,
+            'balance': select_customer[1],
+            'accounts': select_customer[2]
+        }
+        return jsonify(customer_data)
+    except Exception:
+        return 'Unexpected error occurred.'
