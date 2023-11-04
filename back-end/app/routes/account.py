@@ -3,6 +3,8 @@ from models.account import AccountInformation
 from models import db
 from helpers.middleware import is_authenticated, account_owner
 from decimal import Decimal
+from models.customer import CustomerInformation
+from . import bcrypt
 
 account = Blueprint('account', __name__)
 
@@ -37,6 +39,11 @@ def open_account():
 @account_owner
 def close_account(account_id):
     account = AccountInformation.query.get(account_id)
+    customer_id = request.currentUser
+    password = request.get_json().get('password')
+    hashed_password = CustomerInformation.query.get(customer_id).password
+    if not bcrypt.check_password_hash(hashed_password, password):
+        return 'Incorrect password', 401
     if not account:
         return f'Bank Account with account_id {account_id} not found', 404
     if account.status == 'I':
