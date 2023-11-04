@@ -206,12 +206,18 @@ function Registration() {
       <div className="container px-4 py-5 px-md-5 text-center text-lg-start my-5">
         <div className="row gx-lg-5 align-items-center mb-5">
           <div className="col-lg-6 mb-5 mb-lg-0" style={{ zIndex: 10 }}>
-            <h1 className="my-5 display-5 fw-bold ls-tight" style={{ color: 'hsl(218, 81%, 95%)' }}>
+            <h1 className="mb-4 display-5 fw-bold ls-tight" style={{ color: 'hsl(218, 81%, 95%)' }}>
               Your most reliable <br />
               <span style={{ color: 'hsl(218, 81%, 75%)' }}> online banking utility</span>
             </h1>
             <p className="mb-4 opacity-70" style={{ color: 'hsl(218, 81%, 85%)' }}>
-              Lorem ipsum dolor, sit amet consectetur adipisicing elit. Temporibus, expedita iusto veniam atque, magni tempora mollitia dolorum consequatur nulla, neque debitis eos reprehenderit quasi ab ipsum nisi dolorem modi. Quos?
+              Join Hoken Bank Today!
+              <br/><br/>
+              Register now to unlock a world of financial possibilities.
+              <br/><br/> 
+              Experience secure and efficient banking at your fingertips.
+              <br/><br/>
+              Hoken Online Bank - Your financial partner.
             </p>
           </div>
           <div className="col-lg-6 mb-5 mb-lg-0 position-relative">
