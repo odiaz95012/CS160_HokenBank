@@ -137,7 +137,7 @@ function ATMHome() {
             return;
         }
         if (!isValidAmount(amount.toString())) {
-            setAlert({ text: "Please enter a valid amount to deposit (e.g. $25.99).", variant: "warning" });
+            setAlert({ text: "Please enter a valid amount to deposit (e.g. 25.99).", variant: "warning" });
             handleAlert();
             return;
         }
@@ -181,7 +181,7 @@ function ATMHome() {
             return;
         }
         if (!isValidAmount(amount.toString())) {
-            setAlert({ text: "Please enter a valid amount to withdraw (e.g. $25.99).", variant: "warning" });
+            setAlert({ text: "Please enter a valid amount to withdraw (e.g. 25.99).", variant: "warning" });
             handleAlert();
             return;
         }

@@ -10,6 +10,7 @@ import NavBar from './NavBar';
 import Dropdown from './Dropdown';
 import '../componentStyles/AccountDetailsStyles.css';
 
+
 function AccountDetails() {
     const { accountID } = useParams();
     const [selectedNumEntries, setSelectedNumEntries] = useState<number>(0);
@@ -210,7 +211,7 @@ function AccountDetails() {
     return (
         <>
             {/* Responsive navbar */}
-            <NavBar />
+            <NavBar caller='accountDetails'/>
 
             {isUserDataLoaded ? (
                 <div className="container my-5" style={{ border: '1px solid grey', borderRadius: '15px' }}>
@@ -241,7 +242,7 @@ function AccountDetails() {
                             <PopUpModal
                                 activatingBttn={<button className="btn btn-primary my-2">Close Account</button>}
                                 title={<div style={{ textAlign: "center" }}><p className="h4">Close Account</p></div>}
-                                body={<CloseAccount />}
+                                body={<CloseAccount account_id={accountID? parseInt(accountID) : -1}/>}
                             />
                         </div>
                     </div>
