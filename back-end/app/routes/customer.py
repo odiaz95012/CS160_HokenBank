@@ -27,10 +27,10 @@ def login():
     customer = CustomerInformation.query.filter_by(username=username).first()
     if not customer:
         return (f'No account exists with the username {username}.\nPlease '
-                f'enter a valid username.'), 401
+                f'enter a valid username.'), 404
     if customer.status == 'I':
         return (f'Customer account with username {username} has been '
-                f'deactivated.\nPlease enter a valid username.'), 401
+                f'deactivated.\nPlease enter a valid username.'), 406
 
     if not bcrypt.check_password_hash(customer.password, password):
         return "Invalid Password", 401
@@ -86,7 +86,7 @@ def deactivate_customer():
                 404)
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
-                f'inactive', 404)
+                f'inactive', 406)
     try:
         # set all active accounts to 0 balance and 'I' status
         db.session.query(AccountInformation).filter(
@@ -98,7 +98,7 @@ def deactivate_customer():
         return (f'Customer Account with customer_id {customer_id} '
                 f'deactivated successfully')
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 # Retrieve customer info by customer_id
@@ -115,7 +115,7 @@ def get_customer_by_id():
         return jsonify(customer.serialize())
 
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 # Get all customers
@@ -142,4 +142,4 @@ def get_customers():
 
         return jsonify(customer_list)
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500

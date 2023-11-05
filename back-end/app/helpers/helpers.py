@@ -17,7 +17,7 @@ def create_transaction_history_entry(customer_id, account_id, action, amount):
         db.session.add(transaction)
         db.session.commit()
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 def create_automatic_payment_entry(customer_id, account_id, amount, date):
@@ -31,7 +31,7 @@ def create_automatic_payment_entry(customer_id, account_id, amount, date):
         db.session.add(autopayment)
         db.session.commit()
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 def delete_automatic_payment_entry(payment_id):
@@ -40,7 +40,7 @@ def delete_automatic_payment_entry(payment_id):
                                        payment_id).delete()
         db.session.commit()
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 def create_bank_manager():
