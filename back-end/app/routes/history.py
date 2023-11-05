@@ -300,7 +300,7 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
         return 'Unexpected error occurred.', 500
 
 
-@history.route('/generateIndividualReport/<int:customer_id>/', methods=['GET'])
+@history.route('/generateIndividualReport/<int:customer_id>', methods=['GET'])
 @is_authenticated
 @is_admin
 def generate_individual_report(customer_id):
@@ -337,5 +337,7 @@ def generate_individual_report(customer_id):
             'accounts': select_customer[2]
         }
         return jsonify(customer_data)
-    except Exception:
+    except Exception as e:
+        # Log the exception to help diagnose the issue
+        print(f"Exception: {str(e)}")
         return 'Unexpected error occurred.', 500
