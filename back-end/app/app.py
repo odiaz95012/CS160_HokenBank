@@ -75,12 +75,12 @@ def automatic_payment_cycle():
     with app.app_context():
         due_today = (AutomaticPayments.query.filter(
                      AutomaticPayments.date == datetime.now().astimezone(pytz.utc).date()))
-        if (due_today):
+        if due_today:
             for due in due_today:
                 automatic_payment_job(due.payment_id)
         over_due = (AutomaticPayments.query.filter(
             AutomaticPayments.date < datetime.now().astimezone(pytz.utc).date()))
-        if (over_due):
+        if over_due:
             for due in over_due:
                 automatic_payment_job(due.payment_id)
 

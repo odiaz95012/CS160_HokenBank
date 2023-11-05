@@ -23,9 +23,9 @@ def is_authenticated(func):
         customer = CustomerInformation.query.filter_by(
             customer_id=current_customer).first()
         if not customer:
-            return "Invalid Customer", 401
+            return "Customer Not Found", 404
         if customer.status == 'I':
-            return "Inactive Customer", 401
+            return "Inactive Customer", 406
         request.currentUser = current_customer
         return func(*args, **kwargs)
 
@@ -39,12 +39,11 @@ def account_owner(func):
         current_customer = request.currentUser
         account = AccountInformation.query.filter_by(
             account_id=account_id).first()
-        if account:
-            account_owner_id = account.customer.customer_id
-            if current_customer != account_owner_id:
-                return "Not Account Owner", 403
-        else:
-            return "Invalid Account ID ", 400
+        if not account:
+            return "Account ID Not Found", 404
+        account_owner_id = account.customer.customer_id
+        if current_customer != account_owner_id:
+            return "Not Account Owner", 403
 
         return func(*args, **kwargs)
 
@@ -58,7 +57,7 @@ def is_admin(func):
         username = CustomerInformation.query.filter_by(
             customer_id=current_customer).first().username
         if username != 'bank_manager':
-            return "Not a manager", 401
+            return "Not a Manager", 403
 
         return func(*args, **kwargs)
 
@@ -72,12 +71,11 @@ def automatic_payment_owner(func):
         payment_id = kwargs["payment_id"]
         payment = AutomaticPayments.query.filter_by(
             payment_id=payment_id).first()
-        if payment:
-            payment_owner_id = payment.customer.customer_id
-            if current_customer != payment_owner_id:
-                return "Not Automatic Payment Owner", 403
-        else:
-            return "Invalid Payment ID ", 400
+        if not payment:
+            return "Payment ID Not Found", 404
+        payment_owner_id = payment.customer.customer_id
+        if current_customer != payment_owner_id:
+            return "Not Automatic Payment Owner", 403
 
         return func(*args, **kwargs)
 
