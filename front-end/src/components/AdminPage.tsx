@@ -3,7 +3,7 @@ import Cookies from 'js-cookie';
 import PopUpAlert from './PopUpAlert';
 import '../componentStyles/AdminPageStyles.css';
 import CustomerCard from './CustomerCard';
-import NavBar from './NavBar';
+import AdminPageNavBar from './AdminPageNavbar';
 import axios from 'axios';
 
 function AdminPage() {
@@ -23,13 +23,13 @@ function AdminPage() {
   const [customers, setCustomers] = useState<(CustomerData)[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-interface inputData {
+  interface inputData {
     minBalance: number,
     maxBalance: number,
     minAge: number,
     maxAge: number,
     zipcode: number,
-    gender: string
+    gender: string,
   }
 
   const defaultQueryData: inputData = {
@@ -177,23 +177,7 @@ interface inputData {
       handleAlert();
       return;
     }
-    // Get the current date and time
-    const currentDate = new Date();
-    const datePart = `${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate
-      .getDate()
-      .toString()
-      .padStart(2, '0')}-${currentDate.getFullYear()}`;
-    const timePart = `${currentDate
-      .getHours()
-      .toString()
-      .padStart(2, '0')}.${currentDate
-        .getMinutes()
-        .toString()
-        .padStart(2, '0')}.${currentDate
-          .getSeconds()
-          .toString()
-          .padStart(2, '0')}`;
-    const formattedDate = `${datePart}-${timePart}`;
+    const formattedDate = getCurrDateTime();
 
     // Create a filename based on the current date and time
     const filename = `customer_report_${formattedDate}.txt`;
@@ -255,11 +239,110 @@ interface inputData {
     fetchData(); // Call the function to fetch data on page load
   }, []);
 
+  interface userReport {
+    customer_id: number,
+    full_name: string,
+    username: string,
+    email: string,
+    age: number,
+    gender: string,
+    zip_code: number,
+    status: string,
+    balance: string,
+    accounts: number
+  }
+
+  const [userReport, setUserReport] = useState<userReport>({
+    customer_id: 0,
+    full_name: '',
+    username: '',
+    email: '',
+    age: 0,
+    gender: '',
+    zip_code: 0,
+    status: '',
+    balance: '',
+    accounts: 0
+  });
 
 
 
 
+  const generateUserReport = async (customer_id: number, authToken: string) => {
+    axios.get(`http://localhost:8000/generateIndividualReport/${customer_id}`, {
+      headers: {
+        'authorization': `Bearer ${authToken}`
+      },
 
+    }).then((response) => {
+      console.log(response);
+      setUserReport(response.data);
+      downloadUserReport(response.data);
+    }).catch((err) => {
+      console.log(err);
+    })
+  };
+
+  const getCurrDateTime = () => {
+    // Get the current date and time
+    const currentDate = new Date();
+    const datePart = `${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate
+      .getDate()
+      .toString()
+      .padStart(2, '0')}-${currentDate.getFullYear()}`;
+    const timePart = `${currentDate
+      .getHours()
+      .toString()
+      .padStart(2, '0')}.${currentDate
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}.${currentDate
+          .getSeconds()
+          .toString()
+          .padStart(2, '0')}`;
+    return `${datePart}-${timePart}`;
+  }
+
+  const downloadUserReport = (report: userReport) => {
+    if (!report) {
+      setAlert({ text: "There is no user report to download. Please select a user report to download.", variant: "warning" });
+      handleAlert();
+      return;
+    }
+    const formattedDate = getCurrDateTime();
+
+    // Create a filename based on the current date and time
+    const filename = `customer_report_${formattedDate}.txt`;
+
+    // Create a header string based on input parameters
+    const header = `User Report for ${report.full_name}:\n`;
+
+    // Prepare the table data as a string
+    const tableData = `\nCustomer ID: ${report.customer_id}\n\nName: ${report.full_name}\n\nUsername: ${report.username}`+
+                        `\n\nTotal Balance: $${report.balance}\n\nAge: ${report.age}` +
+                        `\n\nGender: ${report.gender}\n\nZip Code: ${report.zip_code}\n\nStatus: ${report.status}` + 
+                        `\n\nTotal Number of Accounts: ${report.accounts}`;
+
+    // Combine the header, table labels, and table data
+    const fileContent = header +  tableData;
+
+    // Create a Blob with the file content
+    const blob = new Blob([fileContent], { type: 'text/plain' });
+
+    // Create an object URL for the Blob
+    const objectURL = URL.createObjectURL(blob);
+
+    // Create an anchor element to trigger the download
+    const a = document.createElement('a');
+    a.href = objectURL;
+    a.download = filename; // Use the filename which is in the format customer_report_MM-DD-YYY-HH.MM.SS.txt
+    a.click();
+
+    // Clean up the object URL
+    URL.revokeObjectURL(objectURL);
+  };
+
+  
 
   const [searchedCustomer, setSearchedCustomer] = useState<string>('');
 
@@ -280,7 +363,7 @@ interface inputData {
 
   return (
     <div className='overflow-hidden'>
-      <NavBar caller='adminPage'/>
+      <AdminPageNavBar/>
       {isLoading ? (
         <div className="spinner-border" role="status">
           <span className="visually-hidden">Loading...</span>
@@ -315,7 +398,7 @@ interface inputData {
               <label className='form-label h6 mx-1' htmlFor='ageInputs'>Age</label>
               <label className='form-label h6 mx-1' htmlFor='zipcodeInput'>Zip Code</label>
               <label className='form-label h6 mx-1' htmlFor='genderBtns'>Gender</label>
-              </div>
+            </div>
             <div className='row'>
               <div className='col-md-3 my-1'>
                 <div className='form-outline' id="balanceInputs">
@@ -393,6 +476,12 @@ interface inputData {
                         age={customer.age}
                         zip_code={customer.zip_code}
                         status={customer.status}
+                        generateUserReport={async () => {
+                          const authToken = await getCustomerToken();
+                          if (authToken) {
+                            generateUserReport(customer.customer_id, authToken)
+                          }
+                        }}
                       />
                     </div>
                   ))
