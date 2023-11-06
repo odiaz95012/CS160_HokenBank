@@ -29,7 +29,7 @@ def automatic_payment(account_id, amount, date):
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
                 404)
-
+    
     # check valid amount
     if Decimal(amount) <= 0:
         return f'Payment amount must be positive', 404
@@ -46,9 +46,11 @@ def automatic_payment(account_id, amount, date):
     utc_date = local_date.astimezone(pytz.utc)
 
     # check that date is in future
-    if utc_date < datetime.now().astimezone(pytz.utc):
+    if utc_date.date() < datetime.now().astimezone(pytz.utc).date():
         return f'Date must not be in past', 404
-
+    
+    #if request.method == 'PATCH':
+    
     try:
         create_automatic_payment_entry(account.customer_id, account_id,
                                        Decimal(amount), utc_date)
