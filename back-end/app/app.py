@@ -39,50 +39,37 @@ def index():
     return 'Hello World'
 
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        create_bank_manager()
-
-    app.run(debug=True, port=8000, host='0.0.0.0')
 
 
 # executing automatic payment, job should auto-execute when server is running
 def automatic_payment_job(payment_id):
-    with app.app_context():
-        # access payment
-        autopayment = AutomaticPayments.query.get(payment_id)
-        # access account
-        account = AccountInformation.query.get(autopayment.account_id)
+    # access payment
+    autopayment = AutomaticPayments.query.get(payment_id)
+    # access account
+    account = AccountInformation.query.get(autopayment.account_id)
 
-        new_balance = account.balance - autopayment.amount
-        # placeholder before grace period implement
-        if new_balance < 0:
-            delete_automatic_payment_entry(payment_id)
+    new_balance = account.balance - autopayment.amount
+    if new_balance < 0:
+       delete_automatic_payment_entry(payment_id)
 
-      # set new balance and reset date for one month from original date,
-      # add transaction
-        account.balance = new_balance
-        autopayment.date = autopayment.date + pandas.DateOffset(months=1)
-        db.session.commit()
-        create_transaction_history_entry(account.account_id, 'Automatic Payment',
-                                         -autopayment.amount)
+    # set new balance and reset date for one month from original date,
+    # add transaction
+    account.balance = new_balance
+    autopayment.date = autopayment.date + pandas.DateOffset(months=1)
+    db.session.commit()
+
+    create_transaction_history_entry(account.customer_id, account.account_id, 'Automatic Payment', -autopayment.amount)
 
 
 # go thru db + update all automatic jobs on the day
 def automatic_payment_cycle():
     # only checking date portion of "date"
     with app.app_context():
-        due_today = (AutomaticPayments.query.filter(
-                     AutomaticPayments.date == datetime.now().astimezone(pytz.utc).date()))
-        if due_today:
-            for due in due_today:
-                automatic_payment_job(due.payment_id)
-        over_due = (AutomaticPayments.query.filter(
-            AutomaticPayments.date < datetime.now().astimezone(pytz.utc).date()))
-        if over_due:
-            for due in over_due:
-                automatic_payment_job(due.payment_id)
+        now = datetime.now().astimezone(pytz.utc)
+        due_payments = (AutomaticPayments.query.filter(AutomaticPayments.date <= now))
+        if (due_payments):
+            for due in due_payments:
+                 automatic_payment_job(due.payment_id)
 
 # schedule this job once a year (5% annual interest)
 
@@ -104,3 +91,10 @@ sched.add_job(automatic_payment_cycle, 'cron', minute='*')
 # sched.add_job(interest_accumulation, 'cron', minute = '*')
 sched.start()
 # atexit.register(lambda: sched.shutdown())
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+        create_bank_manager()
+
+    app.run(debug=True, port=8000, host='0.0.0.0')
