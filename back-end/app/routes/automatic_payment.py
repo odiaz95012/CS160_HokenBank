@@ -28,13 +28,13 @@ def automatic_payment(account_id, amount, date):
         return f'Bank Account with account_id {account_id} not found', 404
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
-                404)
-    
+                406)
+
     # check valid amount
     if Decimal(amount) <= 0:
-        return f'Payment amount must be positive', 404
+        return f'Payment amount must be positive', 400
     elif Decimal(amount) > account.balance:
-        return f'Payment may not exceed balance', 404
+        return f'Payment may not exceed balance', 400
 
     # take datetime
     date_time = pandas.to_datetime(date).to_pydatetime()
@@ -46,18 +46,16 @@ def automatic_payment(account_id, amount, date):
     utc_date = local_date.astimezone(pytz.utc)
 
     # check that date is in future
-    if utc_date.date() < datetime.now().astimezone(pytz.utc).date():
-        return f'Date must not be in past', 404
-    
-    #if request.method == 'PATCH':
-    
+    if utc_date < datetime.now().astimezone(pytz.utc):
+        return f'Date must not be in past', 400
+
     try:
         create_automatic_payment_entry(account.customer_id, account_id,
                                        Decimal(amount), utc_date)
         return (f'Payment of ${Decimal(amount)} successfully scheduled for Bank '
                 f'Account with account_id {account_id} and date {date}')
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 @automaticPayment.route('/cancelAutomaticPayment/<int:payment_id>', methods=['PATCH'])
@@ -79,7 +77,7 @@ def cancel_automatic_payment(payment_id):
             return jsonify(
                 message=f'No automatic payment with the payment id: {payment_id} was found.'), 404
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 # upcoming automatic payments
@@ -88,14 +86,14 @@ def cancel_automatic_payment(payment_id):
 def get_upcoming_payments(number):
     customer_id = request.currentUser
     if number < 0:
-        return f'Query number must be positive', 404
+        return f'Query number must be positive', 400
     customer = CustomerInformation.query.get(customer_id)
     if not customer:
         return (f'Customer Account with customer_id {customer_id} not found',
                 404)
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
-                f'inactive', 404)
+                f'inactive', 406)
     try:
         upcoming = []
         if number == 0:
@@ -110,4 +108,4 @@ def get_upcoming_payments(number):
             upcoming_payments.append(payment.serialize())
         return jsonify(upcoming_payments)
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500

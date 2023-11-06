@@ -3,6 +3,7 @@ import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import { ListGroup, ListGroupItem } from 'react-bootstrap';
 
+
 interface CustomerCardProps {
     customer_id: number,
     full_name: string,
@@ -12,15 +13,13 @@ interface CustomerCardProps {
     gender: string,
     zip_code: number,
     status: string,
+    generateUserReport: (customerID: number) => void
 }
 
-function CustomerCard({ customer_id, full_name, username, email, age, gender, zip_code, status }: CustomerCardProps): JSX.Element {
+function CustomerCard({ customer_id, full_name, username, email, age, gender, zip_code, status, generateUserReport }: CustomerCardProps): JSX.Element {
     return (
         <Card style={{ width: '25rem' }}>
             <Card.Body>
-                <div className='d-flex justify-content-end'>
-                    <button className='btn btn-outline-primary'><i className="bi bi-file-earmark-arrow-down"></i></button>
-                </div>
                 <Card.Title>{full_name}</Card.Title>
                 <Card.Text>
                     <ListGroup variant="flush">
@@ -34,7 +33,11 @@ function CustomerCard({ customer_id, full_name, username, email, age, gender, zi
                         <ListGroup.Item>Status: {status}</ListGroup.Item>
                     </ListGroup>
                 </Card.Text>
-                <Button variant="primary">Generate User Report</Button>
+                {status === 'A' ? (
+                    <Button variant="outline-primary" onClick={() => generateUserReport(customer_id)}>
+                        <i className="bi bi-file-earmark-arrow-down pe-1"></i>Download User Report</Button>
+                ) : null}
+
             </Card.Body>
         </Card>
     );

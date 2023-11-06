@@ -18,14 +18,14 @@ history = Blueprint('history', __name__)
 def get_customer_complete_history(number):
     customer_id = request.currentUser
     if number < 0:
-        return f'Query number must be positive', 404
+        return f'Query number must be positive', 400
     customer = CustomerInformation.query.get(customer_id)
     if not customer:
         return (f'Customer Account with customer_id {customer_id} not found',
                 404)
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
-                f'inactive', 404)
+                f'inactive', 406)
     try:
         if number == 0:
             records = (TransactionHistory.query.filter(
@@ -41,7 +41,7 @@ def get_customer_complete_history(number):
             record_list.append(record.serialize())
         return jsonify(record_list)
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 # number = 0 to return all entries
@@ -50,14 +50,14 @@ def get_customer_complete_history(number):
 def get_customer_transaction_history(number):
     customer_id = request.currentUser
     if number < 0:
-        return f'Query number must be positive', 404
+        return f'Query number must be positive', 400
     customer = CustomerInformation.query.get(customer_id)
     if not customer:
         return (f'Customer Account with customer_id {customer_id} not found',
                 404)
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
-                f'inactive', 404)
+                f'inactive', 406)
     try:
         if number == 0:
             transactions = (TransactionHistory.query.filter(
@@ -77,7 +77,7 @@ def get_customer_transaction_history(number):
             transaction_list.append(transaction.serialize())
         return jsonify(transaction_list)
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 # number = 0 to return all entries
@@ -86,14 +86,14 @@ def get_customer_transaction_history(number):
 def get_customer_payment_history(number):
     customer_id = request.currentUser
     if number < 0:
-        return f'Query number must be positive', 404
+        return f'Query number must be positive', 400
     customer = CustomerInformation.query.get(customer_id)
     if not customer:
         return (f'Customer Account with customer_id {customer_id} not found',
                 404)
     if customer.status == 'I':
         return (f'Customer Account with customer_id {customer_id} is '
-                f'inactive', 404)
+                f'inactive', 406)
 
     try:
         if number == 0:
@@ -114,7 +114,7 @@ def get_customer_payment_history(number):
             payment_list.append(payment.serialize())
         return jsonify(payment_list)
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 # number = 0 to return all entries
@@ -124,13 +124,13 @@ def get_customer_payment_history(number):
 @account_owner
 def get_account_complete_history(account_id, number):
     if number < 0:
-        return f'Query number must be positive', 404
+        return f'Query number must be positive', 400
     account = AccountInformation.query.get(account_id)
     if not account:
         return f'Bank Account with account_id {account_id} not found', 404
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
-                404)
+                406)
     try:
         if number == 0:
             records = (TransactionHistory.query.filter(
@@ -146,7 +146,7 @@ def get_account_complete_history(account_id, number):
             record_list.append(record.serialize())
         return jsonify(record_list)
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 # number = 0 to return all entries
@@ -156,13 +156,13 @@ def get_account_complete_history(account_id, number):
 @account_owner
 def get_account_transaction_history(account_id, number):
     if number < 0:
-        return f'Query number must be positive', 404
+        return f'Query number must be positive', 400
     account = AccountInformation.query.get(account_id)
     if not account:
         return f'Bank Account with account_id {account_id} not found', 404
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
-                404)
+                406)
     try:
         if number == 0:
             transactions = (TransactionHistory.query.filter(
@@ -182,7 +182,7 @@ def get_account_transaction_history(account_id, number):
             transaction_list.append(transaction.serialize())
         return jsonify(transaction_list)
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 # number = 0 to return all entries
@@ -192,13 +192,13 @@ def get_account_transaction_history(account_id, number):
 @account_owner
 def get_account_payment_history(account_id, number):
     if number < 0:
-        return f'Query number must be positive', 404
+        return f'Query number must be positive', 400
     account = AccountInformation.query.get(account_id)
     if not account:
         return f'Bank Account with account_id {account_id} not found', 404
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
-                404)
+                406)
     try:
         if number == 0:
             payments = (TransactionHistory.query.filter(
@@ -218,7 +218,7 @@ def get_account_payment_history(account_id, number):
             payment_list.append(payment.serialize())
         return jsonify(payment_list)
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 # default values:
@@ -233,21 +233,21 @@ def get_account_payment_history(account_id, number):
 def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
                          gender):
     if min_balance < 0:
-        return f'Minimum balance must be positive', 404
+        return f'Minimum balance must be positive', 400
     if max_balance < 0:
-        return f'Maximum balance must be positive', 404
+        return f'Maximum balance must be positive', 400
     if max_balance != 0 and max_balance < min_balance:
-        return f'Minimum balance cannot exceed maximum balance', 404
+        return f'Minimum balance cannot exceed maximum balance', 400
     if min_age < 0:
-        return f'Minimum age must be positive', 404
+        return f'Minimum age must be positive', 400
     if max_age < 0:
-        return f'Maximum age must be positive', 404
+        return f'Maximum age must be positive', 400
     if max_age != 0 and max_age < min_age:
-        return f'Minimum age cannot exceed maximum age', 404
+        return f'Minimum age cannot exceed maximum age', 400
     if gender not in ('M', 'F', 'O', 'A'):
-        return f'Gender must be one of the following options: M, F, O, A', 404
+        return f'Gender must be one of the following options: M, F, O, A', 400
     if zip_code < 10000 or zip_code > 100000:
-        return f'Zip code must be a 5-digit integer', 404
+        return f'Zip code must be a 5-digit integer', 400
 
     try:
         select_customers = (db.session.query(
@@ -297,13 +297,20 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
 
         return jsonify(customer_list)
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
-@history.route('/generateIndividualReport/<int:customer_id>/', methods=['GET'])
+@history.route('/generateIndividualReport/<int:customer_id>', methods=['GET'])
 @is_authenticated
 @is_admin
 def generate_individual_report(customer_id):
+    customer = CustomerInformation.query.get(customer_id)
+    if not customer:
+        return (f'Customer Account with customer_id {customer_id} not found',
+                404)
+    # if customer.status == 'I':
+    #     return (f'Customer Account with customer_id {customer_id} is '
+    #             f'inactive', 406)
     try:
         select_customer = (db.session.query(
             CustomerInformation,
@@ -330,5 +337,7 @@ def generate_individual_report(customer_id):
             'accounts': select_customer[2]
         }
         return jsonify(customer_data)
-    except Exception:
-        return 'Unexpected error occurred.'
+    except Exception as e:
+        # Log the exception to help diagnose the issue
+        print(f"Exception: {str(e)}")
+        return 'Unexpected error occurred.', 500

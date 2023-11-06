@@ -31,7 +31,7 @@ def open_account():
 
         return jsonify(account.serialize())
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 @account.route('/closeAccount/<int:account_id>', methods=['PATCH'])
@@ -48,7 +48,7 @@ def close_account(account_id):
         return f'Bank Account with account_id {account_id} not found', 404
     if account.status == 'I':
         return (f'Bank Account with account_id {account_id} is inactive',
-                404)
+                406)
     try:
         account.balance = Decimal(0)
         account.status = 'I'
@@ -57,21 +57,23 @@ def close_account(account_id):
                 f'closed successfully')
 
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 # Assuming you have a serialize method in your model
 @account.route('/getAccount/<int:account_id>', methods=['GET'])
 @is_authenticated
 @account_owner
-def get_account_by_id(account_id: int):
-    if request.method == 'GET':
+def get_account_by_id(account_id):
+    try:
         account = AccountInformation.query.get(account_id)
         if not account:
             return jsonify({'error': f'Bank Account with account_id '
                                      f'{account_id} not found'}), 404
         # add additional check for 'I' status?
         return jsonify(account.serialize())
+    except Exception:
+        return 'Unexpected error occurred.', 500
 
 
 # Get all accounts, including inactive ones
@@ -93,7 +95,7 @@ def get_accounts():
 
         return jsonify(account_list)
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
 
 
 # Get all active accounts associated with the customer ID
@@ -117,4 +119,4 @@ def get_customer_accounts():
 
         return jsonify(account_list)
     except Exception:
-        return 'Unexpected error occurred.'
+        return 'Unexpected error occurred.', 500
