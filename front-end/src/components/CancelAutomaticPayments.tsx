@@ -82,7 +82,7 @@ function CancelAutomaticPayments() {
         const date = new Date(inputDate);
 
         // Extract the date components
-        const day = date.getDate();
+        const day = date.getDate() + 1;
         const month = date.getMonth() + 1; // Months are 0-based, so add 1
         const year = date.getFullYear();
 
