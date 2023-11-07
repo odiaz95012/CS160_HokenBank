@@ -7,7 +7,7 @@ from datetime import datetime
 import pandas
 from apscheduler.schedulers.background import BackgroundScheduler
 import pytz
-from helpers.helpers import create_bank_manager, create_transaction_history_entry, delete_automatic_payment_entry
+from helpers.helpers import create_bank_manager, create_transaction_history_entry, delete_automatic_payment_entry, create_dummy_accounts, create_dummy_customers
 from routes.account import account
 from routes.automatic_payment import automaticPayment
 from routes.customer import customer
@@ -37,6 +37,22 @@ INTEREST_RATE = 1.05
 @app.route('/')
 def index():
     return 'Hello World'
+
+# testing purposes only
+
+
+@app.route('/testing/reset', methods=['DELETE'])
+def reset():
+    try:
+        db.drop_all()
+        db.create_all()
+        create_bank_manager()
+        create_dummy_customers()
+        create_dummy_accounts()
+        db.session.commit()
+    except Exception:
+        return "Internal Error", 500
+    return "Database Reset", 200
 
 
 
