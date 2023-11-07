@@ -32,10 +32,26 @@ function AccountCard(props:AccountCardProps): JSX.Element {
     navigate(accountDetailsPath);
   };
 
-  const formatBalance = (balance:number) => {
-    // Use toLocaleString to format the balance with commas
-    return balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
+  const formatBalance = (balance: number) => {
+
+    /// Convert the number to a string
+    const numStr = balance.toString();
+
+    // Split the number into integer and decimal parts (if applicable)
+    const [integerPart, decimalPart] = numStr.split('.');
+
+    // Add commas to the integer part
+    const integerWithCommas = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+
+    // Reconstruct the formatted number
+    if (decimalPart) {
+        return integerWithCommas + '.' + decimalPart;
+    } else {
+
+        return integerWithCommas + '.00';
+    }
+};
 
 
   return (

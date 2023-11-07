@@ -44,7 +44,6 @@ function AccountDetails() {
                     'authorization': `Bearer ${await getCustomerToken()}`
                 }
             }).then((response) => {
-                console.log(response);
                 setAccountInfo(response.data);
             }).catch((err) => {
                 console.log(err);
@@ -185,10 +184,26 @@ function AccountDetails() {
         return formattedDate;
     };
 
-    const formatBalance = (balance:number) => {
-        // Use toLocaleString to format the balance with commas
-        return balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
+    const formatBalance = (balance: number) => {
+
+        /// Convert the number to a string
+        const numStr = balance.toString();
+
+        // Split the number into integer and decimal parts (if applicable)
+        const [integerPart, decimalPart] = numStr.split('.');
+
+        // Add commas to the integer part
+        const integerWithCommas = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+
+        // Reconstruct the formatted number
+        if (decimalPart) {
+            return integerWithCommas + '.' + decimalPart;
+        } else {
+
+            return integerWithCommas + '.00';
+        }
+    };
 
 
 
@@ -266,16 +281,19 @@ function AccountDetails() {
             )}
             <div className='row'>
                 <div className='col-md-6 my-1'>
-                    <div className="d-flex justify-content-start ms-4">
+                    <div className='d-flex justify-content-start ms-4 ps-3'>
                         <Dropdown
                             selectedOption={selectedNumEntries}
-                            onSelectedOption={(option) => setSelectedNumEntries(option)}
+                            onSelectedOption={(option: number) => setSelectedNumEntries(option)}
                         />
                     </div>
+
                 </div>
+
                 <div className='col-md-6 my-1'>
-                    <div className="d-flex justify-content-end me-4">
+                    <div className='d-flex justify-content-center'>
                         <div className="btn-group" id="historyOptions" role="group" aria-label="Basic radio toggle button group">
+
                             <input type="radio" value="Complete" className="btn-check" name="btnradio" id="btnradio1" autoComplete="off" checked={selectedHistoryOption === 'Complete'} onChange={() => setSelectedHistoryOption('Complete')} />
                             <label className="btn btn-outline-primary" htmlFor="btnradio1">Complete</label>
 

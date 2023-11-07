@@ -5,11 +5,13 @@ import LogoutModal from './LogoutModal';
 import CloseAccountModal from './CloseAccountModal.tsx';
 import CancelAutomaticPayments from './CancelAutomaticPayments.tsx';
 
+
 interface NavBarProps {
     caller: string;
+    handleAlert?: (alertText: string, alertVariant: string) => void;
 }
 
-function NavBar({ caller }: NavBarProps): JSX.Element {
+function NavBar({ caller, handleAlert }: NavBarProps): JSX.Element {
     const navigate = useNavigate();
 
     return (
@@ -30,7 +32,7 @@ function NavBar({ caller }: NavBarProps): JSX.Element {
                         <Nav.Item className="my-2">
                             <Button
                                 variant="outline-secondary"
-                                className="nav-bar-bttn"
+                                className="nav-bar-bttn nav-link"
                                 onClick={() => navigate('/atmSearch')}
                             >
                                 <i className="bi bi-search me-2"></i>ATM Search
@@ -40,7 +42,7 @@ function NavBar({ caller }: NavBarProps): JSX.Element {
                         <Nav.Item className="my-2">
                             <Button
                                 variant="outline-secondary"
-                                className="nav-bar-bttn"
+                                className="nav-bar-bttn nav-link"
                                 onClick={() => navigate('/home')}
                             >
                                 <i className="bi bi-arrow-left pe-1"></i>Return Home
@@ -53,7 +55,7 @@ function NavBar({ caller }: NavBarProps): JSX.Element {
                     </Nav.Item>
                     {caller !== 'accountDetails' ? (
                         <Nav.Item className="my-2">
-                            <CloseAccountModal />
+                            <CloseAccountModal handleAlert={handleAlert}/>
                         </Nav.Item>
                     ) : null}
                     <Nav.Item className="my-2 me-4">

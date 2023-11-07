@@ -6,25 +6,25 @@ import Cookies from 'js-cookie';
 interface CloseAccountProps {
   onSubmit?: () => void;
   onClose?: () => void;
-  account_id: number;
+  account_id?: number;
+  onInputChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  children?: React.ReactNode;
 }
 
-function CloseAccount({ onSubmit, onClose, account_id }: CloseAccountProps) {
+function CloseAccount({ onSubmit, onClose, account_id, onInputChange }: CloseAccountProps) {
   const navigate = useNavigate();
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
 
-  const goToLoginPage = () => {
-    navigate('/');
-  };
 
   const getCustomerAuthToken = () => {
     return Cookies.get('authToken');
   }
 
-  const gotoAccountPage = () => {
-    navigate('/accountPage');
+  const gotoHomePage = () => {
+    navigate('/home');
   };
+
   const passwordHandler = (e: React.FormEvent) => {
     e.preventDefault();
     if (password.trim() === '') {
@@ -33,6 +33,13 @@ function CloseAccount({ onSubmit, onClose, account_id }: CloseAccountProps) {
       setError("");
     }
   };
+
+  const handlePasswordInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const target = e.target;
+    setPassword(target.value);
+    onInputChange && onInputChange(e);
+  }
+  
 
 
   const closeAccount = (account_id: number, password: string, authToken: string) => {
@@ -66,7 +73,7 @@ function CloseAccount({ onSubmit, onClose, account_id }: CloseAccountProps) {
               id="password"
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordInput}
             />
           </div>
           <p className="text-danger">{error}</p>
@@ -76,7 +83,7 @@ function CloseAccount({ onSubmit, onClose, account_id }: CloseAccountProps) {
               className="btn btn-primary"
               onClick={async () => {
                 const authToken = await getCustomerAuthToken();
-                if (authToken) {
+                if (authToken && account_id) {
                   closeAccount(account_id, password, authToken);
                 }
               }}

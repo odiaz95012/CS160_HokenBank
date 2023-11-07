@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import PopUpModal from './PopUpModal';
 import axios from 'axios';
 import DatePicker from './DatePicker';
+import PopUpAlert from './PopUpAlert';
+import '../componentStyles/ATMHomeStyles.css'; //only has the pop up alert css
 
 interface FormData {
   fullName: string;
@@ -77,33 +78,33 @@ function Registration() {
 
       if (isPasswordsMatch && isUsernameValid && isAgeValid && isZipcodeValid && isEmailValid && isPasswordValid) {
         if (await handleSubmit()) {
-          const accountStatusBody = document.getElementById('statusBody');
-          accountStatusBody!.className = 'text-success';
-          let count = 5;
-          accountStatusBody!.innerText = `Account creation Successful. \nRedirecting to the login page in ${count} seconds.`;
+          
+          let count = 3;
+          setAlert({ text: 'Account creation Successful. \nRedirecting to the login page in 5 seconds.', variant: 'success' });
 
           const countdownInterval = setInterval(() => {
             count -= 1;
-            accountStatusBody!.innerText = `Account creation Successful. \nRedirecting to the login page in ${count} seconds.`;
+            setAlert({ text: `Account creation Successful. \nRedirecting to the login page in ${count} seconds.`, variant: 'success' });
 
             if (count === 0) {
               clearInterval(countdownInterval);
               goToLoginPage();
             }
           }, 1000);
+          handleAlert();
         }
       }
     } catch (err: any) {
-      const accountStatusBody = document.getElementById('statusBody');
-      accountStatusBody!.className = 'text-danger';
-      accountStatusBody!.innerText = err.message;
+      setAlert({ text: err.message, variant: 'danger' });
+      handleAlert();
+      return false;
     }
   };
 
   function isValidZipCode(zipCode: string) {
     const pattern = /^\d{5}$/;
     if (!pattern.test(zipCode)) {
-      throw new Error('The zipcode must be exactly 5 numeric digits.');
+      throw new Error('The zipcode must be exactly 5 numeric digits. (e.g. 95116)');
     }
     return true;
   }
@@ -174,9 +175,8 @@ function Registration() {
       });
       return true;
     } catch (err: any) {
-      const accountStatusBody = document.getElementById('statusBody');
-      accountStatusBody!.className = 'text-danger';
-      accountStatusBody!.innerText = err.response.data;
+      setAlert({ text: err.response.data, variant: 'danger' });
+      handleAlert();
       return false;
     }
   }
@@ -191,6 +191,26 @@ function Registration() {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
+
+  interface Alert {
+    text: string,
+    variant: string
+}
+const defaultAlert: Alert = {
+    text: '',
+    variant: ''
+}
+const [alert, setAlert] = useState<Alert>(defaultAlert);
+
+const handleAlert = () => {
+  const alertElem = document.getElementById('pop-up-alert') as HTMLElement;
+  alertElem.style.visibility = 'visible';
+  // Automatically dismiss the alert after 3 seconds
+  setTimeout(() => {
+      setAlert(defaultAlert); // reset alert
+      alertElem.style.visibility = 'hidden';
+  }, 3000);
+}
 
   return (
     <section className="background-radial-gradient overflow-auto">
@@ -212,17 +232,20 @@ function Registration() {
             </h1>
             <p className="mb-4 opacity-70" style={{ color: 'hsl(218, 81%, 85%)' }}>
               Join Hoken Bank Today!
-              <br/><br/>
+              <br /><br />
               Register now to unlock a world of financial possibilities.
-              <br/><br/> 
+              <br /><br />
               Experience secure and efficient banking at your fingertips.
-              <br/><br/>
+              <br /><br />
               Hoken Online Bank - Your financial partner.
             </p>
           </div>
           <div className="col-lg-6 mb-5 mb-lg-0 position-relative">
             <div id="radius-shape-1" className="position-absolute rounded-circle shadow-5-strong"></div>
             <div id="radius-shape-2" className="position-absolute shadow-5-strong"></div>
+            <div className="d-flex justify-content-center" id='pop-up-alert'>
+              <PopUpAlert text={alert ? alert.text : ''} variant={alert ? alert.variant : 'info'} />
+            </div>
             <div className="card bg-glass">
               <div className="card-body px-4 py-5 px-md-5 ">
                 <form>
@@ -293,21 +316,13 @@ function Registration() {
                     <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
                   </div>
                   {/* Submit button */}
-                  <PopUpModal
-                    activatingBttn={
                       <button
                         type="button"
                         className="btn btn-outline-primary"
-                        data-toggle="modal"
-                        data-target="#exampleModal"
+                        onClick={() => verifyInputFields()}
                       >
                         Sign Up
                       </button>
-                    }
-                    title={<div><h4>Account Creation Status</h4></div>}
-                    body={<div className="text-center"><p id="statusBody"></p></div>}
-                    buttonOnClick={() => verifyInputFields()}
-                  />
                 </form>
               </div>
             </div>
