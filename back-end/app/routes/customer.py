@@ -92,6 +92,18 @@ def register():
 @customer.route('/deactivateCustomer', methods=['PATCH'])
 @is_authenticated
 def deactivate_customer():
+    customer_id = request.currentUser
+    customer = CustomerInformation.query.get(customer_id)
+    password = request.get_json().get('password')
+    hashed_password = CustomerInformation.query.get(customer_id).password
+    if not bcrypt.check_password_hash(hashed_password, password):
+        return 'Incorrect password', 401
+    if not customer:
+        return (f'Customer Account with customer_id {customer_id} not found',
+                404)
+    if customer.status == 'I':
+        return (f'Customer Account with customer_id {customer_id} is '
+                f'inactive', 404)
     try:
         customer_id = request.currentUser
         customer = CustomerInformation.query.get(customer_id)

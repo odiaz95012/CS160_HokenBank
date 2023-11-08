@@ -19,6 +19,7 @@ interface PopUpModalProps {
     additionalBttnText?: string;
     submitAction?: Function;
     closeOnSubmit?: boolean;
+    closeBtnVariant?: string;
 }
 
 function PopUpModal(props: PopUpModalProps) { // Use props as an argument
@@ -70,7 +71,9 @@ function PopUpModal(props: PopUpModalProps) { // Use props as an argument
                                         </button>
                                     )}
                                     {props.closeBttnText && (
-                                        <button type="button" className="btn btn-primary" onClick={handleModalClose}>
+                                        <button
+                                            type="button"
+                                            className={`btn btn-${props.closeBtnVariant ? props.closeBtnVariant : 'primary'}`} onClick={handleModalClose}>
                                             {props.closeBttnText}
                                         </button>
                                     )}

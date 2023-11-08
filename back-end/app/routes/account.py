@@ -51,31 +51,33 @@ def close_account(account_id):
         customer_id = request.currentUser
         customer = CustomerInformation.query.get(customer_id)
         if not customer:
-            return (
-            f'Customer Account with customer_id {customer_id} not found',
-            404)
+            return f'Customer Account with customer_id {customer_id} not found', 404
         if customer.status == 'I':
-            return (f'Customer Account with customer_id {customer_id} is '
-                    f'inactive', 406)
+            return (f'Customer Account with customer_id {customer_id} is inactive', 406)
+
         password = request.get_json().get('password')
         hashed_password = CustomerInformation.query.get(customer_id).password
         if not bcrypt.check_password_hash(hashed_password, password):
             return 'Incorrect password', 401
+
         account = AccountInformation.query.get(account_id)
         if not account:
             return f'Bank Account with account_id {account_id} not found', 404
         if account.status == 'I':
-            return (f'Bank Account with account_id {account_id} is inactive',
-                    406)
+            return (f'Bank Account with account_id {account_id} is inactive', 406)
+
+        if account.balance > 0:
+            return "The account's balance must be transferred to another account before closing.", 400
+
         account.balance = Decimal(0)
         account.status = 'I'
         db.session.commit()
-        return (f'Bank Account with account_id {account_id} '
-                f'closed successfully'), 200
+        return f'Bank Account with account_id {account_id} closed successfully', 200
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
         return 'Unexpected error occurred.', 500
+
 
 
 # Assuming you have a serialize method in your model

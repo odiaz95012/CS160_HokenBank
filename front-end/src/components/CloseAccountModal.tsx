@@ -59,7 +59,9 @@ function CloseAccountModal({handleAlert}: CloseAccountModalProps): JSX.Element {
                 data-target="#exampleModal"
                 title={<div>Close Account</div>}
                 body={<>
-                    <CloseAccount onInputChange={handlePasswordInput}/>
+                    <CloseAccount 
+                    onInputChange={handlePasswordInput}
+                    />
                 </>}
                 closeBttnText={"Yes, I'm sure"}
                 additionalBttnText={"Cancel"}
@@ -70,7 +72,7 @@ function CloseAccountModal({handleAlert}: CloseAccountModalProps): JSX.Element {
                         closeAccount(authToken, password);
                     }
                 }}
-
+                closeBtnVariant='danger'
             />
         </>
     )
