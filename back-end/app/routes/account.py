@@ -65,7 +65,7 @@ def close_account(account_id):
             return f'Bank Account with account_id {account_id} not found', 404
         if account.status == 'I':
             return (f'Bank Account with account_id {account_id} is inactive', 406)
-
+        #Check if account has a balance
         if account.balance > 0:
             return "The account's balance must be transferred to another account before closing.", 400
 
