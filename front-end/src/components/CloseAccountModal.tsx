@@ -10,6 +10,7 @@ interface CloseAccountModalProps {
 }
 function CloseAccountModal({handleAlert}: CloseAccountModalProps): JSX.Element {
 
+    //Latest
     const navigate = useNavigate();
 
     const [password, setPassword] = useState<string>('');
