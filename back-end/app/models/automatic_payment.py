@@ -12,7 +12,7 @@ class AutomaticPayments(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey(
         'AccountInformation.account_id'),
         nullable=False)
-    amount = db.Column(db.Numeric(scale = 2), nullable=False)
+    amount = db.Column(db.Numeric(scale=2), nullable=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     __table_args__ = (
