@@ -340,6 +340,10 @@ function HomePage() {
         handleAlert();
     };
 
+    const childrenSetAlert = (alertText: string, alertVariant: string) => {
+        setAlert({ text: alertText, variant: alertVariant });
+    }
+
     const handleAlert = () => {
         const alertElem = document.getElementById('pop-up-alert') as HTMLElement;
         alertElem.style.visibility = 'visible';
@@ -540,11 +544,6 @@ function HomePage() {
         })
     };
 
-    const childrenHandleAlert = (alertText: string, alertVariant: string) => {
-        console.log('IN HOME PAGE ALERT FUNCTION');
-        setAlert({ text: alertText, variant: alertVariant });
-        handleAlert();
-    };
 
 
 
@@ -552,7 +551,7 @@ function HomePage() {
     return (
 
         <div className='overflow-hidden m-0'>
-            <NavBar caller='home' handleAlert={childrenHandleAlert} />
+            <NavBar caller='home' handleAlert={handleAlert} setAlert={childrenSetAlert}/>
             {/* <!-- Welcome Banner--> */}
             {
                 isUserDataLoaded ? (
