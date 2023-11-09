@@ -8,10 +8,11 @@ import CancelAutomaticPayments from './CancelAutomaticPayments.tsx';
 
 interface NavBarProps {
     caller: string;
-    handleAlert?: (alertText: string, alertVariant: string) => void;
+    setAlert?: (alertText: string, alertVariant: string) => void;
+    handleAlert?: () => void;
 }
 
-function NavBar({ caller, handleAlert }: NavBarProps): JSX.Element {
+function NavBar({ caller, handleAlert, setAlert }: NavBarProps): JSX.Element {
     const navigate = useNavigate();
 
     return (
@@ -55,7 +56,7 @@ function NavBar({ caller, handleAlert }: NavBarProps): JSX.Element {
                     </Nav.Item>
                     {caller !== 'accountDetails' ? (
                         <Nav.Item className="my-2">
-                            <CloseAccountModal handleAlert={handleAlert}/>
+                            <CloseAccountModal handleAlert={handleAlert} setAlert={setAlert}/>
                         </Nav.Item>
                     ) : null}
                     <Nav.Item className="my-2 me-4">

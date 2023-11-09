@@ -6,9 +6,10 @@ import Cookies from 'js-cookie';
 import CloseAccount from './CloseAccount';
 
 interface CloseAccountModalProps {
-    handleAlert?: (alertText: string, alertVariant: string) => void;
+    setAlert?: (alertText: string, alertVariant: string) => void;
+    handleAlert?: () => void;
 }
-function CloseAccountModal({handleAlert}: CloseAccountModalProps): JSX.Element {
+function CloseAccountModal({handleAlert, setAlert}: CloseAccountModalProps): JSX.Element {
 
     //Latest
     const navigate = useNavigate();
@@ -23,7 +24,8 @@ function CloseAccountModal({handleAlert}: CloseAccountModalProps): JSX.Element {
 
     const closeAccount = (authToken: string, password: string) => {
         if (password === '') {
-            handleAlert && handleAlert("Enter your password", "danger");
+            setAlert && setAlert("Please enter your password to close your account.", "warning");
+            handleAlert && handleAlert();
             return;
         }
         axios.patch("http://localhost:8000/deactivateCustomer", {
@@ -69,7 +71,7 @@ function CloseAccountModal({handleAlert}: CloseAccountModalProps): JSX.Element {
                 closeOnSubmit={true}
                 submitAction={async () => {
                     const authToken = await getCustomerToken();
-                    if (authToken && password) {
+                    if (authToken) {
                         closeAccount(authToken, password);
                     }
                 }}
