@@ -1,93 +1,192 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
+import axios from 'axios';
+import { useNavigate, useParams } from 'react-router-dom';
+import PopUpAlert from './PopUpAlert';
 
-interface InternalTransferProps {
-  onChange?: () => void;
-  onClose?: () => void;
+interface Alert {
+  text: string;
+  variant: string;
 }
-
-function InternalTransfer({ onChange, onClose }: InternalTransferProps) {
+interface Account {
+  account_id: number,
+  account_type: string,
+  balance: number
+}
+function InternalTransfer() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [amount, setAmount] = useState('');
-  const [phoneError, setPhoneError] = useState<string>(''); // Separate error state for phone
-  const [emailError, setEmailError] = useState<string>(''); // Separate error state for email
-  const [amountError, setAmountError] = useState<string>(''); // Separate error state for amount
+  const { accountID } = useParams() as { accountID: string };
+  const [toAccount, setToAccount] = useState<string>('');
+  const [alert, setAlert] = useState<{ text: string; variant: string } | null>(null);
+
+  const [amount, setAmount] = useState<string>('');
+  const token = Cookies.get('authToken');
+  const [userAccounts, setUserAccounts] = useState<any>([]);
+
+  useEffect(() => {
+    getUserAccounts();
+  }, []);
 
   const gotoAccountPage = () => {
     navigate('/accountPage');
-  }
+  };
 
-  function isValidEmail(email: string): boolean {
-    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-    return emailRegex.test(email);
-  }
+  const isValidAmount = (amount: string) => {
+    const pattern = /^\d+\.\d{2}$/;
+    return pattern.test(amount) && parseFloat(amount) > 0;
+  };
 
-  function isValidPhoneNumber(phone: string): boolean {
-    const phoneRegex = /^\d{10}$/;
-    return phoneRegex.test(phone);
-  }
+  const isValidAccount = (account: string) => {
+    const pattern = /^\d+$/;
+    return pattern.test(account) && parseInt(account) > 0;
+  };
+
+  const handleAlert = () => {
+    const alertElem = document.getElementById('pop-up-alert');
+    alertElem!.style.visibility = 'visible';
+    setTimeout(() => {
+      setAlert(null);
+      alertElem!.style.visibility = 'hidden';
+    }, 3000);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('submit');
+    console.log(toAccount);
+    console.log(amount);
+    console.log(accountID);
+    if (!isValidAccount(toAccount) || toAccount === '') {
+      setAlert({ text: 'Invalid account.', variant: 'danger' });
+      handleAlert();
 
-    if (email.trim() === '' || !isValidEmail(email)) {
-      setEmailError("Enter a valid email");
-    } else {
-      setEmailError("");
-    }
 
-    if (phone.trim() === '' || !isValidPhoneNumber(phone)) {
-      setPhoneError("Enter a valid phone number");
+    } else if (!isValidAmount(amount) || amount === '') {
+      setAlert({ text: 'Invalid amount.', variant: 'danger' });
+      handleAlert();
     } else {
-      setPhoneError("");
+      transfer();
     }
+  };
 
-    if (amount.trim() === '' || parseFloat(amount) <= 0) {
-      setAmountError("Enter a valid amount");
-    } else {
-      setAmountError("");
+  const transfer = async () => {
+    const parsedAccountId = parseInt(toAccount);
+    const parsedAmount = parseFloat(amount).toFixed(2);
+
+    try {
+      const response = await axios.patch(
+        `http://localhost:8000/transfer/${accountID}/${parsedAccountId}/${parsedAmount}`,
+        {},
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setAlert({ text: 'Transfer successful.', variant: 'success' });
+      handleAlert();
+      setToAccount('');
+      setAmount('');
+    } catch (err: any) {
+      setAlert({ text: `Transfer failed: ${err.message}`, variant: 'danger' });
+      handleAlert();
     }
-  }
+  };
+
+  const getUserAccounts = async () => {
+    try {
+      const response = await axios.get(`http://localhost:8000/getCustomerAccounts`, {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+      let accounts: Account[] = response.data;
+      // Filter out the account that is being transferred from
+      accounts = accounts.filter((account: Account) => account.account_id !== parseInt(accountID));
+      setUserAccounts(accounts);
+    } catch (err: any) {
+      setAlert({ text: `Error fetching accounts: ${err.message}`, variant: 'danger' });
+      console.log(err);
+    }
+  };
+
+  const handleAccountSelection = (selectedAccount: string) => {
+    setToAccount(selectedAccount);
+  };
 
   return (
     <div>
-      {/* main content */}
-      <div className="container mt-5">
-        <p className="text-center">Send</p>
+      <div className="row justify-content-center my-1">
+        <div className="d-flex justify-content-center" id="pop-up-alert">
+          {alert ? <PopUpAlert text={alert.text} variant={alert.variant} /> : null}
+        </div>
+        <div className="d-flex justify-content-center">
+          <p>Please enter the required payment details</p>
+        </div>
+
         <form onSubmit={handleSubmit}>
-          <div className="input-group rounded">
-            <input
-              type="text"
-              className="form-control rounded"
-              placeholder="Please enter the account ID of the recipient account"
-              aria-label="Search"
-              aria-describedby="search-addon"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+          <div className="col-md-6 mb-4">
+            <label className="form-label" htmlFor="accountsList">
+              Accounts
+            </label>
+            <div className="overflow-container">
+              {userAccounts.length > 0 ? (
+                <ul className="list-group">
+                  {userAccounts.map((account: any) => (
+                    <li key={account.account_id} className="list-group-item">
+                      <input
+                        className="form-check-input me-1"
+                        name="accountSelection"
+                        type="radio"
+                        value={account.account_id}
+                        id={account.account_id.toString()}
+                        checked={account.account_id === toAccount}
+                        onChange={() => handleAccountSelection(account.account_id)}
+                      />
+                      <label className="form-check-label" htmlFor={account.account_id.toString()}>
+                        Account ID: {account.account_id}
+                      </label>
+                      <label className="form-check-label ps-3" htmlFor={account.account_id.toString()}>
+                        Balance: ${account.balance}
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div>
+                  <p className="text-danger">There are no active accounts.</p>
+                </div>
+              )}
+            </div>
           </div>
-          <p className="text-danger">{emailError}</p>
-
-          <div className="input-group rounded">
-            <input
-              type="number"
-              className="form-control rounded"
-              placeholder="Enter Amount $"
-              aria-label="Search"
-              aria-describedby="search-addon"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
+          <div className="col-md-6 mb-4">
+            <div className="form-outline">
+              <div className="d-flex justify-content-start">
+                <label className="form-label" htmlFor="validationCustom01">
+                  Amount
+                </label>
+              </div>
+              <input
+                name="amount"
+                type="text"
+                id="validationCustom01"
+                className="form-control"
+                placeholder="$"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
           </div>
-          <p className="text-danger">{amountError}</p>
-
+          <br />
           <div className="text-center">
-            <button type="submit" className="btn btn-primary">Confirm</button>
+            <button type="submit" className="btn btn-primary">
+              Confirm
+            </button>
           </div>
         </form>
         <br />
+        <br />
+
       </div>
     </div>
   );
