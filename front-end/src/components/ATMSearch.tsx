@@ -29,6 +29,7 @@ function ATMSearch() {
     const [isSearching, setIsSearching] = useState<boolean>(false);
 
 
+
     const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const radiusInMiles = e.target.value;
         if (parseInt(radiusInMiles) > 20) {
@@ -56,41 +57,42 @@ function ATMSearch() {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
                 });
+                const coords = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+                findNearestChaseATMs(coords, radius);
             });
         } else {
             console.error("Geolocation is not available in this browser.");
         }
     };
 
-    const formatAddress = (address: string) => {
-        return address ? address.replaceAll(' ', '%20').replaceAll(',', '') : '';
-    };
+
 
     const getCoordsOfAddress = async (startingAddress: string) => {
         // Geocode the user's starting address
-        axios.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${startingAddress}`, {
-            params: {
-                address: startingAddress,
-                key: apiKey,
+        try {
+            const response = await axios.get(
+                `https://maps.googleapis.com/maps/api/geocode/json?address=${startingAddress}&key=${apiKey}`
+            );
+
+            const results = response.data.results;
+            if (results && results.length > 0) {
+                // Extract the coordinates from the geocoding results
+                const { lat, lng } = results[0].geometry.location;
+                const startingCoordinates = { latitude: lat, longitude: lng };
+                setUserCoords(startingCoordinates);
+                return startingCoordinates;
+            } else {
+                console.error('No results found for the starting address');
             }
-        })
-            .then((response) => {
-                const results = response.data.results;
-                if (results && results.length > 0) {
-                    // Extract the coordinates from the geocoding results
-                    const { lat, lng } = results[0].geometry.location;
-                    const startingCoordinates = { latitude: lat, longitude: lng };
-                    setUserCoords(startingCoordinates);
-                } else {
-                    console.error('No results found for the starting address');
-                }
-            })
-            .catch((error) => {
-                console.error('Error geocoding the address:', error);
-            });
+        } catch (error) {
+            console.error('Error geocoding the address:', error);
+        }
     };
 
+
+
     const findNearestChaseATMs = async (coords: any, radius: number) => {
+        console.log("FINDING ATMS");
         setIsSearching(true);
 
         const google = (window as any).google; // Access the Google Maps JavaScript API
@@ -104,7 +106,6 @@ function ATMSearch() {
                 type: 'atm',
                 keyword: 'Chase Bank',
             };
-
             placesService.nearbySearch(request, (results: any, status: any) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK) {
                     // Create an array to store promises for fetching place details
@@ -126,28 +127,38 @@ function ATMSearch() {
                                 });
                             } else {
                                 resolve(null); // Resolve with null if details cannot be fetched
+
                             }
                         });
                     }));
 
+
                     // Wait for all detail requests to complete
                     Promise.all(detailPromises).then((atmLocationsWithGeometry: any) => {
                         // Filter out any null results (failed to fetch details)
-                        const validATMLocations = atmLocationsWithGeometry.filter((location: any) => location !== null);
+                        const validATMLocations = atmLocationsWithGeometry.filter((location: any) => location !== null && location.name.includes('Chase'));
+                        validATMLocations.length === 0 ? setAlert({ text: "No Chase ATMs found within the specified radius. Please try again with a larger search radius or a different starting address.", variant: "warning" }) : setAlert(null);
+                        handleAlert();
                         setAtmLocations(validATMLocations);
                     });
                 } else {
-                    console.error('Error searching for Chase Bank ATMs:', status);
+                    console.log('Error finding chase bank atms ', status)
                     setAtmLocations(null);
+
                 }
-            });
+            }
+            );
+
         }
         setIsSearching(false);
     };
 
 
-
-    const [alert, setAlert] = useState<any>(null);
+    interface Alert {
+        text: string;
+        variant: string;
+    }
+    const [alert, setAlert] = useState<Alert | null>(null);
 
     const handleAlert = () => {
         const alertElem = document.getElementById('pop-up-alert');
@@ -177,31 +188,30 @@ function ATMSearch() {
     const handleLocationChange = (selectedLocation: SelectedLocation, actionMeta: ActionMeta<LocationOption>) => {
         if (selectedLocation) {
             setSelectedLocation(selectedLocation);
-        } else {
-            // Handle the case where selectedLocation is not available
-            setSelectedLocation(null); // Clear the selected location
         }
     };
 
 
-    useEffect(() => {
-        if (userCoords && radius < milesToMeters(20)) {
-            findNearestChaseATMs(userCoords, radius);
-        }
-    }, [userCoords]);
+
 
     useEffect(() => {
-        if (selectedLocation) {
-            const address = formatAddress(selectedLocation.label);
-            getCoordsOfAddress(address);
+        const findAtms = async () => {
+            if (selectedLocation && radius < milesToMeters(20)) {
+                console.log(selectedLocation);
+                const address = encodeURI(selectedLocation.label.replaceAll(',', ''));
+                const coords = await getCoordsOfAddress(address);
+                findNearestChaseATMs(coords, radius);
+            }
         }
+        findAtms();
+
     }, [selectedLocation]);
 
-   
+
 
     return (
-        <>
-            <NavBar caller='atmSearch'/>
+        <div className='overflow-auto'>
+            <NavBar caller='atmSearch' />
             <div className='container mt-2 mb-5'>
                 <div className='row'>
                     <div className='col-md-12'>
@@ -209,8 +219,10 @@ function ATMSearch() {
                             <h4>Find Nearest Chase ATMs</h4>
                         </div>
                     </div>
+                </div>
+                <div className='row'>
                     <div className='col-md-12'>
-                        <div className="d-flex justify-content-center mt-2" id='pop-up-alert'>
+                        <div className="d-flex justify-content-center" id='pop-up-alert'>
                             {alert ? (
                                 <PopUpAlert text={alert.text} variant={alert.variant} />
                             ) : (null)}
@@ -249,10 +261,6 @@ function ATMSearch() {
                                             <span className="visually-hidden">Loading...</span>
                                         </div>
                                     </div>
-                                ) : atmLocations && atmLocations.length === 0 ? (
-                                    <div className="text-center">
-                                        <p>No Chase Bank ATMs found within the specified radius.</p>
-                                    </div>
                                 ) : (
                                     <MapComponent atmLocations={atmLocations ? atmLocations : []} />
                                 )}
@@ -262,10 +270,10 @@ function ATMSearch() {
                 </div>
             </div>
             {/* <!-- Footer--> */}
-            <footer className="py-5 bg-dark">
+            <footer className="py-5 bg-dark fixed-bottom">
                 <div className="container px-5"><p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p></div>
             </footer>
-        </>
+        </div>
     );
 }
 

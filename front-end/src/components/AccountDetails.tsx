@@ -9,6 +9,7 @@ import CloseAccount from './CloseAccount';
 import NavBar from './NavBar';
 import Dropdown from './Dropdown';
 import '../componentStyles/AccountDetailsStyles.css';
+import PopUpAlert from './PopUpAlert';
 
 
 function AccountDetails() {
@@ -38,13 +39,12 @@ function AccountDetails() {
 
 
     useEffect(() => {
-        const fetchAccountDetails = async (accountID:string) => {
+        const fetchAccountDetails = async (accountID: string) => {
             axios.get(`http://localhost:8000/getAccount/${accountID}`, {
                 headers: {
                     'authorization': `Bearer ${await getCustomerToken()}`
                 }
             }).then((response) => {
-                console.log(response);
                 setAccountInfo(response.data);
             }).catch((err) => {
                 console.log(err);
@@ -58,7 +58,7 @@ function AccountDetails() {
     }, []);
 
     //history transaction
-    const getUserCompleteHistory = async (accountID:string, numberOfEntries:number, authToken:string) => {
+    const getUserCompleteHistory = async (accountID: string, numberOfEntries: number, authToken: string) => {
         try {
             const response = await axios.get(`http://localhost:8000/getAccountCompleteHistory/${accountID}/${numberOfEntries}`, {
                 headers: {
@@ -72,7 +72,7 @@ function AccountDetails() {
             return null;
         }
     };
-    const getUserTransactionHistory = async (accountID:string, numberTransactions:number, authToken:string) => {
+    const getUserTransactionHistory = async (accountID: string, numberTransactions: number, authToken: string) => {
         try {
             const response = await axios.get(`http://localhost:8000/getAccountTransactionHistory/${accountID}/${numberTransactions}`, {
                 headers: {
@@ -85,7 +85,7 @@ function AccountDetails() {
             return null; // Handle the error or return an appropriate value
         }
     };
-    const getUserPaymentHistory = async (accountID:string, numberPayments:number, authToken:string) => {
+    const getUserPaymentHistory = async (accountID: string, numberPayments: number, authToken: string) => {
         try {
             const response = await axios.get(`http://localhost:8000/getAccountPaymentHistory/${accountID}/${numberPayments}`, {
                 headers: {
@@ -134,7 +134,7 @@ function AccountDetails() {
         amount: number
     }
 
-    const renderTableData = (dataToRender:Payment[], numOfEntries:number) => {
+    const renderTableData = (dataToRender: Payment[], numOfEntries: number) => {
         if (!dataToRender || dataToRender.length === 0) {
             return (
                 <tr>
@@ -167,7 +167,7 @@ function AccountDetails() {
             ));
         }
     };
-    const formatDate = (inputDate:string) => {
+    const formatDate = (inputDate: string) => {
         const date = new Date(inputDate);
 
         // Extract the date components
@@ -185,10 +185,26 @@ function AccountDetails() {
         return formattedDate;
     };
 
-    const formatBalance = (balance:number) => {
-        // Use toLocaleString to format the balance with commas
-        return balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
+    const formatBalance = (balance: number) => {
+
+        /// Convert the number to a string
+        const numStr = balance.toString();
+
+        // Split the number into integer and decimal parts (if applicable)
+        const [integerPart, decimalPart] = numStr.split('.');
+
+        // Add commas to the integer part
+        const integerWithCommas = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+
+        // Reconstruct the formatted number
+        if (decimalPart) {
+            return integerWithCommas + '.' + decimalPart;
+        } else {
+
+            return integerWithCommas + '.00';
+        }
+    };
 
 
 
@@ -198,23 +214,71 @@ function AccountDetails() {
     };
 
     const navigate = useNavigate();
-    const gotoCloseAccountPage = () => {
-        navigate('/closeAccount');
+
+    interface Alert {
+        text: string,
+        variant: string
+    }
+    const defaultAlert: Alert = {
+        text: '',
+        variant: ''
+    }
+    const [alert, setAlert] = useState<Alert>(defaultAlert);
+
+
+
+    const handleAlert = () => {
+        const alertElem = document.getElementById('pop-up-alert') as HTMLElement;
+        alertElem.style.visibility = 'visible';
+        // Automatically dismiss the alert after 3 seconds
+        setTimeout(() => {
+            setAlert(defaultAlert); // reset alert
+            alertElem.style.visibility = 'hidden';
+        }, 3000);
     };
-    const gotoInternalTransferPage = () => {
-        navigate('/internalTransfer');
+
+    const [password, setPassword] = useState<string>('');
+
+    const handlePasswordInput = (e: React.ChangeEvent<HTMLElement>) => {
+        const target = e.target as HTMLInputElement;
+        setPassword(target.value);
+    }
+
+    const closeAccount = (authToken: string, accountID:number, password: string) => {
+        if (password === '') {
+            setAlert({ text: "Please enter your password", variant: "warning" });
+            handleAlert();
+            return;
+        }
+        axios.patch(`http://localhost:8000/closeAccount/${accountID}`, {
+            password: password
+        }, {
+            headers: {
+                'authorization': `Bearer ${authToken}`
+            }
+        }).then(() => {
+            navigate('/home');
+        })
+            .catch((err) => {
+                console.log(err);
+                setAlert({ text: err.response.data, variant: "danger" });
+                handleAlert();
+            });
     };
-    const gotoExternalTransferPage = () => {
-        navigate('/externalTransfer');
-    };
+
+    //Latest
+
 
     return (
         <>
             {/* Responsive navbar */}
-            <NavBar caller='accountDetails'/>
+            <NavBar caller='accountDetails' />
 
             {isUserDataLoaded ? (
                 <div className="container my-5" style={{ border: '1px solid grey', borderRadius: '15px' }}>
+                    <div className="d-flex justify-content-center" id='pop-up-alert'>
+                        <PopUpAlert text={alert ? alert.text : ''} variant={alert ? alert.variant : 'info'} />
+                    </div>
 
                     <div className='row'>
                         <div className='col-md-12 text-center'>
@@ -242,7 +306,20 @@ function AccountDetails() {
                             <PopUpModal
                                 activatingBttn={<button className="btn btn-primary my-2">Close Account</button>}
                                 title={<div style={{ textAlign: "center" }}><p className="h4">Close Account</p></div>}
-                                body={<CloseAccount account_id={accountID? parseInt(accountID) : -1}/>}
+                                body={<CloseAccount 
+                                    account_id={accountID ? parseInt(accountID) : -1}
+                                    onInputChange={handlePasswordInput}
+                                    />}
+                                closeOnSubmit={true}
+                                submitAction={async () => {
+                                    const authToken = await getCustomerToken();
+                                    if (authToken && accountID) {
+                                        closeAccount(authToken, parseInt(accountID), password);
+                                    }
+                                }}
+                                closeBttnText={"Close Account"}
+                                additionalBttnText={"Cancel"}
+                                closeBtnVariant='danger'
                             />
                         </div>
                     </div>
@@ -266,16 +343,19 @@ function AccountDetails() {
             )}
             <div className='row'>
                 <div className='col-md-6 my-1'>
-                    <div className="d-flex justify-content-start ms-4">
+                    <div className='d-flex justify-content-start ms-4 ps-3'>
                         <Dropdown
                             selectedOption={selectedNumEntries}
-                            onSelectedOption={(option) => setSelectedNumEntries(option)}
+                            onSelectedOption={(option: number) => setSelectedNumEntries(option)}
                         />
                     </div>
+
                 </div>
+
                 <div className='col-md-6 my-1'>
-                    <div className="d-flex justify-content-end me-4">
+                    <div className='d-flex justify-content-center'>
                         <div className="btn-group" id="historyOptions" role="group" aria-label="Basic radio toggle button group">
+
                             <input type="radio" value="Complete" className="btn-check" name="btnradio" id="btnradio1" autoComplete="off" checked={selectedHistoryOption === 'Complete'} onChange={() => setSelectedHistoryOption('Complete')} />
                             <label className="btn btn-outline-primary" htmlFor="btnradio1">Complete</label>
 
@@ -301,7 +381,7 @@ function AccountDetails() {
                         </tr>
                     </thead>
                     <tbody>
-                        {isUserDataLoaded && dataToRender? (
+                        {isUserDataLoaded && dataToRender ? (
                             renderTableData(dataToRender, selectedNumEntries)
                         ) : (
                             <tr>

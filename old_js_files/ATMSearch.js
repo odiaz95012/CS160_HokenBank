@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import NavBar from '../front-end/src/components/NavBar';
 import MapComponent from '../front-end/src/components/MapComponent';
-import '../componentStyles/ATMSearchStyles.css';
+import './componentStyles/ATMSearchStyles.css';
 import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
 import axios from 'axios';
 import PopUpAlert from '../front-end/src/components/PopUpAlert';
@@ -187,7 +187,7 @@ function ATMSearch() {
                     <div className='col-12 col-md-8 mx-auto mt-3'>
                         <div className='row my-2'>
                             <div className='col-12 col-md-4 my-2'>
-                                <button className="btn btn-primary" onClick={handleGetLocation}>Current location<i className="bi bi-crosshair ms-1"></i></button>
+                                <button className="btn btn-primary" onClick={handleGetLocation}>Current loation<i className="bi bi-crosshair ms-1"></i></button>
                             </div>
                             <div className='col-12 col-md-4 my-2'>
                                 <div className='form-outline'>

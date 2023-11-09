@@ -149,8 +149,24 @@ function HomePage() {
 
 
     const formatBalance = (balance: number) => {
-        // Use toLocaleString to format the balance with commas
-        return balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        /// Convert the number to a string
+        const numStr = balance.toString();
+
+        // Split the number into integer and decimal parts (if applicable)
+        const [integerPart, decimalPart] = numStr.split('.');
+
+        // Add commas to the integer part
+        const integerWithCommas = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+
+        // Reconstruct the formatted number
+        if (decimalPart) {
+            return integerWithCommas + '.' + decimalPart;
+        } else {
+
+            return integerWithCommas + '.00';
+        }
     };
 
     const renderTableData = (dataToRender: Transaction[], numOfEntries: number) => {
@@ -343,7 +359,7 @@ function HomePage() {
     };
 
 
-    const automaticPayment = async (accountID: string, amt: string | number, paymentDate: string, authToken: string) => {
+    const automaticPayment = async (accountID: string, amt: string | number, paymentDate: string | null, authToken: string) => {
         if (accountID === '' || amt === '' || paymentDate === null) {
             setAlert({ text: 'At least one required input field was not provided. Please try again.', variant: 'warning' });
             handleAlert();
@@ -410,16 +426,16 @@ function HomePage() {
                 //Retrieve the customer id and auth token, authToken is at index 0 and customer_id is at index 1 
                 const customerAuth = await getCustomerToken();
                 //Retrieve the customer details
-                if(customerAuth){
+                if (customerAuth) {
                     await getUserData(customerAuth);
 
                     await getUserAccounts(customerAuth);
-    
+
                     //set the Transaction History Section to display the complete history on intial page render
                     const completeHistory = await getUserCompleteHistory(selectedNumEntries, customerAuth);
                     setUserCompleteHistory(completeHistory);
                     setDataToRender(completeHistory);
-    
+
                     setIsUserDataLoaded(true);
                 }
             } catch (err) {
@@ -524,13 +540,19 @@ function HomePage() {
         })
     };
 
+    const childrenHandleAlert = (alertText: string, alertVariant: string) => {
+        console.log('IN HOME PAGE ALERT FUNCTION');
+        setAlert({ text: alertText, variant: alertVariant });
+        handleAlert();
+    };
+
 
 
 
     return (
 
-        <div className='overflow-hidden'>
-            <NavBar caller='home'/>
+        <div className='overflow-hidden m-0'>
+            <NavBar caller='home' handleAlert={childrenHandleAlert} />
             {/* <!-- Welcome Banner--> */}
             {
                 isUserDataLoaded ? (
@@ -605,7 +627,7 @@ function HomePage() {
                                                                                 <li key={account.account_id} className="list-group-item">
                                                                                     <input className="form-check-input me-1" name="accountID" type="radio" value={account.account_id} id={account.account_id.toString()} onClick={handlePaymentDetailsChange} />
                                                                                     <label className="form-check-label" htmlFor={account.account_id.toString()}>Account ID: {account.account_id}</label>
-                                                                                    <label className="form-check-label ps-3" htmlFor={account.account_id.toString()}>Balance: ${account.balance}</label>
+                                                                                    <label className="form-check-label ps-3" htmlFor={account.account_id.toString()}>Balance: ${formatBalance(account.balance)}</label>
                                                                                 </li>
                                                                             )
                                                                         }
@@ -786,16 +808,19 @@ function HomePage() {
 
             <div className='row'>
                 <div className='col-md-6 my-1'>
-                    <div className="d-flex justify-content-start ms-4">
+                    <div className='d-flex justify-content-start ms-4 ps-3'>
                         <Dropdown
                             selectedOption={selectedNumEntries}
                             onSelectedOption={(option: number) => setSelectedNumEntries(option)}
                         />
                     </div>
+
                 </div>
+
                 <div className='col-md-6 my-1'>
-                    <div className="d-flex justify-content-end me-4">
+                    <div className='d-flex justify-content-center'>
                         <div className="btn-group" id="historyOptions" role="group" aria-label="Basic radio toggle button group">
+
                             <input type="radio" value="Complete" className="btn-check" name="btnradio" id="btnradio1" autoComplete="off" checked={selectedHistoryOption === 'Complete'} onChange={() => setSelectedHistoryOption('Complete')} />
                             <label className="btn btn-outline-primary" htmlFor="btnradio1">Complete</label>
 
@@ -808,6 +833,8 @@ function HomePage() {
                     </div>
                 </div>
             </div>
+
+
 
             <div className="row overflow-auto my-4">
                 <table className="col-md-12 table table-hover mx-4">

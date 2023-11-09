@@ -269,7 +269,9 @@ function AdminPage() {
 
 
   const generateUserReport = async (customer_id: number, authToken: string) => {
-    axios.get(`http://localhost:8000/generateIndividualReport/${customer_id}`, {
+    let url = `http://localhost:8000/generateIndividualReport/${customer_id}`;
+
+    axios.get(url, {
       headers: {
         'authorization': `Bearer ${authToken}`
       },
@@ -281,6 +283,7 @@ function AdminPage() {
     }).catch((err) => {
       console.log(err);
     })
+    
   };
 
   const getCurrDateTime = () => {

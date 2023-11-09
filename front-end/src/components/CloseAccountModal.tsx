@@ -1,13 +1,34 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PopUpModal from './PopUpModal';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
+import CloseAccount from './CloseAccount';
 
-function CloseAccountModal() {
+interface CloseAccountModalProps {
+    handleAlert?: (alertText: string, alertVariant: string) => void;
+}
+function CloseAccountModal({handleAlert}: CloseAccountModalProps): JSX.Element {
+
+    //Latest
     const navigate = useNavigate();
-    const closeAccount = (authToken: string) => {
-        axios.patch("http://localhost:8000/deactivateCustomer", {}, {
+
+    const [password, setPassword] = useState<string>('');
+
+    const handlePasswordInput = (e: React.ChangeEvent<HTMLElement>) => {
+        const target = e.target as HTMLInputElement;
+        setPassword(target.value);
+    }
+
+
+    const closeAccount = (authToken: string, password: string) => {
+        if (password === '') {
+            handleAlert && handleAlert("Enter your password", "danger");
+            return;
+        }
+        axios.patch("http://localhost:8000/deactivateCustomer", {
+            password: password
+        }, {
             headers: {
                 'authorization': `Bearer ${authToken}`
             }
@@ -15,13 +36,17 @@ function CloseAccountModal() {
             Cookies.remove('authToken');
             navigate('/');
         })
-            .catch((err) => console.log(err));
+            .catch((err) => {
+                console.log(err);
+
+            });
     };
 
     const getCustomerToken = async () => {
         const authToken = Cookies.get('authToken');
         return authToken;
     };
+
 
 
     return (
@@ -34,25 +59,21 @@ function CloseAccountModal() {
                 data-toggle="modal"
                 data-target="#exampleModal"
                 title={<div>Close Account</div>}
-                body={
-                    <div className='container text-center my-4'>
-                        <p className='h6 text-danger'>
-                            ARE YOU SURE YOU WANT TO CLOSE YOUR ACCOUNT?
-                            <br /><br />
-                            THIS ACTION CANNOT BE UNDONE.
-                        </p>
-                    </div>
-                }
+                body={<>
+                    <CloseAccount 
+                    onInputChange={handlePasswordInput}
+                    />
+                </>}
                 closeBttnText={"Yes, I'm sure"}
                 additionalBttnText={"Cancel"}
                 closeOnSubmit={true}
                 submitAction={async () => {
                     const authToken = await getCustomerToken();
-                    if (authToken) {
-                        closeAccount(authToken);
+                    if (authToken && password) {
+                        closeAccount(authToken, password);
                     }
                 }}
-
+                closeBtnVariant='danger'
             />
         </>
     )
