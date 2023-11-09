@@ -9,7 +9,7 @@ class AccountInformation(db.Model):
         'CustomerInformation.customer_id'),
         nullable=False)
     account_type = db.Column(db.String(20), nullable=False)
-    balance = db.Column(db.Numeric(scale = 2), nullable=False)
+    balance = db.Column(db.Numeric(scale=2), nullable=False)
     status = db.Column(db.String(1), nullable=False)
     transactions = db.relationship('TransactionHistory',
                                    backref='account', lazy=True)

@@ -50,31 +50,39 @@ def reset():
         create_dummy_customers()
         create_dummy_accounts()
         db.session.commit()
-    except Exception:
-        return "Internal Error", 500
-    return "Database Reset", 200
-
-
+        return "Database Reset", 200
+    except Exception as e:
+        # Log the exception to help diagnose the issue
+        print(f"Exception: {str(e)}")
+        return 'Unexpected error occurred.', 500
 
 
 # executing automatic payment, job should auto-execute when server is running
 def automatic_payment_job(payment_id):
-    # access payment
-    autopayment = AutomaticPayments.query.get(payment_id)
-    # access account
-    account = AccountInformation.query.get(autopayment.account_id)
+    try:
+        # access payment
+        autopayment = AutomaticPayments.query.get(payment_id)
+        # access account
+        account = AccountInformation.query.get(autopayment.account_id)
 
-    new_balance = account.balance - autopayment.amount
-    if new_balance < 0:
-       delete_automatic_payment_entry(payment_id)
+        new_balance = account.balance - autopayment.amount
+        if new_balance < 0:
+            delete_automatic_payment_entry(payment_id)
 
-    # set new balance and reset date for one month from original date,
-    # add transaction
-    account.balance = new_balance
-    autopayment.date = autopayment.date + pandas.DateOffset(months=1)
-    db.session.commit()
+        # set new balance and reset date for one month from original date,
+        # add transaction
+        account.balance = new_balance
+        autopayment.date = autopayment.date + pandas.DateOffset(months=1)
+        db.session.commit()
 
-    create_transaction_history_entry(account.customer_id, account.account_id, 'Automatic Payment', -autopayment.amount)
+        create_transaction_history_entry(account.customer_id,
+                                         account.account_id,
+                                         'Automatic Payment',
+                                         -autopayment.amount)
+    except Exception as e:
+        # Log the exception to help diagnose the issue
+        print(f"Exception: {str(e)}")
+        return 'Unexpected error occurred.', 500
 
 
 # go thru db + update all automatic jobs on the day
