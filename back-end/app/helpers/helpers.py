@@ -7,31 +7,46 @@ from . import bcrypt
 
 
 def create_transaction_history_entry(customer_id, account_id, action, amount):
-    transaction = TransactionHistory(
-        customer_id=customer_id,
-        account_id=account_id,
-        action=action,
-        amount=amount
-    )
-    db.session.add(transaction)
-    db.session.commit()
+    try:
+        transaction = TransactionHistory(
+            customer_id=customer_id,
+            account_id=account_id,
+            action=action,
+            amount=amount
+        )
+        db.session.add(transaction)
+        db.session.commit()
+    except Exception as e:
+        # Log the exception to help diagnose the issue
+        print(f"Exception: {str(e)}")
+        return 'Unexpected error occurred.', 500
 
 
 def create_automatic_payment_entry(customer_id, account_id, amount, date):
-    autopayment = AutomaticPayments(
-        customer_id=customer_id,
-        account_id=account_id,
-        amount=amount,
-        date=date
-    )
-    db.session.add(autopayment)
-    db.session.commit()
+    try:
+        autopayment = AutomaticPayments(
+            customer_id=customer_id,
+            account_id=account_id,
+            amount=amount,
+            date=date
+        )
+        db.session.add(autopayment)
+        db.session.commit()
+    except Exception as e:
+        # Log the exception to help diagnose the issue
+        print(f"Exception: {str(e)}")
+        return 'Unexpected error occurred.', 500
 
 
 def delete_automatic_payment_entry(payment_id):
-    AutomaticPayments.query.filter(AutomaticPayments.payment_id ==
-                                   payment_id).delete()
-    db.session.commit()
+    try:
+        AutomaticPayments.query.filter(AutomaticPayments.payment_id ==
+                                       payment_id).delete()
+        db.session.commit()
+    except Exception as e:
+        # Log the exception to help diagnose the issue
+        print(f"Exception: {str(e)}")
+        return 'Unexpected error occurred.', 500
 
 
 def create_bank_manager():

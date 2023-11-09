@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../componentStyles/LoginStyles.css';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -98,6 +98,7 @@ function Login() {
         e.preventDefault();
     };
 
+
     return (
         <section className="background-radial-gradient overflow-auto">
             <style>
@@ -187,12 +188,21 @@ function Login() {
                                 </div>
                                 <div className="col-lg-6 d-flex align-items-center gradient-custom-2">
                                     <div className="text-white px-3 py-4 p-md-5 mx-md-4">
-                                        <h4 className="mb-4">The future of online banking is here</h4>
+                                        <h4 className="mb-4">Welcome to Hoken Bank!</h4>
                                         <p className="small mb-0">
-                                            Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed
-                                            do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-                                            enim ad minim veniam, quis nostrud exercitation ullamco laboris
-                                            nisi ut aliquip ex ea commodo consequat.
+
+                                            We are thrilled to have you as part of our banking family. 
+                                            <br/><br/>
+                                            At Hoken, we are committed to providing you with a secure, convenient, and personalized banking experience.
+                                            <br/><br/>
+                                            With our user-friendly online platform, you can access your accounts, manage your finances, and explore a wide range of banking services from the comfort of your home or on the go. Whether you need to check your account balances, transfer funds, or find schedule automatic payments, we've got you covered.
+                                            <br/><br/>
+                                            Thank you for choosing Hoken Online Bank. We look forward to helping you achieve your financial goals and ensuring your banking experience is as smooth as possible.
+                                            <br/><br/>
+                                            Start exploring our online banking services and enjoy the convenience of managing your finances with ease.
+                                            <br/><br/>
+                                            Best regards,<br/><br/>
+                                            The Hoken Bank Team
                                         </p>
                                     </div>
                                 </div>
