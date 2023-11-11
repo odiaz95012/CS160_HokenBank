@@ -5,7 +5,7 @@ import axios from 'axios';
 import PopUpAlert from './PopUpAlert';
 import PopUpModal from './PopUpModal';
 import '../componentStyles/ATMHomeStyles.css';
-import LogoutModal from './LogoutModal';
+import NavBarLogOut from './NavBarLogOut';
 
 interface TransactionData {
     account_id: string;
@@ -249,7 +249,7 @@ function ATMHome() {
                             <div className="collapse navbar-collapse" id="navbarSupportedContent">
                                 <ul className="navbar-nav ms-auto mb-lg-0 my-2">
                                     <li className="nav-item my-2">
-                                        <LogoutModal />
+                                        <button className='btn btn-primary'><NavBarLogOut /></button>
                                     </li>
                                 </ul>
                             </div>
