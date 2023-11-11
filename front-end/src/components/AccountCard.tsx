@@ -32,6 +32,8 @@ function AccountCard(props:AccountCardProps): JSX.Element {
     navigate(accountDetailsPath);
   };
 
+  
+
   const formatBalance = (balance: number) => {
 
     /// Convert the number to a string

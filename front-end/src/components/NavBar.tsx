@@ -4,6 +4,7 @@ import { Navbar, Nav, Button } from 'react-bootstrap';
 import LogoutModal from './LogoutModal';
 import CloseAccountModal from './CloseAccountModal.tsx';
 import CancelAutomaticPayments from './CancelAutomaticPayments.tsx';
+import '../componentStyles/NavBarStyles.css';
 
 
 interface NavBarProps {
@@ -24,7 +25,7 @@ function NavBar({ caller, handleAlert, setAlert }: NavBarProps): JSX.Element {
                     alt="logo"
                     id="logo"
                 />
-                Hoken
+                <a id="home">Hoken</a>
             </Navbar.Brand>
             <Navbar.Toggle aria-controls="navbarNav" />
             <Navbar.Collapse id="navbarNav">

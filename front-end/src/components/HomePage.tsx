@@ -551,7 +551,7 @@ function HomePage() {
     return (
 
         <div className='overflow-hidden m-0'>
-            <NavBar caller='home' handleAlert={handleAlert} setAlert={childrenSetAlert}/>
+            <NavBar caller='home' handleAlert={handleAlert} setAlert={childrenSetAlert} />
             {/* <!-- Welcome Banner--> */}
             {
                 isUserDataLoaded ? (
@@ -574,7 +574,7 @@ function HomePage() {
                                                 title={<div><h4>Open Account</h4></div>}
                                                 body={
                                                     <div className="container text-center">
-                                                        <p id="prompt">What type of account would you like to open?</p>
+                                                        <p className="lead" id="prompt">What type of account would you like to open?</p>
                                                         <div className="d-flex justify-content-center align-items-center" id="accountSelection">
                                                             <div className="d-flex-1 justify-content-center align-items-center">
                                                                 <div className="form-check">
@@ -613,7 +613,7 @@ function HomePage() {
                                                 body={
                                                     <div className="row justify-content-center my-1">
                                                         <div className='d-flex justify-content-center'>
-                                                            <p>Please enter the required payment details</p>
+                                                            <p className='lead'>Please enter the required payment details</p>
                                                         </div>
                                                         <div className="col-md-6 mb-4">
                                                             <label className='form-label' htmlFor='accountsList'>Accounts</label>
@@ -638,9 +638,9 @@ function HomePage() {
                                                         <div className="col-md-6 mb-4">
                                                             <div className="form-outline">
                                                                 <div className='d-flex justify-content-start'>
-                                                                    <label className="form-label" htmlFor="validationCustom01">Amount</label>
+                                                                    <label className="form-label" htmlFor="amount1">Amount</label>
                                                                 </div>
-                                                                <input name="amount" type="text" id="validationCustom01" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange} />
+                                                                <input name="amount" type="text" id="amount1" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange} />
 
                                                             </div>
                                                         </div>
@@ -665,7 +665,7 @@ function HomePage() {
                                                 body={
                                                     <div className="row justify-content-center my-1">
                                                         <div className='d-flex justify-content-center'>
-                                                            <p>Please enter the required details</p>
+                                                            <p className='lead'>Please enter the required details</p>
                                                         </div>
                                                         <div className="col-md-6 mb-4">
                                                             <label className='form-label' htmlFor='accountsList'>Accounts</label>
@@ -690,9 +690,9 @@ function HomePage() {
                                                         <div className="col-md-6 mb-4">
                                                             <div className="form-outline">
                                                                 <div className='d-flex justify-content-start'>
-                                                                    <label className="form-label" htmlFor="validationCustom01">Amount</label>
+                                                                    <label className="form-label" htmlFor="amount2">Amount</label>
                                                                 </div>
-                                                                <input name="amount" type="text" id="validationCustom01" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange} />
+                                                                <input name="amount" type="text" id="amount2" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange} />
                                                             </div>
                                                         </div>
                                                         <div className="col-md-6 mb-4 d-flex justify-content-center align-items-center">
@@ -730,6 +730,9 @@ function HomePage() {
                                                 body={
                                                     <>
                                                         <div className="row justify-content-center my-1">
+                                                            <div className='d-flex justify-content-center'>
+                                                                <p className='lead'>Please enter the required details</p>
+                                                            </div>
                                                             <div className="col-md-8 mb-4">
                                                                 <label className='form-label' htmlFor='accountsList'>Accounts</label>
                                                                 <div className='overflow-container'>
