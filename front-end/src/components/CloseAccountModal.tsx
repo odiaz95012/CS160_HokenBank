@@ -40,7 +40,8 @@ function CloseAccountModal({handleAlert, setAlert}: CloseAccountModalProps): JSX
         })
             .catch((err) => {
                 console.log(err);
-
+                setAlert && setAlert(err.response.data, "danger");
+                handleAlert && handleAlert();
             });
     };
 
