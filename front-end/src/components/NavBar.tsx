@@ -1,11 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar, Nav, Button } from 'react-bootstrap';
-import LogoutModal from './LogoutModal';
-import CloseAccountModal from './CloseAccountModal.tsx';
 import CancelAutomaticPayments from './CancelAutomaticPayments.tsx';
 import '../componentStyles/NavBarStyles.css';
-
+import ProfileDropdown from './ProfileDropdown.tsx';
 
 interface NavBarProps {
     caller: string;
@@ -54,14 +52,9 @@ function NavBar({ caller, handleAlert, setAlert }: NavBarProps): JSX.Element {
 
                     <Nav.Item className="my-2">
                         <CancelAutomaticPayments />
-                    </Nav.Item>
-                    {caller !== 'accountDetails' ? (
-                        <Nav.Item className="my-2">
-                            <CloseAccountModal handleAlert={handleAlert} setAlert={setAlert}/>
-                        </Nav.Item>
-                    ) : null}
-                    <Nav.Item className="my-2 me-4">
-                        <LogoutModal />
+                    </Nav.Item>      
+                    <Nav.Item className='me-2'>
+                        <ProfileDropdown handleAlert={handleAlert} setAlert={setAlert}/>
                     </Nav.Item>
                 </Nav>
             </Navbar.Collapse>
