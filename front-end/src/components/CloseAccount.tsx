@@ -25,7 +25,7 @@ function CloseAccount({  onInputChange }: CloseAccountProps) {
   return (
     <div>
       <div className="container text-center mt-5">
-        <p className='h5 mb-3'>Please enter your password to close the account</p>
+        <p className='h5 mb-3 lead'>Please enter your password to close the account</p>
           <div className="form-group text-start">
             <label htmlFor="password" className='form-label mb-1'>Password Confirm</label>
             <input

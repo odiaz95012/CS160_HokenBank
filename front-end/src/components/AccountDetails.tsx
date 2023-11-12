@@ -234,17 +234,49 @@ function AccountDetails() {
         setTimeout(() => {
             setAlert(defaultAlert); // reset alert
             alertElem.style.visibility = 'hidden';
+            window.location.reload();
         }, 3000);
     };
 
     const [password, setPassword] = useState<string>('');
+
+    interface TransferData {
+        accountID: string;
+        toAccountID: string;
+        amount: string;
+    }
+
+
+    const [transferData, setTransferData] = useState<TransferData>({
+        accountID: accountID ?? '',
+        toAccountID: '',
+        amount: ''
+    });
+
+
+
+
 
     const handlePasswordInput = (e: React.ChangeEvent<HTMLElement>) => {
         const target = e.target as HTMLInputElement;
         setPassword(target.value);
     }
 
-    const closeAccount = (authToken: string, accountID:number, password: string) => {
+    const handleInternalTransferAmount = (e: React.ChangeEvent<HTMLElement>) => {
+        const { name, value } = e.target as HTMLInputElement;
+        setTransferData({ ...transferData, [name]: value });
+    }
+
+    const handleExternalTransferData = (e: React.ChangeEvent<HTMLElement>) => {
+        const { name, value } = e.target as HTMLInputElement;
+        setTransferData({ ...transferData, [name]: value });
+    };
+
+    const handleTransferAccountSelection = (selectedAccountId: string) => {
+        setTransferData({ ...transferData, toAccountID: selectedAccountId });
+    }
+
+    const closeAccount = (authToken: string, accountID: number, password: string) => {
         if (password === '') {
             setAlert({ text: "Please enter your password", variant: "warning" });
             handleAlert();
@@ -266,19 +298,66 @@ function AccountDetails() {
             });
     };
 
-    //Latest
+    const isValidAmount = (amount: string) => {
+        const pattern = /^\d+\.\d{2}$/;
+        return pattern.test(amount) && parseFloat(amount) > 0;
+    };
+    const transfer = async (accountID: string, toAccount: string, amount: string) => {
+        if (accountID === '' || toAccount === '' || amount === '') {
+            setAlert({ text: 'Please fill out all fields.', variant: 'warning' });
+            handleAlert();
+            return;
+        }
+        if (!isValidAmount(amount)) {
+            setAlert({ text: 'Please enter a valid amount. (e.g. 500.00)', variant: 'warning' });
+            handleAlert();
+            return;
+        }
+
+        const parsedToAccountId = parseInt(toAccount);
+        const parsedAmount = parseFloat(amount).toFixed(2);
+        const parsedAccountId = parseInt(accountID);
+
+        try {
+            const response = await axios.patch(
+                `http://localhost:8000/transfer/${parsedAccountId}/${parsedToAccountId}/${parsedAmount}`,
+                {
+                    account_id: parsedAccountId,
+                    to_account_id: parsedToAccountId,
+                    amount: parsedAmount,
+                },
+                {
+                    headers: {
+                        'authorization': `Bearer ${await getCustomerToken()}`,
+                    },
+                }
+            );
+            if (response.data) {
+                setAlert({ text: 'Transfer successful.', variant: 'success' });
+                handleAlert();
+                setTransferData({ accountID: accountID, toAccountID: '', amount: '' });
+            }
+
+        } catch (err: any) {
+            setAlert({ text: `Transfer failed: ${err.message}`, variant: 'danger' });
+            handleAlert();
+        }
+    };
+
+
+
+
 
 
     return (
-        <>
+        <div className='overflow-hidden'>
             {/* Responsive navbar */}
             <NavBar caller='accountDetails' />
-
+            <div className="d-flex justify-content-center mt-3" id='pop-up-alert'>
+                <PopUpAlert text={alert ? alert.text : ''} variant={alert ? alert.variant : 'info'} />
+            </div>
             {isUserDataLoaded ? (
-                <div className="container my-5" style={{ border: '1px solid grey', borderRadius: '15px' }}>
-                    <div className="d-flex justify-content-center" id='pop-up-alert'>
-                        <PopUpAlert text={alert ? alert.text : ''} variant={alert ? alert.variant : 'info'} />
-                    </div>
+                <div className="container mb-5" style={{ border: '1px solid grey', borderRadius: '15px' }}>
 
                     <div className='row'>
                         <div className='col-md-12 text-center'>
@@ -292,24 +371,48 @@ function AccountDetails() {
                             <PopUpModal
                                 activatingBttn={<button className="btn btn-primary my-2">Internal Transfer</button>}
                                 title={<div style={{ textAlign: "center" }}><p className="h4">Internal Transfer</p></div>}
-                                body={<InternalTransfer />}
+                                body={<InternalTransfer
+                                    handleAccountSelect={handleTransferAccountSelection}
+                                    handleAmountInput={handleInternalTransferAmount}
+                                />}
+                                closeOnSubmit={true}
+                                closeBttnText='Transfer'
+                                additionalBttnText='Cancel'
+                                submitAction={async () => {
+                                    if (accountID) {
+                                        transfer(accountID, transferData.toAccountID, transferData.amount);
+
+                                    }
+                                }}
                             />
                         </div>
                         <div className='col-md-4 feature-bttn'>
                             <PopUpModal
                                 activatingBttn={<button className="btn btn-primary my-2">External Transfer</button>}
                                 title={<div style={{ textAlign: "center" }}><p className="h4">External Transfer</p></div>}
-                                body={<ExternalTransfer />}
+                                body={
+                                    <ExternalTransfer
+                                        handleExternalTransferInput={handleExternalTransferData}
+                                    />
+                                }
+                                closeOnSubmit={true}
+                                closeBttnText='Transfer'
+                                additionalBttnText='Cancel'
+                                submitAction={async () => {
+                                    if (accountID) {
+                                        transfer(accountID, transferData.toAccountID, transferData.amount);
+                                    }
+                                }}
                             />
                         </div>
                         <div className='col-md-4 feature-bttn'>
                             <PopUpModal
                                 activatingBttn={<button className="btn btn-primary my-2">Close Account</button>}
                                 title={<div style={{ textAlign: "center" }}><p className="h4">Close Account</p></div>}
-                                body={<CloseAccount 
+                                body={<CloseAccount
                                     account_id={accountID ? parseInt(accountID) : -1}
                                     onInputChange={handlePasswordInput}
-                                    />}
+                                />}
                                 closeOnSubmit={true}
                                 submitAction={async () => {
                                     const authToken = await getCustomerToken();
@@ -368,7 +471,7 @@ function AccountDetails() {
                     </div>
                 </div>
             </div>
-            <div className="row overflow-auto my-4">
+            <div className="row overflow-auto mt-4 mb-5">
                 <table className="col-md-12 table table-hover mx-4">
                     <thead className="thead-dark">
                         <tr>
@@ -402,7 +505,7 @@ function AccountDetails() {
                     <p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p>
                 </div>
             </footer>
-        </>
+        </div>
     );
 }
 

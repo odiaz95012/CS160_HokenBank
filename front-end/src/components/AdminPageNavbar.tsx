@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navbar, Nav, Button } from 'react-bootstrap';
-import LogoutModal from './LogoutModal';
+import NavBarLogOut from './NavBarLogOut';
 
 function AdminPageNavBar(): JSX.Element {
 
@@ -20,7 +20,7 @@ function AdminPageNavBar(): JSX.Element {
             <Navbar.Collapse id="navbarNav">
                 <Nav className="ms-auto mb-lg-0">
                     <Nav.Item className="my-2 me-4">
-                        <LogoutModal />
+                        <button className='btn btn-primary'><NavBarLogOut /></button>
                     </Nav.Item>
                 </Nav>
             </Navbar.Collapse>

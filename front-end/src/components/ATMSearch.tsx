@@ -92,7 +92,6 @@ function ATMSearch() {
 
 
     const findNearestChaseATMs = async (coords: any, radius: number) => {
-        console.log("FINDING ATMS");
         setIsSearching(true);
 
         const google = (window as any).google; // Access the Google Maps JavaScript API
@@ -197,7 +196,6 @@ function ATMSearch() {
     useEffect(() => {
         const findAtms = async () => {
             if (selectedLocation && radius < milesToMeters(20)) {
-                console.log(selectedLocation);
                 const address = encodeURI(selectedLocation.label.replaceAll(',', ''));
                 const coords = await getCoordsOfAddress(address);
                 findNearestChaseATMs(coords, radius);
@@ -270,7 +268,7 @@ function ATMSearch() {
                 </div>
             </div>
             {/* <!-- Footer--> */}
-            <footer className="py-5 bg-dark fixed-bottom">
+            <footer className="py-5 bg-dark">
                 <div className="container px-5"><p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p></div>
             </footer>
         </div>

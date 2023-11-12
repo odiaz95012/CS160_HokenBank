@@ -4,3 +4,19 @@
 #logo:hover {
     cursor: pointer
 }
+
+.profile-dropdown {
+    max-width: fit-content;
+    border: 0.5px solid rgb(102, 153, 204);
+    border-radius: 15px;
+}
+
+.profile-dropdown:hover {
+    background-color: rgba(102, 153, 204, 0.5);
+}
+
+.profile-item {
+    min-width: 50px;
+    padding-left: 5px;
+}
+

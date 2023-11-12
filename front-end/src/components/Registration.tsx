@@ -70,13 +70,14 @@ function Registration() {
       checkAttributesNotNull('Confirm Password', formData.confirmPassword);
 
       const isPasswordsMatch = confirmPasswordsMatch(password, confirmPassword);
+      const isNameValid = isValidName(formData.fullName);
       const isUsernameValid = isValidUsername(username);
       const isAgeValid = isValidAge(age);
       const isEmailValid = isValidEmail(email);
       const isZipcodeValid = isValidZipCode(zipcode);
       const isPasswordValid = isValidPassword(password);
 
-      if (isPasswordsMatch && isUsernameValid && isAgeValid && isZipcodeValid && isEmailValid && isPasswordValid) {
+      if (isPasswordsMatch && isNameValid && isUsernameValid && isAgeValid && isZipcodeValid && isEmailValid && isPasswordValid) {
         if (await handleSubmit()) {
           
           let count = 3;
@@ -124,6 +125,14 @@ function Registration() {
       if (age > 150) {
         throw new Error('The birthdate is invalid.');
       }
+    }
+    return true;
+  };
+
+  const isValidName = (name: string) => {
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if(!nameRegex.test(name)) {
+      throw new Error('The input name is not valid. Please only enter alphabetical characters.');
     }
     return true;
   };

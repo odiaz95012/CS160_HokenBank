@@ -12,9 +12,6 @@ interface ATM {
   };
 }
 
-interface MapComponentProps {
-  atmLocations: ATM[];
-}
 
 const containerStyle = {
   width: '100%',
@@ -27,10 +24,14 @@ const initialCenter = {
   lng: -121.881
 };
 
+interface MapComponentProps {
+  atmLocations: ATM[];
+}
+
 function MapComponent({ atmLocations }: MapComponentProps) {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: 'YOUR_API_KEY'
+    googleMapsApiKey: 'YOUR_API_KEY_HERE'
   });
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -59,13 +60,21 @@ function MapComponent({ atmLocations }: MapComponentProps) {
     }
   }, [atmLocations]);
 
-const onLoad = (map: google.maps.Map) => {
+  const onLoad = (map: google.maps.Map) => {
     setMap(map);
-};
+  };
 
-const onUnmount = (map: google.maps.Map) => {
+  const onUnmount = (map: google.maps.Map) => {
     setMap(null);
-};
+  };
+
+  const handleMarkerClick = (index: number) => {
+    setActiveMarker(index);
+  };
+
+  const handleInfoWindowClose = () => {
+    setActiveMarker(null);
+  };
 
   const placeAtmMarkers = (atms: ATM[]) => {
     return atms.map((atm, index) => (
@@ -73,10 +82,10 @@ const onUnmount = (map: google.maps.Map) => {
         title="Chase Bank ATM"
         key={index}
         position={{ lat: atm.geometry.location.lat, lng: atm.geometry.location.lng }}
-        onClick={() => setActiveMarker(index)}
+        onClick={() => handleMarkerClick(index)}
       >
         {activeMarker === index && (
-          <InfoWindow onCloseClick={() => setActiveMarker(null)}>
+          <InfoWindow onCloseClick={handleInfoWindowClose}>
             <div>
               <h5>ATM Details<i className="bi bi-coin ms-1"></i></h5>
               <p><strong>Name:</strong> {atm.name}</p>

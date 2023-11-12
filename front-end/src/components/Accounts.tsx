@@ -77,7 +77,7 @@ function Accounts({
                     )}
                     {isAccountsExpanded && userAccounts.length > 3 && (
                         <div className={`row justify-content-center my-5 collapse ${isAccountsExpanded ? 'show' : ''}`} id="accounts">
-                            {userAccounts.slice(3).map((account, index) => (
+                            {userAccounts.slice(3).map((account) => (
                                 <AccountCard
                                     key={account.account_id}
                                     account_id={account.account_id}
