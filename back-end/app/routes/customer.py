@@ -174,3 +174,58 @@ def get_customers():
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
         return 'Unexpected error occurred.', 500
+    
+@customer.route('/updateCustomer', methods=['PATCH'])
+@is_authenticated
+def update_customer():
+    try:
+        customer_id = request.currentUser
+        customer = CustomerInformation.query.get(customer_id)
+
+        if not customer:
+            return jsonify({'error': 'Customer not found'}), 404
+
+        if customer.status == 'I':
+            return jsonify({'error': 'Inactive customer account'}), 406
+
+        data = request.get_json()
+
+        if not data:
+            return jsonify({'error': 'Bad request'}), 400
+        
+        #check if the request contains any of the expected attributes
+        expected_attributes = {'new_username', 'new_email', 'new_password', 'new_name', 'new_zipcode'}
+        if not expected_attributes.intersection(data.keys()):
+            return jsonify({'error': 'No new information was provided'}), 400
+        
+        # Check if the new_username is provided, it's different from the current username
+        if 'new_username' in data and data['new_username'] != customer.username:
+            # Check if the new_username already exists in the database
+            existing_user = CustomerInformation.query.filter_by(username=data['new_username']).first()
+            if existing_user:
+                return jsonify({'error': 'Username is already taken'}), 400
+            else: #update the username
+                customer.username = data['new_username']
+
+        if 'new_email' in data:
+            customer.email = data['new_email']
+
+        if 'new_password' in data:
+            customer.password = bcrypt.generate_password_hash(data['new_password']).decode('utf-8')
+
+        if 'new_name' in data:
+            customer.full_name = data['new_name']
+
+        if 'new_zipcode' in data:
+            customer.zip_code = data['new_zipcode']
+
+        db.session.commit()
+
+        update_customer = CustomerInformation.query.get(customer_id)
+
+        return jsonify({'updated_customer': update_customer.serialize()}), 200
+
+    except Exception as e:
+        print(f"Exception: {str(e)}")
+        db.session.rollback() #revert changes if any error occurs
+        return jsonify({'error': 'Unexpected error occurred'}), 500
