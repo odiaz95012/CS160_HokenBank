@@ -111,6 +111,7 @@ const Profile: React.FC<ProfileProps> = () => {
                                 <div className='ps-5 g-col-4 mb-5'>
                                     <p className='h6 my-4 fs-4'>Name: {userData.full_name}</p>
                                     <p className='h6 my-4 fs-4'>Username: {userData.username}</p>
+                                    <p className='h6 my-4 fs-4'>Customer ID: {userData.customer_id}</p>
                                     <p className='h6 my-4 fs-4'>Age: {userData.age}</p>
                                     <p className='h6 my-4 fs-4'>Gender: {userData.gender}</p>
                                     <p className='h6 my-4 fs-4'>Zip Code: {userData.zip_code}</p>
