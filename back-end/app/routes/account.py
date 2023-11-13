@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from models.account import AccountInformation
 from models import db
-from helpers.middleware import is_authenticated, account_owner
+from helpers.middleware import is_authenticated, account_owner, is_admin
 from decimal import Decimal
 from models.customer import CustomerInformation
 from . import bcrypt
@@ -101,6 +101,7 @@ def get_account_by_id(account_id):
 # Get all accounts, including inactive ones
 @account.route('/getAccounts', methods=['GET'])
 @is_authenticated
+@is_admin
 def get_accounts():
     try:
         accounts = AccountInformation.query.all()

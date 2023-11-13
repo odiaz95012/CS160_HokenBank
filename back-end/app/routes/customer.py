@@ -3,7 +3,7 @@ from models.customer import CustomerInformation
 from models.account import AccountInformation
 import jwt
 from models import db
-from helpers.middleware import is_authenticated
+from helpers.middleware import is_authenticated, is_admin
 from decimal import Decimal
 from . import bcrypt
 
@@ -150,6 +150,7 @@ def get_customer_by_id():
 # Get all customers
 @customer.route('/getCustomers', methods=['GET'])
 @is_authenticated
+@is_admin
 def get_customers():
     try:
         customers = CustomerInformation.query.all()
