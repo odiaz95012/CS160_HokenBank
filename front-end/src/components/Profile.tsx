@@ -97,8 +97,8 @@ const Profile: React.FC<ProfileProps> = () => {
         switch (activeTab) {
             case 'viewProfile':
                 return (
-                    <Container className='grid gap-3 align-items-center justify-content-center my-5'>
-                        <Row className='mt-5'>
+                    <Container className='grid gap-3 align-items-center justify-content-center my-5 pb-3'>
+                        <Row>
                             <Col md={4} className='offset-md-2 ps-5 g-col-4 mb-5'>
                                 <Image
                                     src={ProfileImage}
@@ -114,7 +114,6 @@ const Profile: React.FC<ProfileProps> = () => {
                                     <p className='h6 my-4 fs-4'>Age: {userData.age}</p>
                                     <p className='h6 my-4 fs-4'>Gender: {userData.gender}</p>
                                     <p className='h6 my-4 fs-4'>Zip Code: {userData.zip_code}</p>
-
                                 </div>
                             </Col>
                         </Row>
@@ -189,7 +188,7 @@ const Profile: React.FC<ProfileProps> = () => {
                                 />
                             </InputGroup>
 
-                            <div className='d-flex justify-content-center align-items-center mt-4'>
+                            <div className='d-flex justify-content-center align-items-center mt-4 mb-4'>
                                 <Button variant='primary' onClick={() => updateProfile(updatedAccount)}>
                                     Submit Changes
                                 </Button>
@@ -376,10 +375,10 @@ const Profile: React.FC<ProfileProps> = () => {
             </div>
             {activeTab === 'viewProfile' ? (
                 <footer className="py-5 bg-dark">
-                    <div className="container px-5 mt-4"><p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p></div>
+                    <div className="container px-5 mt-2"><p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p></div>
                 </footer>
             ) : (
-                <footer className="py-5 bg-dark fixed-bottom">
+                <footer className="py-5 bg-dark">
                     <div className="container px-5"><p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p></div>
                 </footer>
             )
