@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import PopUpAlert from './PopUpAlert';
+import ForgotPassword from './ForgotPassword';
 
 interface FormData {
     username: string;
@@ -34,10 +35,15 @@ function Login() {
 
     const [alert, setAlert] = useState<{ text: string; variant: string } | null>(null);
 
+    const childrenSetAlert = (alertText: string, alertVariant: string) => {
+        setAlert({ text: alertText, variant: alertVariant });
+    }
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     };
+
 
     const login = async (data: FormData, destination: string) => {
         if (!data.username || !data.password) {
@@ -172,7 +178,9 @@ function Login() {
                                                     Login via ATM
                                                 </button>
                                             </div>
-
+                                            <div className="d-flex align-items-center justify-content-center pb-4">
+                                                <ForgotPassword handleAlert={handleAlert} setAlert={childrenSetAlert}/>
+                                            </div>
                                             <div className="d-flex align-items-center justify-content-center pb-4">
                                                 <p className="mb-0 me-2">Don't have an account?</p>
                                                 <button
@@ -182,6 +190,7 @@ function Login() {
                                                 >
                                                     Create new
                                                 </button>
+                                                <br/>
                                             </div>
                                         </form>
                                     </div>

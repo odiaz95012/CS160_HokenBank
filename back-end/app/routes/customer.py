@@ -229,3 +229,37 @@ def update_customer():
         print(f"Exception: {str(e)}")
         db.session.rollback() #revert changes if any error occurs
         return jsonify({'error': 'Unexpected error occurred'}), 500
+
+#check if email exists in db for password reset    
+@customer.route('/checkEmail', methods=['GET'])
+def check_email():
+    if request.method == 'GET':
+        try:
+            email = request.args.get('email')
+            customer = CustomerInformation.query.filter_by(email=email).first()
+            if not customer:
+                return jsonify({'error': 'Email not found'}), 404
+            return jsonify({'emailExists': True}), 200
+        except Exception as e:
+            print(f"Exception: {str(e)}")
+            return jsonify({'error': 'Unexpected error occurred'}), 500
+
+@customer.route('/resetPassword', methods=['PATCH'])
+def reset_password():
+    if request.method == 'PATCH':
+        try:
+            data = request.get_json()
+            email = data['email']
+            new_password = data['new_password']
+            customer = CustomerInformation.query.filter_by(email=email).first()
+            if not customer:
+                return jsonify({'error': 'Email not found'}), 404
+            if customer.status == 'I':
+                return jsonify({'error': 'Cannot change the password for an inactive account'}), 406
+            customer.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+            db.session.commit()
+            return jsonify({'success': 'Password updated successfully'}), 200
+        except Exception as e:
+            print(f"Exception: {str(e)}")
+            db.session.rollback()
+            return jsonify({'error': 'Unexpected error occurred'}), 500
