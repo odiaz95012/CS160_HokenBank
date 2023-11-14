@@ -12,6 +12,7 @@ import ExternalTransfer from './components/ExternalTransfer.tsx';
 import ATMHome from './components/ATMHome.tsx';
 import AdminPage from './components/AdminPage.tsx';
 import AdminRoute from './components/AdminRoute.tsx';
+import Profile from './components/Profile.tsx';
 
 function App() {
 
@@ -22,6 +23,7 @@ function App() {
         <Route path="/registration" element={<Registration />} />
         <Route element={<ProtectedRoutes />}>
           <Route path="/home" element={<HomePage />} exact />
+          <Route path="/profile" element={<Profile />} exact />
           <Route element={<AdminRoute/>}>
               <Route path="/admin" element={<AdminPage/>} exact/>
           </Route>

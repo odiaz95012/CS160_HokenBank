@@ -14,7 +14,7 @@ function ProfileDropdown({ handleAlert, setAlert }: ProfileProps): JSX.Element {
       <NavDropdown className="nav-bar-bttn nav-link me-3 profile-dropdown" title="Account" align="end" drop='down'>
       <NavDropdown.Header>Account Actions</NavDropdown.Header>
         <NavDropdown.Item className='profile-item ps-3' href="/profile" eventKey={1}>
-          Edit Profile
+          Profile
         </NavDropdown.Item>
         <NavDropdown.Divider />
         <NavDropdown.Item eventKey={2} className='profile-item ps-3'>
