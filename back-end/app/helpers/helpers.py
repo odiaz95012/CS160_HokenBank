@@ -148,7 +148,20 @@ def create_dummy_accounts():
                 'account_type': 'Checking',
                 'balance': 0,
                 'status': 'I'
+            },
+            {
+                'customer_id': 2,
+                'account_type': 'Checking',
+                'balance': 0,
+                'status': 'I'
+            },
+            {
+                'customer_id': 2,
+                'account_type': 'Checking',
+                'balance': 0,
+                'status': 'A'
             }
+
         ]
         for acc in account_data:
             account = AccountInformation(
