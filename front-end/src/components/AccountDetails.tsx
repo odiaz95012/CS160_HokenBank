@@ -501,7 +501,7 @@ function AccountDetails() {
 
             {/* Footer */}
             <footer className="py-5 bg-dark">
-                <div className="container px-5">
+                <div className="container px-5 mt-4">
                     <p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p>
                 </div>
             </footer>
