@@ -142,6 +142,7 @@ function Login() {
                                                     placeholder="Username"
                                                     name="username"
                                                     onChange={handleChange}
+                                                    autoCapitalize='false'
                                                 />
                                             </div>
 
