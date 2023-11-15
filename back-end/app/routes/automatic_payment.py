@@ -9,6 +9,7 @@ from decimal import Decimal
 from datetime import datetime
 import pandas
 import pytz
+from urllib.parse import unquote
 
 automaticPayment = Blueprint('automatic_payment', __name__)
 
@@ -37,14 +38,10 @@ def automatic_payment(account_id, amount, date):
             return f'Payment may not exceed balance', 400
 
         # take datetime
-        date_time = pandas.to_datetime(date).to_pydatetime()
-
-        # take timezone & create local time
-        local_date = date_time.astimezone()
-
-        # convert local time to utc for storage
-        utc_date = local_date.astimezone(pytz.utc)
-
+        date_time = pandas.to_datetime(unquote(date)).to_pydatetime()
+   
+        # convert local time to utc for comparison
+        utc_date = date_time.astimezone(pytz.utc)
 
         # check that date is in future
         if utc_date.date() < datetime.now().astimezone(pytz.utc).date():
@@ -52,10 +49,10 @@ def automatic_payment(account_id, amount, date):
 
 
         create_automatic_payment_entry(account.customer_id, account_id,
-                                       Decimal(amount), utc_date)
+                                       Decimal(amount), date_time)
         return (
             f'Payment of ${Decimal(amount)} successfully scheduled for Bank '
-            f'Account with account_id {account_id} and date {date}'), 200
+            f'Account with account_id {account_id} and date {date_time.date()}'), 200
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")

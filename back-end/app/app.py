@@ -110,8 +110,8 @@ def interest_accumulation():
 # add two jobs to sched
 # original times
 # sched.add_job(automatic_payment_cycle,'cron', hour=0, minute = 0)
-# sched.add_job(interest_accumulation,'cron', month = 1, day = 1, hour = 0, minute = 0)
-# sched.add_job(automatic_payment_cycle, 'cron', minute='*') <-don't touch me
+sched.add_job(interest_accumulation,'cron', month = 1, day = 1, hour = 0, minute = 0)
+sched.add_job(automatic_payment_cycle, 'cron', minute='*')
 # sched.add_job(interest_accumulation, 'cron', minute = '*')
 sched.start()
 # atexit.register(lambda: sched.shutdown())
