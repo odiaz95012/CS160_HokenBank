@@ -79,7 +79,7 @@ def create_dummy_customers():
             {
                 'username': 'test_user1',
                 'email': 'testuser1@gmail.com',
-                'password': '12345678',
+                'password': 'Test-User1',
                 'full_name': 'Test User 1',
                 'age': 22,
                 'gender': 'F',
@@ -89,7 +89,7 @@ def create_dummy_customers():
             {
                 'username': 'test_user2',
                 'email': 'testuser2@gmail.com',
-                'password': '12345678',
+                'password': 'Test-User2',
                 'full_name': 'Test User 2',
                 'age': 22,
                 'gender': 'M',
@@ -99,7 +99,7 @@ def create_dummy_customers():
             {
                 'username': 'test_user3',
                 'email': 'testuser3@gmail.com',
-                'password': '12345678',
+                'password': 'Test-User3',
                 'full_name': 'Test User 3',
                 'age': 24,
                 'gender': 'F',
@@ -134,21 +134,34 @@ def create_dummy_accounts():
             {
                 'customer_id': 2,
                 'account_type': 'Checking',
-                'balance': 1111.11,
+                'balance': 1000.00,
                 'status': 'A'
             },
             {
                 'customer_id': 3,
                 'account_type': 'Savings',
-                'balance': 2222.22,
+                'balance': 2000.00,
                 'status': 'A'
             },
             {
-                'customer_id': 4,
+                'customer_id': 2,
                 'account_type': 'Checking',
                 'balance': 0,
                 'status': 'I'
+            },
+            {
+                'customer_id': 2,
+                'account_type': 'Checking',
+                'balance': 0,
+                'status': 'I'
+            },
+            {
+                'customer_id': 2,
+                'account_type': 'Checking',
+                'balance': 0,
+                'status': 'A'
             }
+
         ]
         for acc in account_data:
             account = AccountInformation(

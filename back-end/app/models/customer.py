@@ -8,7 +8,7 @@ class CustomerInformation(db.Model):
     username = db.Column(db.String(18), unique=True, nullable=False)
     email = db.Column(db.String(45), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    full_name = db.Column(db.String(100), nullable=False)
+    full_name = db.Column(db.String(30), nullable=False)
     age = db.Column(db.Integer, nullable=False)
     gender = db.Column(db.String(1), nullable=False)
     zip_code = db.Column(db.Integer, nullable=False)

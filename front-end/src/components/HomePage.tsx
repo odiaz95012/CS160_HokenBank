@@ -358,8 +358,11 @@ function HomePage() {
         const year = date.getFullYear();
         const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed, so add 1
         const day = date.getDate().toString().padStart(2, '0');
+        const hours= new Date().getHours();
+        const min= new Date().getMinutes();
+        const timezone = -date.getTimezoneOffset()/60; //get hour value and flip
 
-        return `${year}-${month}-${day}`;
+        return `${year}-${month}-${day} ${hours}:${min} ${timezone}`;
     };
 
 

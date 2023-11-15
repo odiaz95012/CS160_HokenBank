@@ -162,6 +162,8 @@ def check_deposit(account_id):
         # extract the amount deposited
         amount_text = re.search('\$\s[0-9,.]+', text).group().replace(",", "")
         amount = Decimal(re.split('\s', amount_text)[1])
+        if amount <= 0:
+            return f'Check deposit amount must be positive', 400
     except Exception:
         return "Can not scan the check. Not in valid format", 400
     try:
