@@ -235,7 +235,7 @@ function AccountDetails() {
             setAlert(defaultAlert); // reset alert
             alertElem.style.visibility = 'hidden';
             window.location.reload();
-        }, 3000);
+        }, 5000);
     };
 
     const [password, setPassword] = useState<string>('');
@@ -333,7 +333,7 @@ function AccountDetails() {
                 }
             );
             if (response.data) {
-                setAlert({ text: 'Transfer successful.', variant: 'success' });
+                setAlert({ text: response.data, variant: 'success' });
                 handleAlert();
                 setTransferData({ accountID: accountID, toAccountID: '', amount: '' });
             }
