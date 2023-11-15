@@ -37,7 +37,7 @@ interface UpdateProfileSummaryProps {
 
 
 function UpdateProfileSummary({ updatedAttributes, setAlert, handleAlert, setUserData, handleClearInputFields }: UpdateProfileSummaryProps) {
-    
+
     const [show, setShow] = useState(false);
 
     // Mapping of updated account keys to more readable display names
@@ -72,7 +72,7 @@ function UpdateProfileSummary({ updatedAttributes, setAlert, handleAlert, setUse
         }
     }, [updatedFields, formattedUpdatedAttributes]);
 
-    
+
 
     const handleClose = () => setShow(false);
     const handleShow = () => setShow(true);
@@ -211,6 +211,12 @@ function UpdateProfileSummary({ updatedAttributes, setAlert, handleAlert, setUse
         setFormattedUpdatedAttributes({});
     };
 
+    const [passwordVisibility, setPasswordVisibility] = useState<boolean>(false);
+
+    const togglePasswordVisibility = () => {
+        setPasswordVisibility((prevVisibility) => !prevVisibility);
+    };
+
     return (
         <>
             <Button variant="primary" onClick={handleShow} className="me-2">
@@ -225,14 +231,42 @@ function UpdateProfileSummary({ updatedAttributes, setAlert, handleAlert, setUse
                 <Offcanvas.Body>
                     <div className='text-center'>
                         {Object.keys(formattedUpdatedAttributes).length > 0 ? (
-                            Object.keys(formattedUpdatedAttributes).map((key) => {
-                                return (
-                                    <p key={key} className='fs-7'>{key}: {formattedUpdatedAttributes[key]}</p>
-                                )
-                            })) : (
+                            Object.keys(formattedUpdatedAttributes).map((key) => (
+                                <div key={key}>
+                                    <p className='fs-7'>
+                                        {key === 'Updated Password' ? (
+                                            <div key={key} style={{ position: 'relative' }}>
+                                                <label className='form-label me-2' htmlFor='new-password'>Updated Password:</label>
+                                                <input
+                                                    type={passwordVisibility ? 'text' : 'password'}
+                                                    value={formattedUpdatedAttributes[key]}
+                                                    disabled
+                                                    id="new-password"
+                                                    className='form-control'
+                                                    style={{ paddingRight: '40px' }}
+                                                />
+                                                <span
+                                                    style={{
+                                                        position: 'absolute',
+                                                        top: '75%',
+                                                        right: '5%',
+                                                        transform: 'translateY(-50%)',
+                                                        cursor: 'pointer',
+                                                    }}
+                                                    onClick={togglePasswordVisibility}
+                                                >
+                                                    <i className={passwordVisibility ? 'bi bi-eye-slash' : 'bi bi-eye'}></i>
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            `${key}: ${formattedUpdatedAttributes[key]}`
+                                        )}
+                                    </p>
+                                </div>
+                            ))
+                        ) : (
                             <p className='lead'>No changes made</p>
-                        )
-                        }
+                        )}
                     </div>
                     <div className='d-flex justify-content-center align-items-center mt-2'>
 
