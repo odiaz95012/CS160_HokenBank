@@ -277,7 +277,6 @@ function AdminPage() {
       },
 
     }).then((response) => {
-      console.log(response);
       setUserReport(response.data);
       downloadUserReport(response.data);
     }).catch((err) => {
@@ -314,8 +313,9 @@ function AdminPage() {
     }
     const formattedDate = getCurrDateTime();
 
-    // Create a filename based on the current date and time
-    const filename = `customer_report_${formattedDate}.txt`;
+    // Create a filename based on the user's name and the current date and time
+    const filename = `${report.full_name}_${formattedDate}.txt`;
+    console.log(filename);
 
     // Create a header string based on input parameters
     const header = `User Report for ${report.full_name}:\n`;
