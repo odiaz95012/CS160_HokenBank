@@ -620,6 +620,7 @@ function HomePage() {
                                                         </div>
                                                         <div className="col-md-6 mb-4">
                                                             <label className='form-label' htmlFor='accountsList'>Accounts</label>
+                                                            <small>Please select the account to use for the payment</small>
                                                             <div className='overflow-container'>
                                                                 {userAccounts.length > 0 ? (
 
