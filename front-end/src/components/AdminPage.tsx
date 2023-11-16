@@ -282,7 +282,7 @@ function AdminPage() {
     }).catch((err) => {
       console.log(err);
     })
-    
+
   };
 
   const getCurrDateTime = () => {
@@ -315,19 +315,18 @@ function AdminPage() {
 
     // Create a filename based on the user's name and the current date and time
     const filename = `${report.full_name}_${formattedDate}.txt`;
-    console.log(filename);
 
     // Create a header string based on input parameters
     const header = `User Report for ${report.full_name}:\n`;
 
     // Prepare the table data as a string
-    const tableData = `\nCustomer ID: ${report.customer_id}\n\nName: ${report.full_name}\n\nUsername: ${report.username}`+
-                        `\n\nTotal Balance: $${report.balance}\n\nAge: ${report.age}` +
-                        `\n\nGender: ${report.gender}\n\nZip Code: ${report.zip_code}\n\nStatus: ${report.status}` + 
-                        `\n\nTotal Number of Accounts: ${report.accounts}`;
+    const tableData = `\nCustomer ID: ${report.customer_id}\n\nName: ${report.full_name}\n\nUsername: ${report.username}` +
+      `\n\nTotal Balance: $${report.balance}\n\nAge: ${report.age}` +
+      `\n\nGender: ${report.gender}\n\nZip Code: ${report.zip_code}\n\nStatus: ${report.status}` +
+      `\n\nTotal Number of Accounts: ${report.accounts}`;
 
     // Combine the header, table labels, and table data
-    const fileContent = header +  tableData;
+    const fileContent = header + tableData;
 
     // Create a Blob with the file content
     const blob = new Blob([fileContent], { type: 'text/plain' });
@@ -345,7 +344,7 @@ function AdminPage() {
     URL.revokeObjectURL(objectURL);
   };
 
-  
+
 
   const [searchedCustomer, setSearchedCustomer] = useState<string>('');
 
@@ -358,15 +357,9 @@ function AdminPage() {
   });
 
 
-
-
-
-
-
-
   return (
     <div className='overflow-hidden'>
-      <AdminPageNavBar/>
+      <AdminPageNavBar />
       {isLoading ? (
         <div className="spinner-border" role="status">
           <span className="visually-hidden">Loading...</span>
