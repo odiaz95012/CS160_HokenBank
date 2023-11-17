@@ -78,6 +78,9 @@ function UpdateProfileSummary({ updatedAttributes, setAlert, handleAlert, setUse
     const handleShow = () => setShow(true);
 
     const isValidName = (name: string) => {
+        if (name.length < 3 || name.length > 30) {
+            throw new Error('The name must be 3-30 characters in length.');
+        }
         const nameRegex = /^[A-Za-z\s]+$/;
         if (!nameRegex.test(name)) {
             throw new Error('The input name is not valid. Please only enter alphabetical characters.');
