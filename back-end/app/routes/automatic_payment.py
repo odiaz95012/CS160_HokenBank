@@ -45,8 +45,7 @@ def automatic_payment(account_id, amount, date):
 
         # check that date is in future
         if utc_date.date() < datetime.now().astimezone(pytz.utc).date():
-            return f'Date must not be in past', 4007
-
+            return f'Date must not be in past', 400
 
         create_automatic_payment_entry(account.customer_id, account_id,
                                        Decimal(amount), date_time)
