@@ -19,6 +19,7 @@ def create_transaction_history_entry(customer_id, account_id, action, amount):
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -35,6 +36,7 @@ def create_automatic_payment_entry(customer_id, account_id, amount, date):
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -46,6 +48,7 @@ def delete_automatic_payment_entry(payment_id):
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -70,6 +73,7 @@ def create_bank_manager():
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -125,6 +129,7 @@ def create_dummy_customers():
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -176,4 +181,5 @@ def create_dummy_accounts():
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500

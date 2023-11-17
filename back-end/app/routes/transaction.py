@@ -36,6 +36,7 @@ def deposit(account_id, amount):
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -66,6 +67,7 @@ def withdraw(account_id, amount):
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -112,6 +114,7 @@ def transfer(account_id, to_account_id, amount):
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -141,6 +144,7 @@ def normal_payment(account_id, amount):
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -183,4 +187,5 @@ def check_deposit(account_id):
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500

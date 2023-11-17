@@ -238,7 +238,7 @@ def get_account_payment_history(account_id, number):
 # default values:
 # min_balance, max_balance, min_age, max_age = 0
 # gender = 'A'
-# zip_code = 100000
+# zip_code = 99999
 @history.route(
     '/generateUserReport/<float:min_balance>/<float:max_balance>/<int:min_age'
     '>/<int:max_age>/<int:zip_code>/<string:gender>', methods=['GET'])
@@ -261,7 +261,7 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
             return f'Minimum age cannot exceed maximum age', 400
         if gender not in ('M', 'F', 'O', 'A'):
             return f'Gender must be one of the following options: M, F, O, A', 400
-        if zip_code < 10000 or zip_code > 100000:
+        if zip_code < 10000 or zip_code > 99999:
             return f'Zip code must be a 5-digit integer', 400
 
         select_customers = (db.session.query(
@@ -285,7 +285,7 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
             select_customers = select_customers.filter(
                 CustomerInformation.gender == gender)
 
-        if zip_code != 100000:
+        if zip_code != 99999:
             select_customers = select_customers.filter(
                 CustomerInformation.zip_code == zip_code)
 
@@ -326,9 +326,6 @@ def generate_individual_report(customer_id):
             return (
             f'Customer Account with customer_id {customer_id} not found',
             404)
-        # if customer.status == 'I':
-        #     return (f'Customer Account with customer_id {customer_id} is '
-        #             f'inactive', 406)
         select_customer = (db.session.query(
             CustomerInformation,
             func.sum(AccountInformation.balance).label("total_balance"),
