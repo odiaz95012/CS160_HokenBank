@@ -34,10 +34,12 @@ function Login() {
 
     const [alert, setAlert] = useState<{ text: string; variant: string } | null>(null);
 
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     };
+
 
     const login = async (data: FormData, destination: string) => {
         if (!data.username || !data.password) {
@@ -140,6 +142,7 @@ function Login() {
                                                     placeholder="Username"
                                                     name="username"
                                                     onChange={handleChange}
+                                                    autoCapitalize='false'
                                                 />
                                             </div>
 
@@ -172,7 +175,6 @@ function Login() {
                                                     Login via ATM
                                                 </button>
                                             </div>
-
                                             <div className="d-flex align-items-center justify-content-center pb-4">
                                                 <p className="mb-0 me-2">Don't have an account?</p>
                                                 <button
@@ -182,6 +184,7 @@ function Login() {
                                                 >
                                                     Create new
                                                 </button>
+                                                <br/>
                                             </div>
                                         </form>
                                     </div>

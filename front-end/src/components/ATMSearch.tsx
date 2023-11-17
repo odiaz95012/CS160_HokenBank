@@ -169,7 +169,7 @@ function ATMSearch() {
                 if (alertElem) {
                     alertElem.style.visibility = 'hidden';
                 }
-            }, 3000);
+            }, 5000);
         }
     };
 

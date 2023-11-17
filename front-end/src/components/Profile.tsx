@@ -4,9 +4,8 @@ import { Nav, InputGroup, Row, Col, Form, Container, Image, Button } from 'react
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import PopUpAlert from './PopUpAlert';
+import UpdateProfileSummary from './UpdateProfileSummary';
 const ProfileImage = require('../utilities/profile_default.png');
-
-
 
 interface ProfileProps { }
 
@@ -69,6 +68,14 @@ const Profile: React.FC<ProfileProps> = () => {
         }, 3000);
     };
 
+    const childrenSetAlert = (alertText: string, alertVariant: string) => {
+        setAlert({ text: alertText, variant: alertVariant });
+    };
+
+    const clearInputFields = () => {
+        setUpdatedAccount(defaultUpdatedAccount);
+    };
+
     const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target as HTMLInputElement;
         setUpdatedAccount({ ...updatedAccount, [name]: value });
@@ -93,6 +100,10 @@ const Profile: React.FC<ProfileProps> = () => {
             })
     };
 
+
+
+    
+
     const renderInputGroup = () => {
         switch (activeTab) {
             case 'viewProfile':
@@ -111,6 +122,7 @@ const Profile: React.FC<ProfileProps> = () => {
                                 <div className='ps-5 g-col-4 mb-5'>
                                     <p className='h6 my-4 fs-4'>Name: {userData.full_name}</p>
                                     <p className='h6 my-4 fs-4'>Username: {userData.username}</p>
+                                    <p className='h6 my-4 fs-4'>Email: {userData.email}</p>
                                     <p className='h6 my-4 fs-4'>Customer ID: {userData.customer_id}</p>
                                     <p className='h6 my-4 fs-4'>Age: {userData.age}</p>
                                     <p className='h6 my-4 fs-4'>Gender: {userData.gender}</p>
@@ -133,6 +145,7 @@ const Profile: React.FC<ProfileProps> = () => {
                                     aria-label="New Name"
                                     aria-describedby="name"
                                     name="new_name"
+                                    value={updatedAccount.new_name}
                                     onChange={handleInput}
                                 />
                             </InputGroup>
@@ -143,6 +156,7 @@ const Profile: React.FC<ProfileProps> = () => {
                                     aria-label="Username"
                                     aria-describedby="username"
                                     name="new_username"
+                                    value={updatedAccount.new_username}
                                     onChange={handleInput}
                                 />
                             </InputGroup>
@@ -153,6 +167,7 @@ const Profile: React.FC<ProfileProps> = () => {
                                     aria-label="Enter new zipcode"
                                     aria-describedby="zipcode"
                                     name="new_zipcode"
+                                    value={updatedAccount.new_zipcode}
                                     onChange={handleInput}
                                 />
                             </InputGroup>
@@ -163,6 +178,7 @@ const Profile: React.FC<ProfileProps> = () => {
                                     aria-label="New Email"
                                     aria-describedby="email"
                                     name="new_email"
+                                    value={updatedAccount.new_email}
                                     onChange={handleInput}
                                 />
                             </InputGroup>
@@ -174,6 +190,7 @@ const Profile: React.FC<ProfileProps> = () => {
                                     aria-describedby="password"
                                     type='password'
                                     name="new_password"
+                                    value={updatedAccount.new_password}
                                     onChange={handleInput}
                                 />
                             </InputGroup>
@@ -186,13 +203,21 @@ const Profile: React.FC<ProfileProps> = () => {
                                     type='password'
                                     name="confirm_password"
                                     onChange={handleInput}
+                                    value={updatedAccount.confirm_password}
                                 />
                             </InputGroup>
 
                             <div className='d-flex justify-content-center align-items-center mt-4 mb-4'>
-                                <Button variant='primary' onClick={() => updateProfile(updatedAccount)}>
+                                {/* <Button variant='primary' onClick={() => updateProfile(updatedAccount)}>
                                     Submit Changes
-                                </Button>
+                                </Button> */}
+                                <UpdateProfileSummary
+                                    updatedAttributes={updatedAccount}
+                                    handleAlert={handleAlert}
+                                    setAlert={childrenSetAlert}
+                                    setUserData={childSetUserData}
+                                    handleClearInputFields={clearInputFields}
+                                />
                             </div>
 
                         </Col>
@@ -203,6 +228,11 @@ const Profile: React.FC<ProfileProps> = () => {
                 return null;
         }
     };
+
+    const childSetUserData = (newUserData: UserData) => {
+        setUserData(newUserData);
+    }
+
 
 
     useEffect(() => {
@@ -219,126 +249,7 @@ const Profile: React.FC<ProfileProps> = () => {
         fetchProfile();
     }, []);
 
-    const isValidName = (name: string) => {
-        const nameRegex = /^[A-Za-z\s]+$/;
-        if (!nameRegex.test(name)) {
-            throw new Error('The input name is not valid. Please only enter alphabetical characters.');
-        }
-        return true;
-    };
 
-    const isValidEmail = (email: string) => {
-        const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
-        if (!emailRegex.test(email)) {
-            throw new Error('The input email is not valid.');
-        }
-        return true;
-    };
-
-    const isValidPassword = (password: string) => {
-        const minLength = 6;
-        const maxLength = 18;
-        const uppercaseRegex = /[A-Z]/;
-        const lowercaseRegex = /[a-z]/;
-        const specialRegex = /[!@#$%^&*(),.?":{}|<>]/;
-
-        if (password.length < minLength || password.length > maxLength) {
-            throw new Error('The password must be 6-18 characters long');
-        }
-
-        if (!uppercaseRegex.test(password) || !lowercaseRegex.test(password) || !specialRegex.test(password)) {
-            throw new Error('The password must contain at least 1 uppercase, 1 lowercase, and 1 special character.');
-        }
-
-        return true;
-    };
-
-    const confirmPasswordsMatch = (password: string, confirmPassword: string) => {
-        if (password !== confirmPassword) {
-            throw new Error('The passwords do not match.');
-        }
-        return true;
-    };
-
-    const isValidZipCode = (zipCode: string) => {
-        const pattern = /^\d{5}$/;
-        if (!pattern.test(zipCode)) {
-            throw new Error('The zipcode must be exactly 5 numeric digits. (e.g. 95116)');
-        }
-        return true;
-    };
-
-    const isValidUsername = (username: string) => {
-        if (!(username.length >= 6 && username.length <= 18)) {
-            throw new Error('The username must be 6-18 characters in length.');
-        }
-        return true;
-    };
-
-    // Create the payload for the update profile request
-    const createRequestPayload = async (updatedName?: string, updatedUsername?: string, updatedEmail?: string, updatedPassword?: string, updatedPasswordConfirm?: string, updatedZipcode?: string) => {
-        try {
-            let payload = {};
-
-            if (updatedName && isValidName(updatedName)) payload = { ...payload, new_name: updatedName };
-
-            if (updatedUsername && isValidUsername(updatedUsername)) payload = { ...payload, new_username: updatedUsername };
-
-            if (updatedEmail && isValidEmail(updatedEmail)) payload = { ...payload, new_email: updatedEmail };
-
-            if (updatedZipcode && isValidZipCode(updatedZipcode)) payload = { ...payload, new_zipcode: updatedZipcode };
-
-            if (updatedPassword) {
-                // If the user is updating their password, check that the new password and confirm password match, and verify it is a valid password
-                if (!updatedPasswordConfirm) {
-                    throw new Error('Please confirm the password.');
-                }
-
-                if (confirmPasswordsMatch(updatedPassword, updatedPasswordConfirm) && isValidPassword(updatedPassword)) {
-                    payload = { ...payload, new_password: updatedPassword };
-                }
-            }
-
-            if (Object.keys(payload).length === 0) {
-                throw new Error('Please provide at least one field to update.');
-            }
-
-            return payload;
-        } catch (error) {
-            throw error; // Rethrow the error to be caught in the calling function
-        }
-    };
-
-
-
-    const updateProfile = async (updatedProfile: UpdatedAccount) => {
-        try {
-            const authToken = Cookies.get('authToken');
-            if (authToken) {
-                const payload = await createRequestPayload(updatedProfile.new_name, updatedProfile.new_username, updatedProfile.new_email, updatedProfile.new_password, updatedProfile.confirm_password, updatedProfile.new_zipcode);
-                if (payload) {
-                    await axios.patch(`http://localhost:8000/updateCustomer`, payload, {
-                        headers: {
-                            'authorization': `Bearer ${authToken}`
-                        }
-                    })
-                        .then((response) => {
-                            console.log(response.data);
-                            setAlert({ text: 'Successfully updated profile!', variant: 'success' });
-                            setUserData(response.data.updated_customer); // update the user data state
-                            handleAlert();
-                        }).catch((err) => {
-                            setAlert({ text: err.response.data.error, variant: 'danger' });
-                            handleAlert();
-                        })
-                }
-            }
-        } catch (err: any) {
-            setAlert({ text: err.message, variant: 'warning' });
-            handleAlert();
-            setUpdatedAccount(defaultUpdatedAccount); // reset the updated account state
-        }
-    };
 
     return (
         <>
@@ -374,17 +285,9 @@ const Profile: React.FC<ProfileProps> = () => {
                 {renderInputGroup()}
 
             </div>
-            {activeTab === 'viewProfile' ? (
-                <footer className="py-5 bg-dark">
-                    <div className="container px-5 mt-2"><p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p></div>
-                </footer>
-            ) : (
-                <footer className="py-5 bg-dark">
-                    <div className="container px-5"><p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p></div>
-                </footer>
-            )
-
-            }
+            <footer className="py-5 bg-dark">
+                <div className="container px-5 mt-4"><p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p></div>
+            </footer>
 
         </>
     );

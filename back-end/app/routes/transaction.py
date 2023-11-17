@@ -71,8 +71,7 @@ def withdraw(account_id, amount):
         return 'Unexpected error occurred.', 500
 
 
-@transaction.route('/transfer/<int:account_id>/<int:to_account_id>/<float:amount'
-                   '>', methods=['PATCH'])
+@transaction.route('/transfer/<int:account_id>/<int:to_account_id>/<float:amount>', methods=['PATCH'])
 @is_authenticated
 @account_owner
 def transfer(account_id, to_account_id, amount):
@@ -109,8 +108,8 @@ def transfer(account_id, to_account_id, amount):
             to_customer_id, to_account_id, 'Transfer', Decimal(amount))
         return (
             f'${Decimal(amount)} successfully transferred from Bank Account '
-            f'with account_id {account_id} to Bank Account with '
-            f'account_id {to_account_id}'), 200
+            f'with the Account ID {account_id} to Bank Account with '
+            f'Account ID {to_account_id}'), 200
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")

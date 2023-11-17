@@ -233,3 +233,4 @@ def update_customer():
         print(f"Exception: {str(e)}")
         db.session.rollback() #revert changes if any error occurs
         return jsonify({'error': 'Unexpected error occurred'}), 500
+

@@ -149,7 +149,6 @@ function AccountDetails() {
             return dataToRender.map((payment) => (
                 <tr key={payment.transaction_id}>
                     <th scope='row'>{payment.transaction_id}</th>
-                    <td>{payment.account_id}</td>
                     <td>{payment.action}</td>
                     <td>{formatDate(payment.date)}</td>
                     <td>{payment.amount < 0 ? `-$${formatBalance(Math.abs(payment.amount))}` : `$${formatBalance(payment.amount)}`}</td>
@@ -159,7 +158,6 @@ function AccountDetails() {
             return dataToRender.slice(0, numOfEntries).map((payment) => (
                 <tr key={payment.transaction_id}>
                     <th scope='row'>{payment.transaction_id}</th>
-                    <td>{payment.account_id}</td>
                     <td>{payment.action}</td>
                     <td>{formatDate(payment.date)}</td>
                     <td>{payment.amount < 0 ? `-$${formatBalance(Math.abs(payment.amount))}` : `$${formatBalance(payment.amount)}`}</td>
@@ -235,7 +233,7 @@ function AccountDetails() {
             setAlert(defaultAlert); // reset alert
             alertElem.style.visibility = 'hidden';
             window.location.reload();
-        }, 3000);
+        }, 5000);
     };
 
     const [password, setPassword] = useState<string>('');
@@ -333,7 +331,7 @@ function AccountDetails() {
                 }
             );
             if (response.data) {
-                setAlert({ text: 'Transfer successful.', variant: 'success' });
+                setAlert({ text: response.data, variant: 'success' });
                 handleAlert();
                 setTransferData({ accountID: accountID, toAccountID: '', amount: '' });
             }
@@ -366,6 +364,7 @@ function AccountDetails() {
                             <p className='py-1'>Balance: ${formatBalance(accountInfo.balance)}</p>
                         </div>
                     </div>
+                    <div className='container justify-content-center align-items-center'>
                     <div className='row mb-3'>
                         <div className='col-md-4 feature-bttn'>
                             <PopUpModal
@@ -427,6 +426,8 @@ function AccountDetails() {
                         </div>
                     </div>
 
+                    </div>
+                    
 
                 </div>
             ) : (
@@ -476,7 +477,6 @@ function AccountDetails() {
                     <thead className="thead-dark">
                         <tr>
                             <th scope='col'>Transaction ID</th>
-                            <th scope='col'>Account ID</th>
                             <th scope='col'>Transaction Type</th>
                             <th scope='col'>Date</th>
                             <th scope='col'>Amount</th>
@@ -501,7 +501,7 @@ function AccountDetails() {
 
             {/* Footer */}
             <footer className="py-5 bg-dark">
-                <div className="container px-5">
+                <div className="container px-5 mt-4">
                     <p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p>
                 </div>
             </footer>
