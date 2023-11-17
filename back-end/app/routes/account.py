@@ -40,6 +40,7 @@ def open_account():
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -67,15 +68,16 @@ def close_account(account_id):
             return (f'Bank Account with account_id {account_id} is inactive', 406)
         #Check if account has a balance
         if account.balance > 0:
-            return "The account's balance must be transferred to another account before closing.", 400
+            return ("The account's balance must be withdrawn or transferred "
+                    "to another account before closing."), 400
 
-        account.balance = Decimal(0)
         account.status = 'I'
         db.session.commit()
         return f'Bank Account with account_id {account_id} closed successfully', 200
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
