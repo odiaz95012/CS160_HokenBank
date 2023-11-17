@@ -85,6 +85,7 @@ def register():
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -114,11 +115,13 @@ def deactivate_customer():
         if customer.status == 'I':
             return (f'Customer Account with customer_id {customer_id} is '
                     f'inactive', 406)
-        # set all active accounts to 0 balance and 'I' status
-        db.session.query(AccountInformation).filter(
+        # only deactivate customer if all bank accounts are inactive
+        account = db.session.query(AccountInformation).filter(
             AccountInformation.customer_id == customer.customer_id,
-            AccountInformation.status == 'A').update(
-            {'balance': Decimal(0), 'status': 'I'})
+            AccountInformation.status == 'A').first()
+        if account:
+            return ('Please close all active bank accounts before attempting '
+                    'to deactivate your user account.'), 400
         customer.status = 'I'
         db.session.commit()
         return (f'Customer Account with customer_id {customer_id} '
@@ -126,6 +129,7 @@ def deactivate_customer():
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 

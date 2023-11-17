@@ -56,6 +56,7 @@ def automatic_payment(account_id, amount, date):
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
@@ -80,6 +81,7 @@ def cancel_automatic_payment(payment_id):
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
+        db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
 
 
