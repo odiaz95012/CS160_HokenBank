@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Form } from 'react-bootstrap';
 import axios from 'axios';
 import DatePicker from './DatePicker';
 import PopUpAlert from './PopUpAlert';
@@ -79,7 +80,7 @@ function Registration() {
 
       if (isPasswordsMatch && isNameValid && isUsernameValid && isAgeValid && isZipcodeValid && isEmailValid && isPasswordValid) {
         if (await handleSubmit()) {
-          
+
           let count = 3;
           setAlert({ text: 'Account creation Successful. \nRedirecting to the login page in 5 seconds.', variant: 'success' });
 
@@ -130,11 +131,11 @@ function Registration() {
   };
 
   const isValidName = (name: string) => {
-    if(name.length < 3 || name.length > 30){
+    if (name.length < 3 || name.length > 30) {
       throw new Error('The name must be 3-30 characters in length.');
     }
     const nameRegex = /^[A-Za-z\s]+$/;
-    if(!nameRegex.test(name)) {
+    if (!nameRegex.test(name)) {
       throw new Error('The input name is not valid. Please only enter alphabetical characters.');
     }
     return true;
@@ -154,17 +155,25 @@ function Registration() {
     const uppercaseRegex = /[A-Z]/;
     const lowercaseRegex = /[a-z]/;
     const specialRegex = /[!@#$%^&*(),.?":{}|<>]/;
+    const numberRegex = /\d/;
 
     if (password.length < minLength || password.length > maxLength) {
       throw new Error('The password must be 6-18 characters long');
     }
 
-    if (!uppercaseRegex.test(password) || !lowercaseRegex.test(password) || !specialRegex.test(password)) {
-      throw new Error('The password must contain at least 1 uppercase, 1 lowercase, and 1 special character.');
+    if (
+      !uppercaseRegex.test(password) ||
+      !lowercaseRegex.test(password) ||
+      !specialRegex.test(password) ||
+      !numberRegex.test(password)
+    ) {
+      throw new Error('The password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special character (!@#$%^&*(),.?":{}|<>).');
     }
 
     return true;
   }
+
+
 
   function confirmPasswordsMatch(password: string, confirmPassword: string) {
     if (password !== confirmPassword) {
@@ -207,22 +216,22 @@ function Registration() {
   interface Alert {
     text: string,
     variant: string
-}
-const defaultAlert: Alert = {
+  }
+  const defaultAlert: Alert = {
     text: '',
     variant: ''
-}
-const [alert, setAlert] = useState<Alert>(defaultAlert);
+  }
+  const [alert, setAlert] = useState<Alert>(defaultAlert);
 
-const handleAlert = () => {
-  const alertElem = document.getElementById('pop-up-alert') as HTMLElement;
-  alertElem.style.visibility = 'visible';
-  // Automatically dismiss the alert after 3 seconds
-  setTimeout(() => {
+  const handleAlert = () => {
+    const alertElem = document.getElementById('pop-up-alert') as HTMLElement;
+    alertElem.style.visibility = 'visible';
+    // Automatically dismiss the alert after 3 seconds
+    setTimeout(() => {
       setAlert(defaultAlert); // reset alert
       alertElem.style.visibility = 'hidden';
-  }, 3000);
-}
+    }, 3000);
+  }
 
   return (
     <section className="background-radial-gradient overflow-auto">
@@ -267,12 +276,22 @@ const handleAlert = () => {
                       <div className="form-outline">
                         <input name="fullName" type="text" id="validationCustom01" className="form-control" onChange={handleChange} />
                         <label className="form-label" htmlFor="validationCustom01">Name</label>
+                        <div className='d-flex text-start'>
+                          <Form.Text id="nameRequirements" muted>
+                            Your name must be 3-30 characters in length and only contain letters.
+                          </Form.Text>
+                        </div>
                       </div>
                     </div>
                     <div className="col-md-6 mb-4">
                       <div className="form-outline">
                         <input name="username" type="text" id="form3Example2" className="form-control" onChange={handleChange} />
                         <label className="form-label" htmlFor="form3Example2">Username</label>
+                        <div className='d-flex text-start'>
+                          <Form.Text id="usernameRequirements" muted>
+                            Your username must be 6-18 characters long.
+                          </Form.Text>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -282,6 +301,11 @@ const handleAlert = () => {
                       <div className="form-outline">
                         <input name="zipcode" type="text" id="form3Example1" className="form-control" onChange={handleChange} />
                         <label className="form-label" htmlFor="form3Example1">Zipcode</label>
+                        <div className='d-flex text-start'>
+                          <Form.Text id="zipcodeRequirements" muted>
+                            The zipcode must be exactly 5 numeric digits. (e.g. 95116)
+                          </Form.Text>
+                        </div>
                       </div>
                     </div>
                     <div className="col-md-6 mb-2">
@@ -322,19 +346,25 @@ const handleAlert = () => {
                   <div className="form-outline mb-4">
                     <input name="password" type="password" id="password" className="form-control" onChange={handleChange} />
                     <label className="form-label" htmlFor="password">Password</label>
+                    <div className='d-flex text-start'>
+                      <Form.Text id="passwordHelpBlock" muted>
+                        Your password must be 6-18 characters long, contain at least 1 capital letter,
+                        1 lowercase letter, 1 number, and 1 special character (!@#$%^&*(),.?":{ }|).
+                      </Form.Text>
+                    </div>
                   </div>
                   <div className="form-outline mb-4">
                     <input name="confirmPassword" type="password" id="confirmPassword" className="form-control" onChange={handleChange} />
                     <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
                   </div>
                   {/* Submit button */}
-                      <button
-                        type="button"
-                        className="btn btn-outline-primary"
-                        onClick={() => verifyInputFields()}
-                      >
-                        Sign Up
-                      </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={() => verifyInputFields()}
+                  >
+                    Sign Up
+                  </button>
                 </form>
               </div>
             </div>

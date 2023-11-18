@@ -102,17 +102,23 @@ function UpdateProfileSummary({ updatedAttributes, setAlert, handleAlert, setUse
         const uppercaseRegex = /[A-Z]/;
         const lowercaseRegex = /[a-z]/;
         const specialRegex = /[!@#$%^&*(),.?":{}|<>]/;
-
+        const numberRegex = /\d/;
+    
         if (password.length < minLength || password.length > maxLength) {
-            throw new Error('The password must be 6-18 characters long');
+          throw new Error('The password must be 6-18 characters long');
         }
-
-        if (!uppercaseRegex.test(password) || !lowercaseRegex.test(password) || !specialRegex.test(password)) {
-            throw new Error('The password must contain at least 1 uppercase, 1 lowercase, and 1 special character.');
+    
+        if (
+          !uppercaseRegex.test(password) ||
+          !lowercaseRegex.test(password) ||
+          !specialRegex.test(password) ||
+          !numberRegex.test(password)
+        ) {
+          throw new Error('The password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special character (!@#$%^&*(),.?":{}|<>).');
         }
-
+    
         return true;
-    };
+      }
 
     const confirmPasswordsMatch = (password: string, confirmPassword: string) => {
         if (password !== confirmPassword) {

@@ -102,7 +102,7 @@ const Profile: React.FC<ProfileProps> = () => {
 
 
 
-    
+
 
     const renderInputGroup = () => {
         switch (activeTab) {
@@ -149,6 +149,12 @@ const Profile: React.FC<ProfileProps> = () => {
                                     onChange={handleInput}
                                 />
                             </InputGroup>
+                            <div className='d-flex text-start'>
+                                <Form.Text className="me-5" id="nameRequirements" muted>
+                                    Your name must be 3-30 characters in length and only contain letters.
+                                </Form.Text>
+                            </div>
+
                             <InputGroup className="mt-4">
                                 <InputGroup.Text id="username">New Username</InputGroup.Text>
                                 <Form.Control
@@ -160,6 +166,11 @@ const Profile: React.FC<ProfileProps> = () => {
                                     onChange={handleInput}
                                 />
                             </InputGroup>
+                            <div className='d-flex text-start'>
+                                <Form.Text id="usernameRequirements" muted>
+                                    Your username must be 6-18 characters long.
+                                </Form.Text>
+                            </div>
                             <InputGroup className="mt-4">
                                 <InputGroup.Text id="zipcode">Change Zip Code</InputGroup.Text>
                                 <Form.Control
@@ -171,6 +182,11 @@ const Profile: React.FC<ProfileProps> = () => {
                                     onChange={handleInput}
                                 />
                             </InputGroup>
+                            <div className='d-flex text-start'>
+                                <Form.Text id="zipcodeRequirements" muted>
+                                    The zipcode must be exactly 5 numeric digits. (e.g. 95116)
+                                </Form.Text>
+                            </div>
                             <InputGroup className="mt-4">
                                 <InputGroup.Text id="email">New Email</InputGroup.Text>
                                 <Form.Control
@@ -194,6 +210,13 @@ const Profile: React.FC<ProfileProps> = () => {
                                     onChange={handleInput}
                                 />
                             </InputGroup>
+                            <div className='d-flex text-start'>
+                                <Form.Text id="passwordHelpBlock" muted>
+                                    Your password must be 6-18 characters long, contain at least 1 capital letter,
+                                    1 lowercase letter, 1 number, and 1 special character (!@#$%^&*(),.?":{ }|).
+                                </Form.Text>
+                            </div>
+
                             <InputGroup className="mt-4">
                                 <InputGroup.Text id="password">Confirm New Password</InputGroup.Text>
                                 <Form.Control
