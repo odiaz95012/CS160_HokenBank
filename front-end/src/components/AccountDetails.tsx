@@ -472,7 +472,7 @@ function AccountDetails() {
                     </div>
                 </div>
             </div>
-            <div className="row overflow-auto mt-4 mb-5">
+            <div className="row overflow-auto mt-4" style={{marginBottom: '150px'}}>
                 <table className="col-md-12 table table-hover mx-4">
                     <thead className="thead-dark">
                         <tr>

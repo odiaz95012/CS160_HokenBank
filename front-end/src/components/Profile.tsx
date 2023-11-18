@@ -258,7 +258,7 @@ const Profile: React.FC<ProfileProps> = () => {
                 <div className="d-flex justify-content-center mt-3" id='pop-up-alert'>
                     <PopUpAlert text={alert ? alert.text : ''} variant={alert ? alert.variant : 'info'} />
                 </div>
-                <Row>
+                <Row className='mb-5'>
                     <Col md={12}>
                         <Nav
                             variant="tabs"
@@ -286,7 +286,7 @@ const Profile: React.FC<ProfileProps> = () => {
 
             </div>
             <footer className="py-5 bg-dark">
-                <div className="container px-5 mt-4"><p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p></div>
+                <div className="container px-5 mt-5"><p className="m-0 text-center text-white">Copyright &copy; Hoken 2023</p></div>
             </footer>
 
         </>
