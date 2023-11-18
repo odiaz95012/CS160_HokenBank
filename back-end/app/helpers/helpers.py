@@ -61,7 +61,7 @@ def create_bank_manager():
                 username='bank_manager',
                 email='bank_manager@gmail.com',
                 password=bcrypt.generate_password_hash(
-                    'Hoken-Admin1').decode('utf-8'),
+                    'Hoken-Admin1!').decode('utf-8'),
                 full_name='Bank Manager',
                 age=150,
                 gender='O',
@@ -83,7 +83,7 @@ def create_dummy_customers():
             {
                 'username': 'test_user1',
                 'email': 'testuser1@gmail.com',
-                'password': 'Test-User1',
+                'password': 'Test-User1!',
                 'full_name': 'Test User 1',
                 'age': 22,
                 'gender': 'F',
@@ -93,7 +93,7 @@ def create_dummy_customers():
             {
                 'username': 'test_user2',
                 'email': 'testuser2@gmail.com',
-                'password': 'Test-User2',
+                'password': 'Test-User2!',
                 'full_name': 'Test User 2',
                 'age': 22,
                 'gender': 'M',
@@ -103,7 +103,7 @@ def create_dummy_customers():
             {
                 'username': 'test_user3',
                 'email': 'testuser3@gmail.com',
-                'password': 'Test-User3',
+                'password': 'Test-User3!',
                 'full_name': 'Test User 3',
                 'age': 24,
                 'gender': 'F',
