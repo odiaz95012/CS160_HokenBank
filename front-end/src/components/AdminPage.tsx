@@ -5,6 +5,7 @@ import '../componentStyles/AdminPageStyles.css';
 import CustomerCard from './CustomerCard';
 import AdminPageNavBar from './AdminPageNavbar';
 import axios from 'axios';
+import { Form } from 'react-bootstrap';
 
 function AdminPage() {
 
@@ -416,6 +417,9 @@ function AdminPage() {
                 <div className='form-outline' id="zipcodeInput">
                   <input type='text' className='form-control' name="zipcode" id="zipcode" placeholder='Enter Zipcode' onChange={handleDataChange} />
                   <label className='form-label h6' htmlFor='zipcode'>Zip Code</label>
+                  <Form.Text id="zipcodeRequirements" className='ms-2'muted>
+                    Enter 99999 for all zipcodes
+                  </Form.Text>
                 </div>
               </div>
               <div className="col-md-3 my-1">
