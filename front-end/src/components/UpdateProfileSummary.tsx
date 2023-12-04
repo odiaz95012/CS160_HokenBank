@@ -79,14 +79,17 @@ function UpdateProfileSummary({ updatedAttributes, setAlert, handleAlert, setUse
 
     const isValidName = (name: string) => {
         if (name.length < 3 || name.length > 30) {
-            throw new Error('The name must be 3-30 characters in length.');
+          throw new Error('The name must be 3-30 characters in length.');
         }
-        const nameRegex = /^[A-Za-z\s]+$/;
+      
+        const nameRegex = /^[A-Za-z\s\-]+$/; // Updated regex to include hyphens
         if (!nameRegex.test(name)) {
-            throw new Error('The input name is not valid. Please only enter alphabetical characters.');
+          throw new Error('The input name is not valid. Please only enter alphabetical characters and hyphens.');
         }
+      
         return true;
-    };
+      };
+      
 
     const isValidEmail = (email: string) => {
         const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;

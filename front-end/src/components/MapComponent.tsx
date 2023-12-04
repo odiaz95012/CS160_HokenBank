@@ -31,8 +31,8 @@ interface MapComponentProps {
 function MapComponent({ atmLocations }: MapComponentProps) {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: 'YOUR_API_KEY_HERE'
-  });
+    googleMapsApiKey: 'AIzaSyDsb7sZIBO5GSHm3KO1Gdxbfa2sdPieUO0'
+  })
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [activeMarker, setActiveMarker] = useState<number | null>(null);

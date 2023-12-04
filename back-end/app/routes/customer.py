@@ -5,6 +5,7 @@ import jwt
 from models import db
 from helpers.middleware import is_authenticated, is_admin
 from decimal import Decimal
+from sqlalchemy import or_
 from . import bcrypt
 
 customer = Blueprint('customer', __name__)
@@ -53,40 +54,44 @@ def register():
         if not data:
             return "Bad Request", 400
 
-        existing_customer = CustomerInformation.query.filter_by(
+        existing_user_username = CustomerInformation.query.filter_by(
             username=data["username"]).first()
-        if existing_customer:
+        existing_user_email = CustomerInformation.query.filter_by(
+            email=data["email"]).first()
+
+        if existing_user_username:
             return (
-                f"An account with the username {existing_customer.username} "
+                f"An account with the username {existing_user_username.username} "
                 f"already exists.\nPlease choose a different one."), 400
+        elif existing_user_email:
+            return (
+                f"An account with the email {existing_user_email.email} "
+                f"already exists.\nPlease choose a different one."), 400
+        else:
+            # Hash password
+            hashed_pw = bcrypt.generate_password_hash(data["password"]).decode(
+                'utf-8')
 
-        # Hash password
-        hashed_pw = bcrypt.generate_password_hash(data["password"]).decode(
-            'utf-8')
-        # customer = None
-        # try:
-        customer = CustomerInformation(
-            username=data["username"],
-            email=data["email"],
-            password=hashed_pw,
-            full_name=data["full_name"],
-            age=data["age"],
-            gender=data["gender"],
-            zip_code=data["zip_code"],
-            status=data["status"]
-        )
-        db.session.add(customer)
-        db.session.commit()
+            customer = CustomerInformation(
+                username=data["username"],
+                email=data["email"],
+                password=hashed_pw,
+                full_name=data["full_name"],
+                age=data["age"],
+                gender=data["gender"],
+                zip_code=data["zip_code"],
+                status=data["status"]
+            )
+            db.session.add(customer)
+            db.session.commit()
 
-        # except exc.IntegrityError:
-        #     return "Invalid Input Format", 400
-
-        return jsonify(customer.serialize()), 200
+            return jsonify(customer.serialize()), 200
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
         db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
+
 
 
 # Deactivate Customer Account
@@ -212,6 +217,9 @@ def update_customer():
                 customer.username = data['new_username']
 
         if 'new_email' in data:
+            existing_user = CustomerInformation.query.filter_by(email=data['new_email']).first()
+            if existing_user:
+                return jsonify({'error': 'Email is already in use.'}), 400
             customer.email = data['new_email']
 
         if 'new_password' in data:

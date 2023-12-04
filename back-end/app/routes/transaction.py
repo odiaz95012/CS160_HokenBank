@@ -31,9 +31,9 @@ def deposit(account_id, amount):
         account.balance += d_amount
         db.session.commit()
         create_transaction_history_entry(
-            customer_id, account_id, 'Deposit', d_amount)
-        return (f'${d_amount} successfully deposited to Bank Account '
-                f'with account_id {account_id}'), 200
+            customer_id, account_id, 'Deposit', Decimal(amount))
+        message = f'${Decimal(amount)} successfully deposited to Bank Account with the Account ID {account_id}'
+        return {'message': message, 'balance': account.balance, 'status': 200}
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
@@ -63,9 +63,10 @@ def withdraw(account_id, amount):
         account.balance = new_balance
         db.session.commit()
         create_transaction_history_entry(
-            customer_id, account_id, 'Withdraw', -d_amount)
-        return (f'${d_amount} successfully withdrawn from Bank Account '
-                f'with account_id {account_id}'), 200
+            customer_id, account_id, 'Withdraw', -Decimal(amount))
+        message = f'${Decimal(amount)} successfully withdrawn from Bank Account with the Account ID {account_id}'
+        return {'message': message, 'balance': account.balance, 'status': 200}
+        
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")
@@ -106,13 +107,12 @@ def transfer(account_id, to_account_id, amount):
         to_account.balance += d_amount
         db.session.commit()
         create_transaction_history_entry(
-            from_customer_id, account_id, 'Transfer', -d_amount)
+            from_customer_id, account_id, 'Transfer', -Decimal(amount))
+        print(transaction)
         create_transaction_history_entry(
-            to_customer_id, to_account_id, 'Transfer', d_amount)
-        return (
-            f'${d_amount} successfully transferred from Bank Account '
-            f'with the Account ID {account_id} to Bank Account with '
-            f'Account ID {to_account_id}'), 200
+            to_customer_id, to_account_id, 'Transfer', Decimal(amount))
+        message = f'${Decimal(amount)} successfully transferred from Bank Account with the Account ID {account_id} to Bank Account with the Account ID {to_account_id}'
+        return {'message': message, 'balance': from_account.balance, 'status': 200}
     except Exception as e:
         # Log the exception to help diagnose the issue
         print(f"Exception: {str(e)}")

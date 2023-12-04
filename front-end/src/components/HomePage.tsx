@@ -120,6 +120,7 @@ function HomePage() {
 
 
     const [dataToRender, setDataToRender] = useState<Transaction[]>([]);
+    const [didTransactionOccur, setDidTransactionOccur] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchTransactionsData = async () => {
@@ -145,7 +146,8 @@ function HomePage() {
         };
 
         fetchTransactionsData();
-    }, [selectedHistoryOption, selectedNumEntries]);
+        setDidTransactionOccur(false);
+    }, [selectedHistoryOption, selectedNumEntries, didTransactionOccur]);
 
 
     const formatBalance = (balance: number) => {
@@ -331,7 +333,7 @@ function HomePage() {
                 setUserAccounts(updatedAccounts);
 
             }
-
+            setDidTransactionOccur(true);
             setAlert({ text: 'Payment successful!', variant: 'success' });
         }).catch((err) => {
             console.log(err);
@@ -397,6 +399,7 @@ function HomePage() {
                     'authorization': `Bearer ${authToken}`
                 }
             }).then(() => {
+                setDidTransactionOccur(true);
                 setAlert({ text: "The automatic payment was successfully set.", variant: "success" });
             }).catch((err) => {
                 console.log(err);
@@ -537,7 +540,7 @@ function HomePage() {
                 'Content-Type': 'multipart/form-data'
             }
         }).then((response) => {
-            console.log(response);
+            setDidTransactionOccur(true);
             setAlert({ text: "The check was deposited successfully.", variant: "success" });
             handleAlert();
         }).catch((err) => {
@@ -643,7 +646,7 @@ function HomePage() {
                                                                 <div className='d-flex justify-content-start'>
                                                                     <label className="form-label" htmlFor="amount1">Amount</label>
                                                                 </div>
-                                                                <input name="amount" type="text" id="amount1" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange} />
+                                                                <input name="amount" type="number" min={0} id="amount1" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange} />
 
                                                             </div>
                                                         </div>
@@ -695,7 +698,7 @@ function HomePage() {
                                                                 <div className='d-flex justify-content-start'>
                                                                     <label className="form-label" htmlFor="amount2">Amount</label>
                                                                 </div>
-                                                                <input name="amount" type="text" id="amount2" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange} />
+                                                                <input name="amount" type="number" min={0} id="amount2" className="form-control" placeholder={"$"} onChange={handlePaymentDetailsChange} />
                                                             </div>
                                                         </div>
                                                         <div className="col-md-6 mb-4 d-flex justify-content-center align-items-center">

@@ -115,7 +115,7 @@ function ATMHome() {
 
     const [transactionData, setTransactionData] = useState<TransactionData>({
         account_id: '',
-        amount: 0.0,
+        amount: '',
     });
 
     const handleTransactionData = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,9 +157,17 @@ function ATMHome() {
                 })
             .then((response) => {
                 console.log(response);
-                setAlert({ text: "Deposit successful.", variant: "success" });
+                setAlert({ text: response.data.message, variant: "success" });
                 handleAlert();
+                const updatedAccounts = userAccounts.map(account => {
+                    if (account.account_id === account_id) {
+                        return { ...account, balance: response.data.balance };
+                    }
+                    return account;
+                });
+                setUserAccounts(updatedAccounts);
                 setTransactionData({ account_id: '', amount: 0.0 }); // reset transaction data after transaction
+                setSelectedAccount({account_id: '', account_type: '', balance: 0});
             })
             .catch((err) => {
                 console.log(err);
@@ -201,9 +209,17 @@ function ATMHome() {
                 })
             .then((response) => {
                 console.log(response);
-                setAlert({ text: "Withdrawal successful.", variant: "success" });
+                setAlert({ text: response.data.message, variant: "success" });
                 handleAlert();
+                const updatedAccounts = userAccounts.map(account => {
+                    if (account.account_id === account_id) {
+                        return { ...account, balance: response.data.balance };
+                    }
+                    return account;
+                });
+                setUserAccounts(updatedAccounts);
                 setTransactionData({ account_id: '', amount: 0.0 }); // reset transaction data after transaction
+                setSelectedAccount({account_id: '', account_type: '', balance: 0});
             })
             .catch((err) => {
                 console.log(err);
@@ -303,7 +319,7 @@ function ATMHome() {
                                         <div className="row justify-content-center my-1">
                                             <div className="col-md-6 mb-4">
                                                 <div className="form-outline">
-                                                    <input name="amount" type="text" id="validationCustom01" className="form-control" placeholder={"$"} onChange={handleTransactionData} />
+                                                    <input name="amount" type="number" min={0} id="validationCustom01" className="form-control" placeholder={"$"} onChange={handleTransactionData} value={transactionData.amount}/>
                                                     <div className='d-flex justify-content-center'>
                                                         <label className="form-label" htmlFor="validationCustom01">Amount</label>
                                                     </div>
@@ -333,7 +349,7 @@ function ATMHome() {
                                             <div className="row justify-content-center my-1">
                                                 <div className="col-md-6 mb-4">
                                                     <div className="form-outline">
-                                                        <input name="amount" type="text" id="validationCustom01" className="form-control" placeholder={"$"} onChange={handleTransactionData} />
+                                                        <input name="amount" type="number" min={0} id="validationCustom01" className="form-control" placeholder={"$"} onChange={handleTransactionData} value={transactionData.amount}/>
                                                         <div className='d-flex justify-content-center'>
                                                             <label className="form-label" htmlFor="validationCustom01">Amount</label>
                                                         </div>
