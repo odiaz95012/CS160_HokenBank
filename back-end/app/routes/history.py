@@ -339,6 +339,12 @@ def generate_individual_report(customer_id):
                 AccountInformation.status == 'A').group_by(
             CustomerInformation.customer_id)).first()
 
+        if not select_customer:
+            return (
+                f'Customer Account with customer_id {customer_id} has no '
+                f'active bank accounts',
+                404)
+
         customer = select_customer[0]
         customer_data = {
             'customer_id': customer.customer_id,
