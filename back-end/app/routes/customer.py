@@ -197,7 +197,7 @@ def update_customer():
         if not data:
             return jsonify({'error': 'Bad request'}), 400
         
-        #check if the request contains any of the expected attributes
+        # check if the request contains any of the expected attributes
         expected_attributes = {'new_username', 'new_email', 'new_password', 'new_name', 'new_zipcode'}
         if not expected_attributes.intersection(data.keys()):
             return jsonify({'error': 'No new information was provided'}), 400
@@ -208,7 +208,7 @@ def update_customer():
             existing_user = CustomerInformation.query.filter_by(username=data['new_username']).first()
             if existing_user:
                 return jsonify({'error': 'Username is already taken'}), 400
-            else: #update the username
+            else:  # update the username
                 customer.username = data['new_username']
 
         if 'new_email' in data:
@@ -231,6 +231,5 @@ def update_customer():
 
     except Exception as e:
         print(f"Exception: {str(e)}")
-        db.session.rollback() #revert changes if any error occurs
+        db.session.rollback()  # revert changes if any error occurs
         return jsonify({'error': 'Unexpected error occurred'}), 500
-

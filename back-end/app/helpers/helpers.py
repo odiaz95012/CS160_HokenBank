@@ -3,6 +3,7 @@ from models.transaction import TransactionHistory
 from models.customer import CustomerInformation
 from models.account import AccountInformation
 from models import db
+from decimal import Decimal
 from . import bcrypt
 
 
@@ -12,7 +13,7 @@ def create_transaction_history_entry(customer_id, account_id, action, amount):
             customer_id=customer_id,
             account_id=account_id,
             action=action,
-            amount=amount
+            amount=Decimal(str(amount))
         )
         db.session.add(transaction)
         db.session.commit()
@@ -28,7 +29,7 @@ def create_automatic_payment_entry(customer_id, account_id, amount, date):
         autopayment = AutomaticPayments(
             customer_id=customer_id,
             account_id=account_id,
-            amount=amount,
+            amount=Decimal(str(amount)),
             date=date
         )
         db.session.add(autopayment)
@@ -139,31 +140,31 @@ def create_dummy_accounts():
             {
                 'customer_id': 2,
                 'account_type': 'Checking',
-                'balance': 1000.00,
+                'balance': Decimal(str(1000.00)),
                 'status': 'A'
             },
             {
                 'customer_id': 3,
                 'account_type': 'Savings',
-                'balance': 2000.00,
+                'balance': Decimal(str(2000.00)),
                 'status': 'A'
             },
             {
                 'customer_id': 2,
                 'account_type': 'Checking',
-                'balance': 0,
+                'balance': Decimal(str(0.00)),
                 'status': 'I'
             },
             {
                 'customer_id': 2,
                 'account_type': 'Checking',
-                'balance': 0,
+                'balance': Decimal(str(0.00)),
                 'status': 'I'
             },
             {
                 'customer_id': 2,
                 'account_type': 'Checking',
-                'balance': 0,
+                'balance': Decimal(str(0.00)),
                 'status': 'A'
             }
 

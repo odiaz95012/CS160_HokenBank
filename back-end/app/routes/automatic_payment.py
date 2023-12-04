@@ -32,9 +32,10 @@ def automatic_payment(account_id, amount, date):
                     406)
 
         # check valid amount
-        if Decimal(amount) <= 0:
+        d_amount = Decimal(str(amount))
+        if d_amount <= Decimal(str(0.00)):
             return f'Payment amount must be positive', 400
-        elif Decimal(amount) > account.balance:
+        elif d_amount > account.balance:
             return f'Payment may not exceed balance', 400
 
         # take datetime
@@ -48,9 +49,9 @@ def automatic_payment(account_id, amount, date):
             return f'Date must not be in past', 400
 
         create_automatic_payment_entry(account.customer_id, account_id,
-                                       Decimal(amount), date_time)
+                                       d_amount, date_time)
         return (
-            f'Payment of ${Decimal(amount)} successfully scheduled for Bank '
+            f'Payment of ${d_amount} successfully scheduled for Bank '
             f'Account with account_id {account_id} and date {date_time.date()}'), 200
     except Exception as e:
         # Log the exception to help diagnose the issue
