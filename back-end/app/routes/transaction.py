@@ -19,7 +19,8 @@ transaction = Blueprint('transaction', __name__)
 def deposit(account_id, amount):
     try:
         customer_id = request.currentUser
-        if amount <= 0:
+        d_amount = Decimal(str(amount))
+        if d_amount <= Decimal(str(0.00)):
             return f'Deposit amount must be positive', 400
         account = AccountInformation.query.get(account_id)
         if not account:
@@ -27,11 +28,11 @@ def deposit(account_id, amount):
         if account.status == 'I':
             return (f'Bank Account with account_id {account_id} is inactive',
                     406)
-        account.balance += Decimal(amount)
+        account.balance += d_amount
         db.session.commit()
         create_transaction_history_entry(
-            customer_id, account_id, 'Deposit', Decimal(amount))
-        return (f'${Decimal(amount)} successfully deposited to Bank Account '
+            customer_id, account_id, 'Deposit', d_amount)
+        return (f'${d_amount} successfully deposited to Bank Account '
                 f'with account_id {account_id}'), 200
     except Exception as e:
         # Log the exception to help diagnose the issue
@@ -46,7 +47,8 @@ def deposit(account_id, amount):
 def withdraw(account_id, amount):
     try:
         customer_id = request.currentUser
-        if amount <= 0:
+        d_amount = Decimal(str(amount))
+        if d_amount <= Decimal(str(0.00)):
             return f'Withdraw amount must be positive', 400
         account = AccountInformation.query.get(account_id)
         if not account:
@@ -54,15 +56,15 @@ def withdraw(account_id, amount):
         if account.status == 'I':
             return (f'Bank Account with account_id {account_id} is inactive',
                     406)
-        new_balance = account.balance - Decimal(amount)
-        if new_balance < 0:
+        new_balance = account.balance - d_amount
+        if new_balance < Decimal(str(0.00)):
             return (f'Withdrawal will put Bank Account with account_id '
                     f'{account_id} into negative balance', 400)
         account.balance = new_balance
         db.session.commit()
         create_transaction_history_entry(
-            customer_id, account_id, 'Withdraw', -Decimal(amount))
-        return (f'${Decimal(amount)} successfully withdrawn from Bank Account '
+            customer_id, account_id, 'Withdraw', -d_amount)
+        return (f'${d_amount} successfully withdrawn from Bank Account '
                 f'with account_id {account_id}'), 200
     except Exception as e:
         # Log the exception to help diagnose the issue
@@ -77,7 +79,8 @@ def withdraw(account_id, amount):
 def transfer(account_id, to_account_id, amount):
     try:
         from_customer_id = request.currentUser
-        if amount <= 0:
+        d_amount = Decimal(str(amount))
+        if d_amount <= Decimal(str(0.00)):
             return f'Transfer amount must be positive', 400
         from_account = AccountInformation.query.get(account_id)
         if not from_account:
@@ -94,20 +97,20 @@ def transfer(account_id, to_account_id, amount):
             return (f'Receiving Account with account_id {to_account_id} is '
                     f'inactive', 406)
         to_customer_id = to_account.customer_id
-        new_balance = from_account.balance - Decimal(amount)
-        if new_balance < 0:
+        new_balance = from_account.balance - d_amount
+        if new_balance < Decimal(str(0.00)):
             return (f'Transfer from Bank Account with account_id '
                     f'{account_id} will put it into negative balance',
                     400)
         from_account.balance = new_balance
-        to_account.balance += Decimal(amount)
+        to_account.balance += d_amount
         db.session.commit()
         create_transaction_history_entry(
-            from_customer_id, account_id, 'Transfer', -Decimal(amount))
+            from_customer_id, account_id, 'Transfer', -d_amount)
         create_transaction_history_entry(
-            to_customer_id, to_account_id, 'Transfer', Decimal(amount))
+            to_customer_id, to_account_id, 'Transfer', d_amount)
         return (
-            f'${Decimal(amount)} successfully transferred from Bank Account '
+            f'${d_amount} successfully transferred from Bank Account '
             f'with the Account ID {account_id} to Bank Account with '
             f'Account ID {to_account_id}'), 200
     except Exception as e:
@@ -123,7 +126,8 @@ def transfer(account_id, to_account_id, amount):
 def normal_payment(account_id, amount):
     try:
         customer_id = request.currentUser
-        if amount <= 0:
+        d_amount = Decimal(str(amount))
+        if d_amount <= Decimal(str(0.00)):
             return f'Payment amount must be positive', 400
         account = AccountInformation.query.get(account_id)
         if not account:
@@ -131,14 +135,14 @@ def normal_payment(account_id, amount):
         if account.status == 'I':
             return (f'Bank Account with account_id {account_id} is inactive',
                     406)
-        new_balance = account.balance - Decimal(amount)
-        if new_balance < 0:
+        new_balance = account.balance - d_amount
+        if new_balance < Decimal(str(0.00)):
             return (f'Bill payment will put the account with Account ID: '
                     f'{account_id} into negative balance.', 400)
         account.balance = new_balance
         db.session.commit()
         create_transaction_history_entry(
-            customer_id, account_id, 'Normal Payment', -Decimal(amount))
+            customer_id, account_id, 'Normal Payment', -d_amount)
         return jsonify(account.serialize()), 200
     except Exception as e:
         # Log the exception to help diagnose the issue
@@ -165,7 +169,8 @@ def check_deposit(account_id):
         # extract the amount deposited
         amount_text = re.search('\$\s[0-9,.]+', text).group().replace(",", "")
         amount = Decimal(re.split('\s', amount_text)[1])
-        if amount <= 0:
+        d_amount = Decimal(str(amount))
+        if d_amount <= Decimal(str(0.00)):
             return f'Check deposit amount must be positive', 400
     except Exception:
         return "Can not scan the check. Not in valid format", 400
@@ -177,9 +182,9 @@ def check_deposit(account_id):
             return "Check does not belong to current user", 403
 
         # deposit the amount to the account
-        account.balance += amount
+        account.balance += d_amount
         create_transaction_history_entry(
-            customer_id, account_id, 'Deposit', amount)
+            customer_id, account_id, 'Deposit', d_amount)
         db.session.commit()
 
         return jsonify(account.serialize()), 200

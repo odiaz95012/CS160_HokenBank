@@ -29,7 +29,7 @@ def open_account():
         account = AccountInformation(
             customer_id=customer_id,
             account_type=account_type,
-            balance=Decimal(0),
+            balance=Decimal(str(0.00)),
             status='A'
         )
         # Add the account to the database session and commit the changes
@@ -66,8 +66,8 @@ def close_account(account_id):
             return f'Bank Account with account_id {account_id} not found', 404
         if account.status == 'I':
             return (f'Bank Account with account_id {account_id} is inactive', 406)
-        #Check if account has a balance
-        if account.balance > 0:
+        # Check if account has a balance
+        if account.balance > Decimal(str(0.00)):
             return ("The account's balance must be withdrawn or transferred "
                     "to another account before closing."), 400
 
@@ -79,7 +79,6 @@ def close_account(account_id):
         print(f"Exception: {str(e)}")
         db.session.rollback()  # revert changes if any error occurs
         return 'Unexpected error occurred.', 500
-
 
 
 # Assuming you have a serialize method in your model

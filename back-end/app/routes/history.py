@@ -247,11 +247,13 @@ def get_account_payment_history(account_id, number):
 def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
                          gender):
     try:
-        if min_balance < 0:
+        d_min_balance = Decimal(str(min_balance))
+        d_max_balance = Decimal(str(max_balance))
+        if d_min_balance < 0:
             return f'Minimum balance must be positive', 400
-        if max_balance < 0:
+        if d_max_balance < 0:
             return f'Maximum balance must be positive', 400
-        if max_balance != 0 and max_balance < min_balance:
+        if d_max_balance != 0 and d_max_balance < d_min_balance:
             return f'Minimum balance cannot exceed maximum balance', 400
         if min_age < 0:
             return f'Minimum age must be positive', 400
@@ -290,11 +292,11 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
                 CustomerInformation.zip_code == zip_code)
 
         select_customers = select_customers.having(
-            text(f'total_balance >= {min_balance}'))
+            text(f'total_balance >= {d_min_balance}'))
 
-        if max_balance != Decimal(0):
+        if d_max_balance != 0:
             select_customers = select_customers.having(
-                text(f'total_balance <= {max_balance}'))
+                text(f'total_balance <= {d_max_balance}'))
 
         customer_list = []
 
@@ -305,7 +307,7 @@ def generate_user_report(min_balance, max_balance, min_age, max_age, zip_code,
                 'age': customer.age,
                 'gender': customer.gender,
                 'zip_code': customer.zip_code,
-                'balance': record[1]
+                'balance': Decimal(str(record[1]))
             }
             customer_list.append(customer_data)
 
@@ -347,7 +349,7 @@ def generate_individual_report(customer_id):
             'gender': customer.gender,
             'zip_code': customer.zip_code,
             'status': customer.status,
-            'balance': select_customer[1],
+            'balance': Decimal(str(select_customer[1])),
             'accounts': select_customer[2]
         }
         return jsonify(customer_data), 200
