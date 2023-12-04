@@ -19,7 +19,7 @@ function ExternalTransfer({ handleAlert, setAlert, handleExternalTransferInput }
   const { accountID } = useParams() as { accountID: string };
   const [toAccount, setToAccount] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
-  
+
 
 
   const handleAmount = (e: React.ChangeEvent<HTMLElement>) => {
@@ -43,36 +43,38 @@ function ExternalTransfer({ handleAlert, setAlert, handleExternalTransferInput }
           <p className='lead'>Please enter the required details</p>
         </div>
 
-          <div className='d-flex'>
-            <label className='form-label' htmlFor='toAccountID'>Recepient Account ID</label>
-          </div>
-          <div className="input-group rounded">
-            <input
-              type="text"
-              className="form-control rounded"
-              placeholder="Destination Account ID"
-              value={toAccount}
-              onChange={handleAccount}
-              name="toAccountID"
-              id="toAccountID"
-            />
-          </div>
-          <br />
-          <div className='d-flex pt-2'>
-            <label className='form-label' htmlFor='amount'>Amount</label>
-          </div>
-          <div className="input-group rounded">
-            <input
-              type="text"
-              name="amount"
-              className="form-control rounded"
-              placeholder="Enter Amount $"
-              value={amount}
-              onChange={handleAmount}
-              id="amount"
-            />
-          </div>
-          <br />
+        <div className='d-flex'>
+          <label className='form-label' htmlFor='toAccountID'>Recepient Account ID</label>
+        </div>
+        <div className="input-group rounded">
+          <input
+            type="number"
+            min={0}
+            className="form-control rounded"
+            placeholder="Destination Account ID"
+            value={toAccount}
+            onChange={handleAccount}
+            name="toAccountID"
+            id="toAccountID"
+          />
+        </div>
+        <br />
+        <div className='d-flex pt-2'>
+          <label className='form-label' htmlFor='amount'>Amount</label>
+        </div>
+        <div className="input-group rounded">
+          <input
+            type="number"
+            min={0}
+            name="amount"
+            className="form-control rounded"
+            placeholder="Enter Amount $"
+            value={amount}
+            onChange={handleAmount}
+            id="amount"
+          />
+        </div>
+        <br />
       </div>
     </div>
   );

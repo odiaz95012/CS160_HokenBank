@@ -141,7 +141,8 @@ function InternalTransfer({ handleAlert, setAlert, handleAccountSelect, handleAm
               </div>
               <input
                 name="amount"
-                type="text"
+                type="number"
+                min={0}
                 id="validationCustom01"
                 className="form-control"
                 placeholder="$"

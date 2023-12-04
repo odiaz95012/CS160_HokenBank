@@ -37,13 +37,21 @@ function Registration() {
     confirmPassword: '',
   });
 
-  const handleDateChange = (date: Date) => {
-    setFormData({ ...formData, birthDate: date, age: calculateAge(date) });
+  const handleDateChange = (date: Date | null) => {
+    if (date) {
+      setFormData({ ...formData, birthDate: date, age: calculateAge(date) });
+    } else {
+      setFormData({ ...formData, birthDate: null, age: null });
+    }
   };
 
-  const calculateAge = (birthdate: Date) => {
+
+  const calculateAge = (birthdate: Date | null): number | null => {
+    if (!birthdate) return null;
+
     const currentDate = new Date();
     let age = currentDate.getFullYear() - birthdate.getFullYear();
+
     if (
       currentDate.getMonth() < birthdate.getMonth() ||
       (currentDate.getMonth() === birthdate.getMonth() &&
@@ -51,8 +59,10 @@ function Registration() {
     ) {
       age -= 1;
     }
+
     return age;
   };
+
 
   const updateGenderValue = (genderValue: string) => {
     setFormData({ ...formData, gender: genderValue });
@@ -79,8 +89,8 @@ function Registration() {
       const isPasswordValid = isValidPassword(password);
 
       if (isPasswordsMatch && isNameValid && isUsernameValid && isAgeValid && isZipcodeValid && isEmailValid && isPasswordValid) {
-        if (await handleSubmit()) {
-
+        const isSuccessful = await handleSubmit();
+        if (isSuccessful) {
           let count = 3;
           setAlert({ text: 'Account creation Successful. \nRedirecting to the login page in 5 seconds.', variant: 'success' });
 
@@ -95,7 +105,7 @@ function Registration() {
           }, 1000);
           handleAlert();
         }
-      }
+      };
     } catch (err: any) {
       setAlert({ text: err.message, variant: 'danger' });
       handleAlert();
@@ -134,12 +144,15 @@ function Registration() {
     if (name.length < 3 || name.length > 30) {
       throw new Error('The name must be 3-30 characters in length.');
     }
-    const nameRegex = /^[A-Za-z\s]+$/;
+  
+    const nameRegex = /^[A-Za-z\s\-]+$/; // Updated regex to include hyphens
     if (!nameRegex.test(name)) {
-      throw new Error('The input name is not valid. Please only enter alphabetical characters.');
+      throw new Error('The input name is not valid. Please only enter alphabetical characters and hyphens.');
     }
+  
     return true;
   };
+  
 
   function isValidEmail(email: string) {
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
@@ -182,7 +195,7 @@ function Registration() {
     return true;
   }
 
-  async function handleSubmit() {
+  const handleSubmit = async () => {
     try {
       await axios.post('http://localhost:8000/register', {
         username: formData.username,
@@ -194,13 +207,16 @@ function Registration() {
         zip_code: parseInt(formData.zipcode, 10),
         status: 'A',
       });
-      return true;
+      return true; // Return true if the post request succeeds
     } catch (err: any) {
-      setAlert({ text: err.response.data, variant: 'danger' });
-      handleAlert();
-      return false;
+      if (err.response && err.response.data) {
+        setAlert({ text: err.response.data, variant: 'danger' });
+        handleAlert();
+      }
+      return false; // Return false if there's an error or if the request fails
     }
-  }
+  };
+  
 
   function checkAttributesNotNull(attributeName: string, attributeValue: any) {
     if (!attributeValue || attributeValue === '') {
@@ -365,6 +381,9 @@ function Registration() {
                   >
                     Sign Up
                   </button>
+                  <div className='mt-2 text-primary'>
+                    <a onClick={() => (navigate("/"))} style={{ cursor: 'pointer' }}>Already have an account? Return to the login page</a>
+                  </div>
                 </form>
               </div>
             </div>

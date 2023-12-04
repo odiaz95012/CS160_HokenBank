@@ -47,8 +47,10 @@ function PopUpModal(props: PopUpModalProps) { // Use props as an argument
         }
     });
 
+    
+
     return (
-        <div>
+        <>
             <div className='row'>
                 <div className='col'>
                     {activatingButtonWithClickHandler}
@@ -56,7 +58,7 @@ function PopUpModal(props: PopUpModalProps) { // Use props as an argument
             </div>
             <div className='row'>
                 <div className='col'>
-                    <MDBModal show={basicModal} setShow={setBasicModal} tabIndex='-1'>
+                    <MDBModal show={basicModal} setShow={setBasicModal} tabIndex="-1">
                         <MDBModalDialog>
                             <MDBModalContent>
                                 <MDBModalHeader>
@@ -83,7 +85,7 @@ function PopUpModal(props: PopUpModalProps) { // Use props as an argument
                     </MDBModal>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
 

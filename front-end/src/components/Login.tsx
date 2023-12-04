@@ -198,7 +198,7 @@ function Login() {
                                             <br/><br/>
                                             At Hoken, we are committed to providing you with a secure, convenient, and personalized banking experience.
                                             <br/><br/>
-                                            With our user-friendly online platform, you can access your accounts, manage your finances, and explore a wide range of banking services from the comfort of your home or on the go. Whether you need to check your account balances, transfer funds, or find schedule automatic payments, we've got you covered.
+                                            With our user-friendly online platform, you can access your accounts, manage your finances, and explore a wide range of banking services from the comfort of your home or on the go. Whether you need to check your account balances, transfer funds, or schedule automatic payments, we've got you covered.
                                             <br/><br/>
                                             Thank you for choosing Hoken Online Bank. We look forward to helping you achieve your financial goals and ensuring your banking experience is as smooth as possible.
                                             <br/><br/>

@@ -8,6 +8,8 @@ import PopUpAlert from './PopUpAlert';
 import { SingleValue, ActionMeta } from 'react-select';
 
 function ATMSearch() {
+
+    const apiKey = 'API_KEY';
     interface coordinates {
         latitude: number | null;
         longitude: number | null;
@@ -22,7 +24,6 @@ function ATMSearch() {
             };
         };
     }
-    const [userLocation, setUserLocation] = useState<coordinates>({ latitude: null, longitude: null });
     const [userCoords, setUserCoords] = useState<coordinates>({ latitude: null, longitude: null });
     const [atmLocations, setAtmLocations] = useState<ATM[] | null>(null);
     const [radius, setRadius] = useState<number>(500);
@@ -47,7 +48,6 @@ function ATMSearch() {
         return miles * 1609.34;
     };
 
-    const apiKey = 'YOUR_API_KEY_HERE';
 
     const handleGetLocation = () => {
         setIsSearching(true);
@@ -182,11 +182,11 @@ function ATMSearch() {
     // Define the type for the selected location
     type SelectedLocation = SingleValue<LocationOption>;
 
-    const [selectedLocation, setSelectedLocation] = useState<SelectedLocation | null>(null);
-
+    const [userCurrLocation, setSelectedLocation] = useState<SelectedLocation | null>(null);
+    const [userInputAddress, setUserInputAddress] = useState<SelectedLocation>(null);
     const handleLocationChange = (selectedLocation: SelectedLocation, actionMeta: ActionMeta<LocationOption>) => {
         if (selectedLocation) {
-            setSelectedLocation(selectedLocation);
+            setUserInputAddress(selectedLocation);
         }
     };
 
@@ -195,15 +195,23 @@ function ATMSearch() {
 
     useEffect(() => {
         const findAtms = async () => {
-            if (selectedLocation && radius < milesToMeters(20)) {
-                const address = encodeURI(selectedLocation.label.replaceAll(',', ''));
+            if (userCurrLocation && radius < milesToMeters(20)) {
+                const address = encodeURI(userCurrLocation.label.replaceAll(',', ''));
                 const coords = await getCoordsOfAddress(address);
                 findNearestChaseATMs(coords, radius);
             }
         }
         findAtms();
 
-    }, [selectedLocation]);
+    }, [userCurrLocation]);
+
+    const handleAddressSearch = async () => {
+        if (userInputAddress && radius < milesToMeters(20)) {
+            const address = encodeURI(userInputAddress.label.replaceAll(',', ''));
+            const coords = await getCoordsOfAddress(address);
+            findNearestChaseATMs(coords, radius);
+        }
+    };
 
 
 
@@ -230,10 +238,10 @@ function ATMSearch() {
                 <div className='row main-container'>
                     <div className='col-12 col-md-8 mx-auto mt-3'>
                         <div className='row my-2'>
-                            <div className='col-12 col-md-4 my-2'>
+                            <div className='col-12 col-md-2 my-2'>
                                 <button className="btn btn-primary" onClick={handleGetLocation}>Current location<i className="bi bi-crosshair ms-1"></i></button>
                             </div>
-                            <div className='col-12 col-md-4 my-2'>
+                            <div className='col-12 col-md-3 my-2'>
                                 <div className='form-outline'>
                                     <input type="number" min={1} max={20} id="radius" className="form-control" name="radius" placeholder='Radius(Miles)' onChange={handleRadiusChange} />
                                     <label className="form-label" htmlFor='radius'>Search Radius (Miles)</label>
@@ -243,11 +251,19 @@ function ATMSearch() {
                                 <div className="form-outline">
                                     <GooglePlacesAutocomplete
                                         selectProps={{
-                                            value: selectedLocation,
+                                            value: userInputAddress,
                                             onChange: handleLocationChange,
                                         }}
                                     />
+                                    <label className="form-label">
+                                        Starting Address
+                                    </label>
                                 </div>
+                            </div>
+                            <div className='col-12 col-md-3 my-2'>
+                                <button className="btn btn-primary" onClick={handleAddressSearch}>
+                                    <i className="bi bi-search"></i>
+                                </button>
                             </div>
                         </div>
                         <div className='row mb-4'>

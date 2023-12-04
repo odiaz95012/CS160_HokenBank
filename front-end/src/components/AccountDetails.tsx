@@ -100,6 +100,7 @@ function AccountDetails() {
     };
 
     const [dataToRender, setDataToRender] = useState<Payment[]>([]);
+    const [isTableAltered, setIsTableAltered] = useState<boolean>(false);
     useEffect(() => {
         const fetchTransactionsData = async () => {
             try {
@@ -124,7 +125,8 @@ function AccountDetails() {
         };
 
         fetchTransactionsData();
-    }, [selectedHistoryOption, selectedNumEntries]);
+        setIsTableAltered(false);
+    }, [selectedHistoryOption, selectedNumEntries, isTableAltered]);
 
     interface Payment {
         transaction_id: string | number,
@@ -232,7 +234,6 @@ function AccountDetails() {
         setTimeout(() => {
             setAlert(defaultAlert); // reset alert
             alertElem.style.visibility = 'hidden';
-            window.location.reload();
         }, 5000);
     };
 
@@ -290,7 +291,6 @@ function AccountDetails() {
             navigate('/home');
         })
             .catch((err) => {
-                console.log(err);
                 setAlert({ text: err.response.data, variant: "danger" });
                 handleAlert();
             });
@@ -300,6 +300,10 @@ function AccountDetails() {
         const pattern = /^\d+\.\d{2}$/;
         return pattern.test(amount) && parseFloat(amount) > 0;
     };
+
+    
+
+
     const transfer = async (accountID: string, toAccount: string, amount: string) => {
         if (accountID === '' || toAccount === '' || amount === '') {
             setAlert({ text: 'Please fill out all fields.', variant: 'warning' });
@@ -315,9 +319,8 @@ function AccountDetails() {
         const parsedToAccountId = parseInt(toAccount);
         const parsedAmount = parseFloat(amount).toFixed(2);
         const parsedAccountId = parseInt(accountID);
-
-        try {
-            const response = await axios.patch(
+        const authToken = await getCustomerToken();
+            axios.patch(
                 `http://localhost:8000/transfer/${parsedAccountId}/${parsedToAccountId}/${parsedAmount}`,
                 {
                     account_id: parsedAccountId,
@@ -326,20 +329,23 @@ function AccountDetails() {
                 },
                 {
                     headers: {
-                        'authorization': `Bearer ${await getCustomerToken()}`,
+                        'authorization': `Bearer ${authToken}`,
                     },
                 }
-            );
-            if (response.data) {
-                setAlert({ text: response.data, variant: 'success' });
+            ) .then(async (response) => {
+                if (response.data) {
+                setAlert({ text: response.data.message, variant: 'success' });
                 handleAlert();
+                setIsTableAltered(true);
+                setAccountInfo({ ...accountInfo, balance: response.data.balance });
                 setTransferData({ accountID: accountID, toAccountID: '', amount: '' });
             }
+            }).catch((err) => {
+                setAlert({ text: `Transfer failed: ${err.message}`, variant: 'danger' });
+                handleAlert();
+            })
 
-        } catch (err: any) {
-            setAlert({ text: `Transfer failed: ${err.message}`, variant: 'danger' });
-            handleAlert();
-        }
+
     };
 
 
@@ -365,69 +371,69 @@ function AccountDetails() {
                         </div>
                     </div>
                     <div className='container justify-content-center align-items-center'>
-                    <div className='row mb-3'>
-                        <div className='col-md-4 feature-bttn'>
-                            <PopUpModal
-                                activatingBttn={<button className="btn btn-primary my-2">Internal Transfer</button>}
-                                title={<div style={{ textAlign: "center" }}><p className="h4">Internal Transfer</p></div>}
-                                body={<InternalTransfer
-                                    handleAccountSelect={handleTransferAccountSelection}
-                                    handleAmountInput={handleInternalTransferAmount}
-                                />}
-                                closeOnSubmit={true}
-                                closeBttnText='Transfer'
-                                additionalBttnText='Cancel'
-                                submitAction={async () => {
-                                    if (accountID) {
-                                        transfer(accountID, transferData.toAccountID, transferData.amount);
+                        <div className='row mb-3'>
+                            <div className='col-md-4 feature-bttn'>
+                                <PopUpModal
+                                    activatingBttn={<button className="btn btn-primary my-2">Internal Transfer</button>}
+                                    title={<div style={{ textAlign: "center" }}><p className="h4">Internal Transfer</p></div>}
+                                    body={<InternalTransfer
+                                        handleAccountSelect={handleTransferAccountSelection}
+                                        handleAmountInput={handleInternalTransferAmount}
+                                    />}
+                                    closeOnSubmit={true}
+                                    closeBttnText='Transfer'
+                                    additionalBttnText='Cancel'
+                                    submitAction={async () => {
+                                        if (accountID) {
+                                            transfer(accountID, transferData.toAccountID, transferData.amount);
 
+                                        }
+                                    }}
+                                />
+                            </div>
+                            <div className='col-md-4 feature-bttn'>
+                                <PopUpModal
+                                    activatingBttn={<button className="btn btn-primary my-2">External Transfer</button>}
+                                    title={<div style={{ textAlign: "center" }}><p className="h4">External Transfer</p></div>}
+                                    body={
+                                        <ExternalTransfer
+                                            handleExternalTransferInput={handleExternalTransferData}
+                                        />
                                     }
-                                }}
-                            />
+                                    closeOnSubmit={true}
+                                    closeBttnText='Transfer'
+                                    additionalBttnText='Cancel'
+                                    submitAction={async () => {
+                                        if (accountID) {
+                                            transfer(accountID, transferData.toAccountID, transferData.amount);
+                                        }
+                                    }}
+                                />
+                            </div>
+                            <div className='col-md-4 feature-bttn'>
+                                <PopUpModal
+                                    activatingBttn={<button className="btn btn-primary my-2">Close Account</button>}
+                                    title={<div style={{ textAlign: "center" }}><p className="h4">Close Account</p></div>}
+                                    body={<CloseAccount
+                                        account_id={accountID ? parseInt(accountID) : -1}
+                                        onInputChange={handlePasswordInput}
+                                    />}
+                                    closeOnSubmit={true}
+                                    submitAction={async () => {
+                                        const authToken = await getCustomerToken();
+                                        if (authToken && accountID) {
+                                            closeAccount(authToken, parseInt(accountID), password);
+                                        }
+                                    }}
+                                    closeBttnText={"Close Account"}
+                                    additionalBttnText={"Cancel"}
+                                    closeBtnVariant='danger'
+                                />
+                            </div>
                         </div>
-                        <div className='col-md-4 feature-bttn'>
-                            <PopUpModal
-                                activatingBttn={<button className="btn btn-primary my-2">External Transfer</button>}
-                                title={<div style={{ textAlign: "center" }}><p className="h4">External Transfer</p></div>}
-                                body={
-                                    <ExternalTransfer
-                                        handleExternalTransferInput={handleExternalTransferData}
-                                    />
-                                }
-                                closeOnSubmit={true}
-                                closeBttnText='Transfer'
-                                additionalBttnText='Cancel'
-                                submitAction={async () => {
-                                    if (accountID) {
-                                        transfer(accountID, transferData.toAccountID, transferData.amount);
-                                    }
-                                }}
-                            />
-                        </div>
-                        <div className='col-md-4 feature-bttn'>
-                            <PopUpModal
-                                activatingBttn={<button className="btn btn-primary my-2">Close Account</button>}
-                                title={<div style={{ textAlign: "center" }}><p className="h4">Close Account</p></div>}
-                                body={<CloseAccount
-                                    account_id={accountID ? parseInt(accountID) : -1}
-                                    onInputChange={handlePasswordInput}
-                                />}
-                                closeOnSubmit={true}
-                                submitAction={async () => {
-                                    const authToken = await getCustomerToken();
-                                    if (authToken && accountID) {
-                                        closeAccount(authToken, parseInt(accountID), password);
-                                    }
-                                }}
-                                closeBttnText={"Close Account"}
-                                additionalBttnText={"Cancel"}
-                                closeBtnVariant='danger'
-                            />
-                        </div>
+
                     </div>
 
-                    </div>
-                    
 
                 </div>
             ) : (
@@ -472,7 +478,7 @@ function AccountDetails() {
                     </div>
                 </div>
             </div>
-            <div className="row overflow-auto mt-4" style={{marginBottom: '150px'}}>
+            <div className="row overflow-auto mt-4" style={{ marginBottom: '150px' }}>
                 <table className="col-md-12 table table-hover mx-4">
                     <thead className="thead-dark">
                         <tr>

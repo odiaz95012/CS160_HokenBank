@@ -281,7 +281,14 @@ function AdminPage() {
       setUserReport(response.data);
       downloadUserReport(response.data);
     }).catch((err) => {
-      console.log(err);
+      if(err.response){
+        console.log(err.response);
+        setAlert({ text: err.response.data, variant: 'danger' });
+        handleAlert();
+      }else{
+        setAlert({ text: 'There was an error generating the user report. Please try again.', variant: 'danger' });
+        handleAlert();
+      }
     })
 
   };
